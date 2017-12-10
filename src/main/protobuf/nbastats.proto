@@ -1,0 +1,79 @@
+syntax = "proto3";
+
+package nbastats;
+
+option java_package = "com.digitald4.nbastats.proto";
+option java_outer_classname = "NBAStatsProtos";
+
+enum Position {
+  POS_UNKNOWN = 0;
+  PG = 1;
+  SG = 2;
+  SF = 3;
+  PF = 4;
+  C = 5;
+}
+
+message Player {
+  int64 id = 1;
+  int32 player_id = 2;
+  string name = 3;
+  string a_k_a = 4;
+}
+
+message PlayerDay {
+  int64 id = 1;
+  int32 player_id = 2;
+  string as_of_date = 3;
+  string name = 4;
+
+  enum Status {
+    STATUS_UNKNOWN = 0;
+    ACTIVE = 1;
+    IN_ACTIVE = 2;
+    INJURIED = 3;
+    QUESTIONABLE = 4;
+  }
+  Status status = 5;
+  string team = 6;
+  string opponent = 7;
+
+  message FantasySiteInfo {
+    repeated Position position = 1;
+    int32 cost = 2;
+  }
+  map<string, FantasySiteInfo> fantasy_site_info = 8;
+
+  message Stats {
+    double points = 1;
+    double rebounds = 2;
+    double assists = 3;
+    double blocks = 4;
+    double steals = 5;
+    double made3s = 6;
+    double turnovers = 7;
+    double double_doubles = 8;
+    double triple_doubles = 9;
+
+    map<string, double> fantasy_site_points = 10;
+  }
+  map<string, Stats> stats = 9;
+}
+
+message LineUp {
+  int64 id = 1;
+  string date = 2;
+  string fantasy_site = 3;
+  double projected_points = 4;
+  double total_salary = 5;
+  message LineUpPlayer {
+    string name = 1;
+    int32 player_id = 2;
+    repeated Position position = 3;
+    int32 cost = 4;
+    double projected_points = 5;
+    int32 hash_id = 6;
+  }
+  repeated LineUpPlayer player = 6;
+  int32 hash_id = 7;
+}
