@@ -23,8 +23,8 @@ public class ProcessLocal {
 		PlayerDayStore playerDayStore = new PlayerDayStore(daoProvider, apiDAO,
 				new PlayerStore(daoProvider, apiDAO));
 		LineUpStore lineUpStore = new LineUpStore(daoProvider, playerDayStore);
-		//System.out.println(playerDayStore.processStats(DateTime.now()).size());
-		System.out.println("Valid Line Ups: " + lineUpStore.processDraftKings(DateTime.parse("2017-12-02")).size());
+		System.out.println(playerDayStore.processStats(DateTime.now()).size());
+		// System.out.println("Valid Line Ups: " + lineUpStore.processDraftKings(DateTime.parse("2017-12-02")).size());
 		//lineUpStore.processDraftKings(DateTime.now().minusHours(8));
 		// System.out.println(apiDAO.fillStats(PlayerDay.newBuilder().setName("Marcus Smart").setPlayerId(203935).setAsOfDate("11/30/2017").build()));
 		// System.out.println(apiDAO.fillStats(PlayerDay.newBuilder().setName("Lonzo Ball").setPlayerId(1628366).setAsOfDate("11/30/2017")).build());

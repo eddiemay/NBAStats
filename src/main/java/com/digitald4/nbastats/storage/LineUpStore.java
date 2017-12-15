@@ -13,9 +13,7 @@ import com.digitald4.nbastats.proto.NBAStatsProtos.LineUp.LineUpPlayer;
 import com.digitald4.nbastats.proto.NBAStatsProtos.Position;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
@@ -53,7 +51,7 @@ public class LineUpStore extends GenericStore<LineUp> {
 						.setName(playerDay.getName())
 						.addAllPosition(playerDay.getFantasySiteInfoOrThrow(leauge).getPositionList())
 						.setCost(playerDay.getFantasySiteInfoOrThrow(leauge).getCost())
-						.setProjectedPoints(playerDay.getStatsOrThrow("Projection").getFantasySitePointsOrThrow(leauge))
+						.setProjected(playerDay.getStatsOrThrow("Projection").getFantasySitePointsOrThrow(leauge))
 						.build())
 				.collect(Collectors.toList()));
 	}
@@ -70,7 +68,7 @@ public class LineUpStore extends GenericStore<LineUp> {
 		List<LineUpPlayer> utils = new DistinictSalaryList(4);
 		int[] fibonacci = Fibonacci.genSequence(lineUpPlayers.size() + 1);
 		AtomicInteger index = new AtomicInteger();
-		lineUpPlayers.stream().sorted(Comparator.comparing(LineUpPlayer::getProjectedPoints).reversed()).forEach(player -> {
+		lineUpPlayers.stream().sorted(Comparator.comparing(LineUpPlayer::getProjected).reversed()).forEach(player -> {
 			player = player.toBuilder().setHashId(fibonacci[index.incrementAndGet()]).build();
 			if (player.getPositionList().contains(Position.PG) || player.getPositionList().contains(Position.SG)) {
 				gs.add(player);
@@ -98,7 +96,7 @@ public class LineUpStore extends GenericStore<LineUp> {
 		System.out.println("Combinations: " + FormatText.formatCurrency(Calculate.combinations(utils.size(), 8)));
 
 		TopSet<LineUp> bestLineUps = new TopSet<>(LIMIT,
-				Comparator.comparing(LineUp::getProjectedPoints).reversed().thenComparing(LineUp::getHashId));
+				Comparator.comparing(LineUp::getProjected).reversed().thenComparing(LineUp::getHashId));
 		List<Pair<LineUpPlayer, LineUpPlayer>> pairs = new ArrayList<>();
 		for (LineUpPlayer pg : pgs) {
 			for (LineUpPlayer sg : sgs) {
@@ -117,7 +115,7 @@ public class LineUpStore extends GenericStore<LineUp> {
 		System.out.println("Runners required: " + pairs.size());
 		pairs.subList(0, 4).parallelStream().map(pair -> {
 			Set<LineUp> lineUps = new TopSet<>(LIMIT,
-					Comparator.comparing(LineUp::getProjectedPoints).reversed().thenComparing(LineUp::getHashId));
+					Comparator.comparing(LineUp::getProjected).reversed().thenComparing(LineUp::getHashId));
 			LineUpPlayer pg = pair.getLeft();
 			LineUpPlayer sg = pair.getRight();
 			for (LineUpPlayer sf : sfs.subList(0, 2)) {
@@ -140,9 +138,9 @@ public class LineUpStore extends GenericStore<LineUp> {
 												.setHashId(pg.getHashId() + sg.getHashId() + sf.getHashId() + pf.getHashId() + c.getHashId()
 														+ util.getHashId() + g.getHashId() + f.getHashId())
 												.setFantasySite(FantasyLeague.DRAFT_KINGS.name)
-												.setProjectedPoints(pg.getProjectedPoints() + sg.getProjectedPoints()
-														+ sf.getProjectedPoints() + pf.getProjectedPoints() + c.getProjectedPoints()
-														+ g.getProjectedPoints() + f.getProjectedPoints() + util.getProjectedPoints())
+												.setProjected(pg.getProjected() + sg.getProjected()
+														+ sf.getProjected() + pf.getProjected() + c.getProjected()
+														+ g.getProjected() + f.getProjected() + util.getProjected())
 												.setTotalSalary(totalSalary)
 												.addPlayer(pg).addPlayer(sg).addPlayer(sf).addPlayer(pf).addPlayer(c)
 												.addPlayer(g).addPlayer(f).addPlayer(util)
@@ -210,7 +208,7 @@ Utils: 119
 		List<LineUpPlayer> pfs = new DistinictSalaryList(3);
 		List<LineUpPlayer> cs = new DistinictSalaryList(2);
 
-		lineUpPlayers.stream().sorted(Comparator.comparing(LineUpPlayer::getProjectedPoints).reversed()).forEach(player -> {
+		lineUpPlayers.stream().sorted(Comparator.comparing(LineUpPlayer::getProjected).reversed()).forEach(player -> {
 			if (player.getPositionList().contains(Position.PG)) pgs.add(player);
 			if (player.getPositionList().contains(Position.SG)) sgs.add(player);
 			if (player.getPositionList().contains(Position.SF)) sfs.add(player);
@@ -232,10 +230,10 @@ Utils: 119
 		LineUpPlayer[] sfArray = sfs.toArray(new LineUpPlayer[sfs.size()]);
 		LineUpPlayer[] pfArray = pfs.toArray(new LineUpPlayer[pfs.size()]);
 		Set<LineUp> bestLineUps = new TopSet<>(LIMIT,
-				Comparator.comparing(LineUp::getProjectedPoints).thenComparing(LineUp::getId));
+				Comparator.comparing(LineUp::getProjected).thenComparing(LineUp::getId));
 		cs.parallelStream().map(c -> {
 			Set<LineUp> lineUps = new TopSet<>(LIMIT,
-					Comparator.comparing(LineUp::getProjectedPoints).thenComparing(LineUp::getId));
+					Comparator.comparing(LineUp::getProjected).thenComparing(LineUp::getId));
 			int id = cs.indexOf(c) * 1000;
 			for (int pG1 = 0; pG1 < pgArray.length - 1; pG1++) {
 				LineUpPlayer pg1 = pgArray[pG1];
@@ -265,8 +263,8 @@ Utils: 119
 												lineUps.add(LineUp.newBuilder()
 														.setId(id++)
 														.setFantasySite(FantasyLeague.DRAFT_KINGS.name)
-														.setProjectedPoints(pg1.getProjectedPoints() + pg2.getProjectedPoints() + sg1.getProjectedPoints() + sg2.getProjectedPoints()
-														+ sf1.getProjectedPoints() + sf2.getProjectedPoints() + pf1.getProjectedPoints() + pf2.getProjectedPoints() + c.getProjectedPoints())
+														.setProjected(pg1.getProjected() + pg2.getProjected() + sg1.getProjected() + sg2.getProjected()
+														+ sf1.getProjected() + sf2.getProjected() + pf1.getProjected() + pf2.getProjected() + c.getProjected())
 														.setTotalSalary(totalSalary)
 														.addPlayer(pg1).addPlayer(pg2).addPlayer(sg1).addPlayer(sg2)
 														.addPlayer(sf1).addPlayer(sf2).addPlayer(pf1).addPlayer(pf2).addPlayer(c)
@@ -283,24 +281,5 @@ Utils: 119
 			return lineUps;
 		}).forEach(bestLineUps::addAll);
 		return bestLineUps;
-	}
-
-	private class DistinictSalaryList extends ArrayList<LineUpPlayer> {
-		private Map<Integer, AtomicInteger> byCostCount = new HashMap<>();
-
-		private final int limit;
-		public DistinictSalaryList(int limit) {
-			this.limit = limit;
-		}
-
-		@Override
-		public boolean add(LineUpPlayer player) {
-			AtomicInteger byCost = byCostCount.computeIfAbsent(player.getCost(), cost -> new AtomicInteger());
-			if (byCost.get() < limit) {
-				byCost.incrementAndGet();
-				return super.add(player);
-			}
-			return false;
-		}
 	}
 }

@@ -19,8 +19,8 @@ public class PlayerDayStore extends GenericStore<PlayerDay> {
 
 	private final APIDAO apiDAO;
 	private final PlayerStore playerStore;
-	public PlayerDayStore(Provider<DAO> cacheDAOProvider, APIDAO apiDAO, PlayerStore playerStore) {
-		super(PlayerDay.class, cacheDAOProvider);
+	public PlayerDayStore(Provider<DAO> daoProvider, APIDAO apiDAO, PlayerStore playerStore) {
+		super(PlayerDay.class, daoProvider);
 		this.apiDAO = apiDAO;
 		this.playerStore = playerStore;
 	}

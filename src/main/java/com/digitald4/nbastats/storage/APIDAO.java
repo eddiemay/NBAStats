@@ -5,6 +5,7 @@ import static java.lang.String.format;
 
 import com.digitald4.common.exception.DD4StorageException;
 import com.digitald4.common.tools.DataImporter;
+import com.digitald4.common.util.Calculate;
 import com.digitald4.nbastats.proto.NBAStatsProtos.PlayerDay;
 import com.digitald4.nbastats.proto.NBAStatsProtos.PlayerDay.FantasySiteInfo;
 import com.digitald4.nbastats.proto.NBAStatsProtos.PlayerDay.Stats;
@@ -52,6 +53,10 @@ public class APIDAO {
 		}
 	}
 
+	private double round(double n) {
+		return Calculate.round(n, 3);
+	}
+
 	private PlayerDay.Builder fillStats(PlayerDay.Builder player) throws IOException {
 		DateTime date = DateTime.parse(player.getAsOfDate(), DateTimeFormat.forPattern(API_DATE_FORMAT));
 		String dateTo = date.minusDays(1).toString(API_DATE_FORMAT);
@@ -95,17 +100,17 @@ public class APIDAO {
 
 			if (sampleSize == SAMPLE_SIZE) {
 				player.putStats("Projection", Stats.newBuilder()
-						.setPoints(standardDeviation(matrix[Stats.POINTS_FIELD_NUMBER]) * Z_SCORE + sampleGameAvgs.getPoints())
-						.setMade3S(standardDeviation(matrix[Stats.MADE3S_FIELD_NUMBER]) * Z_SCORE + sampleGameAvgs.getMade3S())
-						.setRebounds(standardDeviation(matrix[Stats.REBOUNDS_FIELD_NUMBER]) * Z_SCORE + sampleGameAvgs.getRebounds())
-						.setAssists(standardDeviation(matrix[Stats.ASSISTS_FIELD_NUMBER]) * Z_SCORE + sampleGameAvgs.getAssists())
-						.setSteals(standardDeviation(matrix[Stats.STEALS_FIELD_NUMBER]) * Z_SCORE + sampleGameAvgs.getSteals())
-						.setBlocks(standardDeviation(matrix[Stats.BLOCKS_FIELD_NUMBER]) * Z_SCORE + sampleGameAvgs.getBlocks())
-						.setTurnovers(standardDeviation(matrix[Stats.TURNOVERS_FIELD_NUMBER]) * Z_SCORE + sampleGameAvgs.getTurnovers())
-						.setDoubleDoubles(standardDeviation(matrix[Stats.DOUBLE_DOUBLES_FIELD_NUMBER]) * Z_SCORE + sampleGameAvgs.getDoubleDoubles())
-						.setTripleDoubles(standardDeviation(matrix[Stats.TRIPLE_DOUBLES_FIELD_NUMBER]) * Z_SCORE + sampleGameAvgs.getTripleDoubles())
-						.putFantasySitePoints("draftkings", standardDeviation(matrix[Stats.FANTASY_SITE_POINTS_FIELD_NUMBER]) * Z_SCORE + sampleGameAvgs.getFantasySitePointsOrDefault("draftkings", 0))
-						.putFantasySitePoints("fanduel", standardDeviation(matrix[Stats.FANTASY_SITE_POINTS_FIELD_NUMBER + 1]) * Z_SCORE + sampleGameAvgs.getFantasySitePointsOrDefault("fanduel", 0))
+						.setPoints(round(standardDeviation(matrix[Stats.POINTS_FIELD_NUMBER]) * Z_SCORE + sampleGameAvgs.getPoints()))
+						.setMade3S(round(standardDeviation(matrix[Stats.MADE3S_FIELD_NUMBER]) * Z_SCORE + sampleGameAvgs.getMade3S()))
+						.setRebounds(round(standardDeviation(matrix[Stats.REBOUNDS_FIELD_NUMBER]) * Z_SCORE + sampleGameAvgs.getRebounds()))
+						.setAssists(round(standardDeviation(matrix[Stats.ASSISTS_FIELD_NUMBER]) * Z_SCORE + sampleGameAvgs.getAssists()))
+						.setSteals(round(standardDeviation(matrix[Stats.STEALS_FIELD_NUMBER]) * Z_SCORE + sampleGameAvgs.getSteals()))
+						.setBlocks(round(standardDeviation(matrix[Stats.BLOCKS_FIELD_NUMBER]) * Z_SCORE + sampleGameAvgs.getBlocks()))
+						.setTurnovers(round(standardDeviation(matrix[Stats.TURNOVERS_FIELD_NUMBER]) * Z_SCORE + sampleGameAvgs.getTurnovers()))
+						.setDoubleDoubles(round(standardDeviation(matrix[Stats.DOUBLE_DOUBLES_FIELD_NUMBER]) * Z_SCORE + sampleGameAvgs.getDoubleDoubles()))
+						.setTripleDoubles(round(standardDeviation(matrix[Stats.TRIPLE_DOUBLES_FIELD_NUMBER]) * Z_SCORE + sampleGameAvgs.getTripleDoubles()))
+						.putFantasySitePoints("draftkings", round(standardDeviation(matrix[Stats.FANTASY_SITE_POINTS_FIELD_NUMBER]) * Z_SCORE + sampleGameAvgs.getFantasySitePointsOrDefault("draftkings", 0)))
+						.putFantasySitePoints("fanduel", round(standardDeviation(matrix[Stats.FANTASY_SITE_POINTS_FIELD_NUMBER + 1]) * Z_SCORE + sampleGameAvgs.getFantasySitePointsOrDefault("fanduel", 0)))
 						.build());
 			} else {
 				System.err.println(String.format("Not enough data for: %d - %s (%d)", player.getPlayerId(), player.getName(), games.size()));
@@ -136,6 +141,11 @@ public class APIDAO {
 					player.putStats(rowSet.getString(3) + " " + rowSet.getString(4), game);
 				}
 			}
+		}
+		try {
+			Thread.sleep(500); // Wait 1/2 a second to try and stop API from dectecting automated code.
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
 		return games;
 	}

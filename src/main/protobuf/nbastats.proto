@@ -64,14 +64,14 @@ message LineUp {
   int64 id = 1;
   string date = 2;
   string fantasy_site = 3;
-  double projected_points = 4;
+  double projected = 4;
   double total_salary = 5;
   message LineUpPlayer {
     string name = 1;
     int32 player_id = 2;
     repeated Position position = 3;
     int32 cost = 4;
-    double projected_points = 5;
+    double projected = 5;
     int32 hash_id = 6;
   }
   repeated LineUpPlayer player = 6;

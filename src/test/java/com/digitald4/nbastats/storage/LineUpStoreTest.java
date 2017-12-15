@@ -18,31 +18,31 @@ import org.junit.Test;
 import org.mockito.Mock;
 
 public class LineUpStoreTest {
-	@Mock final DAO dao = mock(DAO.class);
-	@Mock final PlayerDayStore playerDayStore = mock(PlayerDayStore.class);
+	@Mock private final DAO dao = mock(DAO.class);
+	@Mock private final PlayerDayStore playerDayStore = mock(PlayerDayStore.class);
 	private final LineUpStore lineUpStore = new LineUpStore(() -> dao, playerDayStore);
 
 	@Test
 	public void testProcessDraftKings() {
 		List<LineUpPlayer> playerOptions = Arrays.asList(
-				LineUpPlayer.newBuilder().setPlayerId(1).setName("A").setCost(1000).addPosition(Position.PG).setProjectedPoints(90).build(),
-				LineUpPlayer.newBuilder().setPlayerId(2).setName("B").setCost(2000).addPosition(Position.SG).setProjectedPoints(110).build(),
-				LineUpPlayer.newBuilder().setPlayerId(4).setName("C").setCost(2000).addPosition(Position.SF).setProjectedPoints(80).build(),
-				LineUpPlayer.newBuilder().setPlayerId(8).setName("D").setCost(3000).addPosition(Position.PF).setProjectedPoints(40).build(),
-				LineUpPlayer.newBuilder().setPlayerId(16).setName("E").setCost(3000).addPosition(Position.C).setProjectedPoints(100).build(),
-				LineUpPlayer.newBuilder().setPlayerId(32).setName("F").setCost(3000).addPosition(Position.PG).addPosition(Position.SG).setProjectedPoints(50).build(),
-				LineUpPlayer.newBuilder().setPlayerId(64).setName("G").setCost(4000).addPosition(Position.PG).addPosition(Position.SF).setProjectedPoints(120).build(),
-				LineUpPlayer.newBuilder().setPlayerId(128).setName("H").setCost(4000).addPosition(Position.PF).addPosition(Position.C).setProjectedPoints(30).build(),
-				LineUpPlayer.newBuilder().setPlayerId(256).setName("I").setCost(4000).addPosition(Position.SG).setProjectedPoints(70).build(),
-				LineUpPlayer.newBuilder().setPlayerId(512).setName("J").setCost(4000).addPosition(Position.SG).setProjectedPoints(60).build(),
-				LineUpPlayer.newBuilder().setPlayerId(1024).setName("K").setCost(5000).addPosition(Position.SF).setProjectedPoints(20).build(),
-				LineUpPlayer.newBuilder().setPlayerId(2048).setName("L").setCost(5000).addPosition(Position.C).setProjectedPoints(10).build()
+				LineUpPlayer.newBuilder().setPlayerId(1).setName("A").setCost(1000).addPosition(Position.PG).setProjected(90).build(),
+				LineUpPlayer.newBuilder().setPlayerId(2).setName("B").setCost(2000).addPosition(Position.SG).setProjected(110).build(),
+				LineUpPlayer.newBuilder().setPlayerId(4).setName("C").setCost(2000).addPosition(Position.SF).setProjected(80).build(),
+				LineUpPlayer.newBuilder().setPlayerId(8).setName("D").setCost(3000).addPosition(Position.PF).setProjected(40).build(),
+				LineUpPlayer.newBuilder().setPlayerId(16).setName("E").setCost(3000).addPosition(Position.C).setProjected(100).build(),
+				LineUpPlayer.newBuilder().setPlayerId(32).setName("F").setCost(3000).addPosition(Position.PG).addPosition(Position.SG).setProjected(50).build(),
+				LineUpPlayer.newBuilder().setPlayerId(64).setName("G").setCost(4000).addPosition(Position.PG).addPosition(Position.SF).setProjected(120).build(),
+				LineUpPlayer.newBuilder().setPlayerId(128).setName("H").setCost(4000).addPosition(Position.PF).addPosition(Position.C).setProjected(30).build(),
+				LineUpPlayer.newBuilder().setPlayerId(256).setName("I").setCost(4000).addPosition(Position.SG).setProjected(70).build(),
+				LineUpPlayer.newBuilder().setPlayerId(512).setName("J").setCost(4000).addPosition(Position.SG).setProjected(60).build(),
+				LineUpPlayer.newBuilder().setPlayerId(1024).setName("K").setCost(5000).addPosition(Position.SF).setProjected(20).build(),
+				LineUpPlayer.newBuilder().setPlayerId(2048).setName("L").setCost(5000).addPosition(Position.C).setProjected(10).build()
 		);
 		Set<LineUp> lineUps = lineUpStore.processDraftKings(playerOptions);
 		System.out.println("LineUps: " + lineUps.size());
 		lineUps.forEach(lineUp -> {
 			lineUp.getPlayerList().forEach(p -> System.out.print(p.getName() + ","));
-			System.out.println(lineUp.getTotalSalary() + "," + lineUp.getProjectedPoints() + "," + lineUp.getHashId());
+			System.out.println(lineUp.getTotalSalary() + "," + lineUp.getProjected() + "," + lineUp.getHashId());
 		});
 		System.out.println("Combinations: " + Calculate.combinations(12, 8));
 		System.out.println("Valid Lineups: " + getValidList(playerOptions).size());
@@ -59,7 +59,7 @@ public class LineUpStoreTest {
 		List<LineUpPlayer> sfs = new ArrayList<>();
 		List<LineUpPlayer> pfs = new ArrayList<>();
 		List<LineUpPlayer> cs = new ArrayList<>();
-		lineUpPlayers.stream().sorted(Comparator.comparing(LineUpPlayer::getProjectedPoints).reversed()).forEach(player -> {
+		lineUpPlayers.stream().sorted(Comparator.comparing(LineUpPlayer::getProjected).reversed()).forEach(player -> {
 			if (utils.add(player)) {
 				if (player.getPositionList().contains(Position.PG) || player.getPositionList().contains(Position.SG)) {
 					gs.add(player);
@@ -99,9 +99,9 @@ public class LineUpStoreTest {
 											ids.add(id);
 											lineUps.add(LineUp.newBuilder()
 													.setFantasySite("draftkings")
-													.setProjectedPoints(pg.getProjectedPoints() + sg.getProjectedPoints()
-															+ sf.getProjectedPoints() + pf.getProjectedPoints() + c.getProjectedPoints()
-															+ g.getProjectedPoints() + f.getProjectedPoints() + util.getProjectedPoints())
+													.setProjected(pg.getProjected() + sg.getProjected()
+															+ sf.getProjected() + pf.getProjected() + c.getProjected()
+															+ g.getProjected() + f.getProjected() + util.getProjected())
 													.setTotalSalary(id)
 													.addPlayer(util).addPlayer(g).addPlayer(f)
 													.addPlayer(pg).addPlayer(sg)
