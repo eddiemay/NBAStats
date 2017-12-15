@@ -48,47 +48,54 @@ public class ProcessDraftKings {
 
 	public static class DKMapper extends Mapper<Object, Text, DoubleWritable, Text> {
 		private static final String PLAYER_OUT = "%s (%d),";
-		private TopLineUps topLineUps = new TopLineUps();
 
 		public void map(Object key, Text value, Context context) throws IOException, InterruptedException {
 			long sTime = System.currentTimeMillis();
 			String[] ids = value.toString().split(",");
 			LineUpPlayer pg = lineUpPlayerMap.get(Integer.parseInt(ids[0]));
 			LineUpPlayer sg = lineUpPlayerMap.get(Integer.parseInt(ids[1]));
-			LineUpPlayer sf = lineUpPlayerMap.get(Integer.parseInt(ids[2]));
-			for (LineUpPlayer pf : pfs) {
-				if (pf == sf) continue;
-				for (LineUpPlayer c : cs) {
-					if (c == pf) continue;
-					for (LineUpPlayer g : gs) {
-						if (g == pg || g == sg || g == sf) continue;
-						for (LineUpPlayer f : fs) {
-							if (f == sf || f == pf || f == c || f == g || f == pg || f == sg) continue;
-							for (LineUpPlayer util : utils) {
-								if (util == pg || util == sg || util == sf || util == pf || util == c || util == g || util == f) continue;
-								int totalSalary = pg.getCost() + sg.getCost() + sf.getCost() + pf.getCost() + c.getCost()
-										+ g.getCost() + f.getCost() + util.getCost();
-								if (totalSalary <= FantasyLeague.DRAFT_KINGS.salaryCap) {
-									double projected = pg.getProjected() + sg.getProjected() + sf.getProjected() + pf.getProjected()
-											+ c.getProjected() + g.getProjected() + f.getProjected() + util.getProjected();
-									topLineUps.add(LineUp.newBuilder()
-											.setProjected(projected)
-											.setTotalSalary(totalSalary)
-											.addPlayer(pg).addPlayer(sg).addPlayer(sf).addPlayer(pf).addPlayer(c)
-											.addPlayer(g).addPlayer(f).addPlayer(util)
-											.build());
+			sfs.parallelStream().forEach(sf -> {
+				if (sf == sg || sf == pg) return;
+				TopLineUps topLineUps = new TopLineUps();
+				for (LineUpPlayer pf : pfs) {
+					if (pf == sf) continue;
+					for (LineUpPlayer c : cs) {
+						if (c == pf) continue;
+						for (LineUpPlayer g : gs) {
+							if (g == pg || g == sg || g == sf) continue;
+							for (LineUpPlayer f : fs) {
+								if (f == sf || f == pf || f == c || f == g || f == pg || f == sg) continue;
+								for (LineUpPlayer util : utils) {
+									if (util == pg || util == sg || util == sf || util == pf || util == c || util == g || util == f)
+										continue;
+									int totalSalary = pg.getCost() + sg.getCost() + sf.getCost() + pf.getCost() + c.getCost()
+											+ g.getCost() + f.getCost() + util.getCost();
+									if (totalSalary <= FantasyLeague.DRAFT_KINGS.salaryCap) {
+										double projected = pg.getProjected() + sg.getProjected() + sf.getProjected() + pf.getProjected()
+												+ c.getProjected() + g.getProjected() + f.getProjected() + util.getProjected();
+										topLineUps.add(LineUp.newBuilder()
+												.setProjected(projected)
+												.setTotalSalary(totalSalary)
+												.addPlayer(pg).addPlayer(sg).addPlayer(sf).addPlayer(pf).addPlayer(c)
+												.addPlayer(g).addPlayer(f).addPlayer(util)
+												.build());
+									}
 								}
 							}
 						}
 					}
 				}
-			}
-
-			for (LineUp lineUp : topLineUps) {
-				StringBuilder sb = new StringBuilder();
-				lineUp.getPlayerList().forEach(p -> sb.append(String.format(PLAYER_OUT, p.getName(), p.getPlayerId())));
-				context.write(new DoubleWritable(lineUp.getProjected()), new Text(sb.toString()));
-			}
+				for (LineUp lineUp : topLineUps) {
+					StringBuilder sb = new StringBuilder();
+					lineUp.getPlayerList().forEach(p -> sb.append(String.format(PLAYER_OUT, p.getName(), p.getPlayerId())));
+					try {
+						context.write(new DoubleWritable(lineUp.getProjected()), new Text(sb.toString()));
+					} catch (Exception e) {
+						e.printStackTrace();
+						throw new RuntimeException(e);
+					}
+				}
+			});
 			System.out.println("Finished: " + value + " " + ((System.currentTimeMillis() - sTime) / 1000) + " secs");
 		}
 	}
@@ -171,10 +178,8 @@ public class ProcessDraftKings {
 		for (LineUpPlayer pg : pgs) {
 			for (LineUpPlayer sg : sgs) {
 				if (sg == pg) continue;
-				for (LineUpPlayer sf : sfs) {
-					if (sf == sg || sf == pg) continue;
-					if (count++ < 170)
-						fw.write(pg.getPlayerId() + "," + sg.getPlayerId() + "," + sf.getPlayerId() + "\n");
+				if (count++ < 6) {
+					fw.write(pg.getPlayerId() + "," + sg.getPlayerId() + "\n");
 				}
 			}
 		}
