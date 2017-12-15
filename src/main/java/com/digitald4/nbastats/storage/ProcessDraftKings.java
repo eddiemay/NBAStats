@@ -130,7 +130,7 @@ public class ProcessDraftKings {
 				"jdbc:mysql://localhost/NBAStats?autoReconnect=true",
 				"dd4_user", "getSchooled85"));
 		Provider<DAO> daoProvider = () -> dao;
-		APIDAO apiDAO = new APIDAO(new DataImporter(dao, null));
+		APIDAO apiDAO = new APIDAO(new DataImporter(null, null));
 		PlayerDayStore playerDayStore = new PlayerDayStore(daoProvider, apiDAO,
 				new PlayerStore(daoProvider, apiDAO));
 		//LineUpStore lineUpStore = new LineUpStore(daoProvider, playerDayStore);
