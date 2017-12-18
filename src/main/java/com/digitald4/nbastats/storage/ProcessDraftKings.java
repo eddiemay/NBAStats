@@ -33,7 +33,6 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.joda.time.DateTime;
 
 public class ProcessDraftKings {
-
 	private static final int LINEUP_LIMIT = 100;
 
 	private static Map<Integer, LineUpPlayer> lineUpPlayerMap;

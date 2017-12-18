@@ -153,6 +153,14 @@
               <targetPath>WEB-INF</targetPath>
             </resource>
           </webResources>
+          <archive>
+            <manifest>
+              <addClasspath>true</addClasspath>
+              <mainClass>
+                com.digitald4.nbastats.storage.ProcessDraftKings
+              </mainClass>
+            </manifest>
+          </archive>
         </configuration>
       </plugin>
       <plugin>
