@@ -5,7 +5,6 @@ import com.digitald4.common.proto.DD4Protos.Query.Filter;
 import com.digitald4.common.storage.DAO;
 import com.digitald4.common.storage.GenericStore;
 import com.digitald4.common.storage.QueryResult;
-import com.digitald4.common.util.FormatText;
 import com.digitald4.common.util.Provider;
 import com.digitald4.nbastats.proto.NBAStatsProtos.PlayerDay;
 import com.digitald4.nbastats.proto.NBAStatsProtos.Player;
@@ -14,8 +13,11 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.joda.time.DateTime;
+import org.joda.time.format.DateTimeFormat;
+import org.joda.time.format.DateTimeFormatter;
 
 public class PlayerDayStore extends GenericStore<PlayerDay> {
+	private static final DateTimeFormatter DATE_FORMAT = DateTimeFormat.forPattern("yyyy-MM-dd");
 
 	private final APIDAO apiDAO;
 	private final PlayerStore playerStore;
@@ -26,14 +28,26 @@ public class PlayerDayStore extends GenericStore<PlayerDay> {
 	}
 
 	public QueryResult<PlayerDay> list(DateTime date) {
-		QueryResult<PlayerDay> queryResult = list(Query.newBuilder()
-				.addFilter(Filter.newBuilder().setColumn("as_of_date").setValue(FormatText.formatDate(date)))
+		return list(Query.newBuilder()
+				.addFilter(Filter.newBuilder().setColumn("as_of_date").setValue(date.toString(DATE_FORMAT)))
 				.build());
-		if (queryResult.getTotalSize() == 0) {
+	}
+
+	@Override
+	public QueryResult<PlayerDay> list(Query query) {
+		if (query.getFilterCount() == 0) {
+			query = query.toBuilder()
+					.addFilter(Filter.newBuilder().setColumn("as_of_date").setValue(DateTime.now().toString(DATE_FORMAT)))
+					.build();
+		}
+		QueryResult<PlayerDay> queryResult = super.list(query);
+		if (queryResult.getTotalSize() == 0 && query.getFilterCount() == 1
+				&& query.getFilter(0).getColumn().equals("as_of_date")) {
+			DateTime date = DateTime.parse(query.getFilter(0).getValue(), DATE_FORMAT);
 			List<PlayerDay> playerDays = apiDAO.getGameDay(date).stream().parallel()
 					.map(this::create)
 					.collect(Collectors.toList());
-			return QueryResult.<PlayerDay>newBuilder()
+			queryResult = QueryResult.<PlayerDay>newBuilder()
 					.setResultList(playerDays)
 					.setTotalSize(playerDays.size())
 					.build();
@@ -42,7 +56,7 @@ public class PlayerDayStore extends GenericStore<PlayerDay> {
 	}
 
 	public List<PlayerDay> processStats(DateTime date) {
-		List<Player> playerList = playerStore.list().getResultList();
+		List<Player> playerList = playerStore.list(Query.getDefaultInstance()).getResultList();
 		Map<String, Player> playerMap = playerList.stream()
 				.parallel()
 				.collect(Collectors.toMap(Player::getName, Function.identity()));
@@ -50,11 +64,11 @@ public class PlayerDayStore extends GenericStore<PlayerDay> {
 				.parallel()
 				.filter(player -> !player.getAKA().isEmpty())
 				.collect(Collectors.toMap(Player::getAKA, Function.identity())));
-		List<PlayerDay> playerDays = list(date).getResultList().stream()
+		return list(date).getResultList().stream()
 				//.parallel()
 				.map(playerDay -> {
 					if (playerDay.getStatsCount() == 0) {
-						Player player = playerMap.computeIfAbsent(playerDay.getName(), playerStore::getByName);
+						Player player = playerMap.get(playerDay.getName());
 						if (player != null) {
 							PlayerDay statsFilled = apiDAO.fillStats(playerDay.toBuilder()
 									.setPlayerId(player.getPlayerId())
@@ -69,6 +83,5 @@ public class PlayerDayStore extends GenericStore<PlayerDay> {
 					return playerDay;
 				})
 				.collect(Collectors.toList());
-		return playerDays;
 	}
 }

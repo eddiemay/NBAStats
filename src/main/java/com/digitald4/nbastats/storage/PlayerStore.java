@@ -20,32 +20,10 @@ public class PlayerStore extends GenericStore<Player> {
 		this.apiDAO = apiDAO;
 	}
 
-	public Player getByName(String name) {
-		QueryResult<Player> result = list(Query.newBuilder()
-				.addFilter(Filter.newBuilder().setColumn("name").setValue(name)).build());
-		if (result.getTotalSize() == 0) {
-			System.err.println("Could not find player named: " + name);
-			/*synchronized (this) {
-				result = list(Query.newBuilder()
-						.addFilter(Filter.newBuilder().setColumn("name").setValue(name)).build());
-				if (result.getTotalSize() == 0) {
-					Player[] player = new Player[1];
-					refreshPlayerList().forEach(p -> {
-						if (name.equals(p.getName())) {
-							player[0] = p;
-						}
-					});
-					return player[0];
-				}
-			}*/
-			return null;
-		}
-		return result.getResultList().get(0);
-	}
-
-	public QueryResult<Player> list() {
-		QueryResult<Player> queryResult = list(Query.getDefaultInstance());
-		if (queryResult.getTotalSize() == 0) {
+	@Override
+	public QueryResult<Player> list(Query query) {
+		QueryResult<Player> queryResult = super.list(query);
+		if (queryResult.getTotalSize() == 0 && query.getFilterCount() == 0) {
 			List<Player> players = refreshPlayerList();
 			return QueryResult.<Player>newBuilder()
 					.setResultList(players)
