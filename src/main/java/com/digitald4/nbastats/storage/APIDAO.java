@@ -231,6 +231,10 @@ public class APIDAO {
 	}
 
 	private void getFantasyData(String site, Map<String, PlayerDay.Builder> playerDayMap, DateTime date) {
+		DateTime now = DateTime.now();
+		if (date.getDayOfYear() != now.getDayOfYear() || date.getYear() != now.getYear()) {
+			throw new IllegalArgumentException("Can only read fantasy data of today");
+		}
 		try {
 			HttpURLConnection con = (HttpURLConnection) new URL(String.format(ROTO_GRINDER, site)).openConnection();
 			con.setRequestMethod("GET");
