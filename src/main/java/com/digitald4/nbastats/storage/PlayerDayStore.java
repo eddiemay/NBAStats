@@ -17,7 +17,7 @@ import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
 
 public class PlayerDayStore extends GenericStore<PlayerDay> {
-	private static final DateTimeFormatter DATE_FORMAT = DateTimeFormat.forPattern("yyyy-MM-dd");
+	private static final DateTimeFormatter DATE_FORMAT = DateTimeFormat.forPattern(APIDAO.API_DATE_FORMAT);
 
 	private final APIDAO apiDAO;
 	private final PlayerStore playerStore;

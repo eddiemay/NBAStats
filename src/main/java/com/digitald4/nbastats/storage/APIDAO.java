@@ -28,7 +28,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 public class APIDAO {
-	private static final String API_DATE_FORMAT = "MM/dd/yyyy";
+	public static final String API_DATE_FORMAT = "MM/dd/yyyy";
 
 	private static final String ROTO_GRINDER =
 			"https://rotogrinders.com/projected-stats/nba-player.csv?site=%s";

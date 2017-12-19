@@ -142,7 +142,7 @@ public class ProcessDraftKings {
 				new PlayerStore(daoProvider, apiDAO));
 		//LineUpStore lineUpStore = new LineUpStore(daoProvider, playerDayStore);
 		String leauge = FantasyLeague.DRAFT_KINGS.name;
-		lineUpPlayerMap = playerDayStore.processStats(DateTime.parse("2017-12-18"))
+		lineUpPlayerMap = playerDayStore.processStats(DateTime.parse("2017-12-19"))
 				.stream()
 				.filter(playerDay -> playerDay.getStatsMap().get("Projection") != null)
 				.filter(playerDay -> playerDay.getStatsMap().get("Projection").getFantasySitePointsMap().get(leauge) != null)
