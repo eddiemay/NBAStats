@@ -2,6 +2,7 @@ package com.digitald4.nbastats.storage;
 
 import com.digitald4.common.jdbc.DBConnectorThreadPoolImpl;
 import com.digitald4.common.storage.DAO;
+import com.digitald4.common.storage.DAOCloudDS;
 import com.digitald4.common.storage.DAOSQLImpl;
 import com.digitald4.common.tools.DataImporter;
 import com.digitald4.common.util.Calculate;
@@ -125,7 +126,14 @@ public class ProcessDraftKings {
 
 	public static void main(String[] args) throws Exception {
 		long startTime = System.currentTimeMillis();
-		DAO dao = new DAOSQLImpl(new DBConnectorThreadPoolImpl("org.gjt.mm.mysql.Driver",
+		String dataStore = "cloud";
+		for (int a = 0; a < args.length; a++) {
+			if (args[a].equals("--datastore")) {
+				dataStore = args[++a];
+			}
+		}
+		DAO dao = dataStore.equals("cloud") ? new DAOCloudDS()
+				: new DAOSQLImpl(new DBConnectorThreadPoolImpl("org.gjt.mm.mysql.Driver",
 				"jdbc:mysql://localhost/NBAStats?autoReconnect=true",
 				"dd4_user", "getSchooled85"));
 		Provider<DAO> daoProvider = () -> dao;
