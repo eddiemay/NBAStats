@@ -40,6 +40,8 @@ public class APIDAO {
 	// Sets the data at -10% from the center which is the 40th percentile, 80% of mean. Giving a 60% chance of hitting the number.
 	private static final double Z_SCORE = -.25;
 
+	private static final boolean fetchFromNBAStatsEnabled = false;
+
 	private final DataImporter importer;
 	public APIDAO(DataImporter importer) {
 		this.importer = importer;
@@ -121,31 +123,33 @@ public class APIDAO {
 
 	private List<Stats> addGames(PlayerDay.Builder player, int count, String season, String dateTo) throws IOException {
 		List<Stats> games = new ArrayList<>();
-		JSONObject json = new JSONObject(importer.sendGet(format(PLAYER_GAMELOG, player.getPlayerId(), season, dateTo)));
-		JSONArray resultSets = json.getJSONArray("resultSets");
-		for (int x = 0; x < resultSets.length(); x++) {
-			JSONObject resultSet = resultSets.getJSONObject(x);
-			if (resultSet.get("name").equals("PlayerGameLog")) {
-				JSONArray rowSets = resultSet.getJSONArray("rowSet");
-				for (int i = 0; i < rowSets.length() && games.size() < count; i++) {
-					JSONArray rowSet = rowSets.getJSONArray(i);
-					Stats game = fillFantasy(fillMultiples(Stats.newBuilder()
-							.setPoints(rowSet.getDouble(24))
-							.setMade3S(rowSet.getDouble(10))
-							.setRebounds(rowSet.getDouble(18))
-							.setAssists(rowSet.getDouble(19))
-							.setSteals(rowSet.getDouble(20))
-							.setBlocks(rowSet.getDouble(21))
-							.setTurnovers(rowSet.getDouble(22))));
-					games.add(game);
-					player.putStats(rowSet.getString(3) + " " + rowSet.getString(4), game);
+		if (fetchFromNBAStatsEnabled) {
+			JSONObject json = new JSONObject(importer.sendGet(format(PLAYER_GAMELOG, player.getPlayerId(), season, dateTo)));
+			JSONArray resultSets = json.getJSONArray("resultSets");
+			for (int x = 0; x < resultSets.length(); x++) {
+				JSONObject resultSet = resultSets.getJSONObject(x);
+				if (resultSet.get("name").equals("PlayerGameLog")) {
+					JSONArray rowSets = resultSet.getJSONArray("rowSet");
+					for (int i = 0; i < rowSets.length() && games.size() < count; i++) {
+						JSONArray rowSet = rowSets.getJSONArray(i);
+						Stats game = fillFantasy(fillMultiples(Stats.newBuilder()
+								.setPoints(rowSet.getDouble(24))
+								.setMade3S(rowSet.getDouble(10))
+								.setRebounds(rowSet.getDouble(18))
+								.setAssists(rowSet.getDouble(19))
+								.setSteals(rowSet.getDouble(20))
+								.setBlocks(rowSet.getDouble(21))
+								.setTurnovers(rowSet.getDouble(22))));
+						games.add(game);
+						player.putStats(rowSet.getString(3) + " " + rowSet.getString(4), game);
+					}
 				}
 			}
-		}
-		try {
-			Thread.sleep(500); // Wait 1/2 a second to try and stop API from dectecting automated code.
-		} catch (Exception e) {
-			e.printStackTrace();
+			try {
+				Thread.sleep(500); // Wait 1/2 a second to try and stop API from dectecting automated code.
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
 		}
 		return games;
 	}
@@ -200,18 +204,20 @@ public class APIDAO {
 	public List<Player> listAllPlayers(String season) {
 		try {
 			List<Player> players = new ArrayList<>();
-			JSONObject json = new JSONObject(importer.sendGet(format(COMMON_ALL_PLAYERS, season)));
-			JSONArray resultSets = json.getJSONArray("resultSets");
-			for (int x = 0; x < resultSets.length(); x++) {
-				JSONObject resultSet = resultSets.getJSONObject(x);
-				if (resultSet.get("name").equals("CommonAllPlayers")) {
-					JSONArray rowSets = resultSet.getJSONArray("rowSet");
-					for (int i = 0; i < rowSets.length(); i++) {
-						JSONArray rowSet = rowSets.getJSONArray(i);
-						players.add(Player.newBuilder()
-								.setPlayerId(rowSet.getInt(0))
-								.setName(rowSet.getString(2))
-								.build());
+			if (fetchFromNBAStatsEnabled) {
+				JSONObject json = new JSONObject(importer.sendGet(format(COMMON_ALL_PLAYERS, season)));
+				JSONArray resultSets = json.getJSONArray("resultSets");
+				for (int x = 0; x < resultSets.length(); x++) {
+					JSONObject resultSet = resultSets.getJSONObject(x);
+					if (resultSet.get("name").equals("CommonAllPlayers")) {
+						JSONArray rowSets = resultSet.getJSONArray("rowSet");
+						for (int i = 0; i < rowSets.length(); i++) {
+							JSONArray rowSet = rowSets.getJSONArray(i);
+							players.add(Player.newBuilder()
+									.setPlayerId(rowSet.getInt(0))
+									.setName(rowSet.getString(2))
+									.build());
+						}
 					}
 				}
 			}
