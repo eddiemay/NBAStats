@@ -41,7 +41,7 @@ public class PlayerDayStore extends GenericStore<PlayerDay> {
 					.build();
 		}
 		QueryResult<PlayerDay> queryResult = super.list(query);
-		if (queryResult.getTotalSize() == 0 && query.getFilterCount() == 1
+		if (queryResult.getResultCount() == 0 && query.getFilterCount() == 1
 				&& query.getFilter(0).getColumn().equals("as_of_date")) {
 			DateTime date = DateTime.parse(query.getFilter(0).getValue(), DATE_FORMAT);
 			List<PlayerDay> playerDays = apiDAO.getGameDay(date).stream().parallel()

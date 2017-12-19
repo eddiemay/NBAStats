@@ -23,7 +23,7 @@ public class PlayerStore extends GenericStore<Player> {
 	@Override
 	public QueryResult<Player> list(Query query) {
 		QueryResult<Player> queryResult = super.list(query);
-		if (queryResult.getTotalSize() == 0 && query.getFilterCount() == 0) {
+		if (queryResult.getResultCount() == 0 && query.getFilterCount() == 0) {
 			List<Player> players = refreshPlayerList();
 			return QueryResult.<Player>newBuilder()
 					.setResultList(players)
