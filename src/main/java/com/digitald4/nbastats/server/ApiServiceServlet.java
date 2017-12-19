@@ -16,8 +16,8 @@ public class ApiServiceServlet extends com.digitald4.common.server.ApiServiceSer
 		PlayerDayStore playerDayStore = new PlayerDayStore(dataAccessObjectProvider, apiDAO, playerStore);
 		LineUpStore lineUpStore = new LineUpStore(dataAccessObjectProvider, playerDayStore);
 
-		addService("player", new SingleProtoService<>(playerStore));
-		addService("playerDay", new SingleProtoService<>(playerDayStore));
-		addService("lineUp", new SingleProtoService<>(lineUpStore));
+		addService("player", new SingleProtoService<>(playerStore).setDefaultRequiresLogin(false));
+		addService("playerDay", new SingleProtoService<>(playerDayStore).setDefaultRequiresLogin(false));
+		addService("lineUp", new SingleProtoService<>(lineUpStore).setDefaultRequiresLogin(false));
 	}
 }
