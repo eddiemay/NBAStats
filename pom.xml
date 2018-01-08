@@ -148,7 +148,7 @@
             <manifest>
               <addClasspath>true</addClasspath>
               <mainClass>
-                com.digitald4.nbastats.storage.ProcessDraftKings
+                com.digitald4.nbastats.compute.ProcessDraftKings
               </mainClass>
             </manifest>
           </archive>

@@ -1,11 +1,245 @@
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<!--[if lt IE 8 ]><html lang="en" class="no-js ie ie7"><![endif]-->
+<!--[if IE 8 ]><html lang="en" class="no-js ie"><![endif]-->
+<!--[if (gt IE 8)|!(IE)]><!--><html lang="en" class="no-js"><!--<![endif]-->
 <head>
   <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+  <meta charset="utf-8">
+
   <title>NBA Stats</title>
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!-- Global stylesheets -->
+  <link href="css/reset.css" rel="stylesheet" type="text/css">
+  <link href="css/common.css" rel="stylesheet" type="text/css">
+  <link href="css/form.css" rel="stylesheet" type="text/css">
+  <link href="css/standard.css" rel="stylesheet" type="text/css">
+
+  <!-- Comment/uncomment one of these files to toggle between fixed and fluid layout -->
+  <!--<link href="css/960.gs.css" rel="stylesheet" type="text/css">-->
+  <link href="css/960.gs.fluid.css" rel="stylesheet" type="text/css">
+
+  <!-- Custom styles -->
+  <link href="css/simple-lists.css" rel="stylesheet" type="text/css">
+  <link href="css/block-lists.css" rel="stylesheet" type="text/css">
+  <link href="css/planning.css" rel="stylesheet" type="text/css">
+  <link href="css/table.css" rel="stylesheet" type="text/css">
+  <link href="css/calendars.css" rel="stylesheet" type="text/css">
+  <link href="css/wizard.css" rel="stylesheet" type="text/css">
+  <link href="css/gallery.css" rel="stylesheet" type="text/css">
+  <link href="css/jquery-ui.css" rel="stylesheet" type="text/css">
+
+  <!-- Favicon -->
+  <link rel="shortcut icon" type="image/x-icon" href="favicon.ico">
+  <link rel="icon" type="image/png" href="favicon-large.png">
+
+  <!-- Modernizr for support detection, all javascript libs are moved right above </body> for better performance -->
+  <script src="js/libs/modernizr.custom.min.js"></script>
+
+  <script src="js/libs/jquery-1.10.2.min.js"></script>
+  <script src="js/libs/jquery-ui-1.11.0.min.js"></script>
+  <script src="js/libs/angular.min.js"></script>
+  <script src="js/libs/angular-ui-date.js"></script>
+  <script src="js/libs/angular-route.js"></script>
+
+  <!-- Digital D4 -->
+  <script src="js/dd4-common-min.js"></script>
+  <script src="js/NBAStats.js"></script>
 </head>
-<body>
-  <h2>NBA Stats</h2>
+
+<body data-ng-app="nbastats" data-ng-controller="DD4AppCtrl as commonCtrl">
+<!-- dd4-login data-ng-if="!commonCtrl.globalData.user" data-label="NBA Stats" data-allow-signup="true"></dd4-login>
+<div data-ng-if="commonCtrl.globalData.user" data-ng-controller="NBAStatsCtrl as appCtrl"-->
+<div data-ng-controller="NBAStatsCtrl as appCtrl">
+
+  <!-- Header -->
+
+  <!-- Server status -->
+  <header><div class="container_12">
+
+    <p id="skin-name"><small>NBA Stats</small> <strong>0.45</strong></p>
+    <div class="server-info">Server: <strong>Tomcat</strong></div>
+    <div class="server-info">Java: <strong>1.8</strong></div>
+
+  </div></header>
+  <!-- End server status -->
+
+  <!-- Sub nav -->
+  <div id="sub-nav"><div class="container_12">
+    <a href="#" title="Help" class="nav-button"><b>Help</b></a>
+    <form id="search-form" name="search-form" method="post" action="search.html">
+      <input type="text" name="s" id="s" value="" title="Search admin..." autocomplete="off">
+    </form>
+  </div></div>
+  <!-- End sub nav -->
+
+  <!-- Status bar -->
+  <div id="status-bar"><div class="container_12">
+
+    <ul id="status-infos">
+      <li class="spaced">Logged as: <strong>{{commonCtrl.globalData.user.email}}</strong></li>
+      <li><a ng-click="commonCtrl.logout()" class="button red" title="Logout"><span class="smaller">LOGOUT</span></a></li>
+    </ul>
+
+  </div></div>
+  <!-- End status bar -->
+
+  <div id="header-shadow"></div>
+  <!-- End header -->
+
+  <!-- Always visible control bar -->
+  <div id="control-bar" class="grey-bg clearfix">
+    <div class="container_12">
+      <a href="#"><button>Default View</button></a>
+      <a href="#settings"><button>Settings</button></a>
+      <a href="#players"><button>Players</button></a>
+      <a href="#playerOptions"><button>Player Options</button></a>
+      <a href="#lineups"><button>Line Ups</button></a>
+      <div class="block-controls">
+        <ul class="controls-buttons">
+          <span data-ng-show="commonCtrl.globalData.controlType != commonCtrl.globalData.CONTROL_TYPE.NONE">
+            <li>
+              <a data-ng-click="commonCtrl.globalData.prev()" title="Previous">
+                <img src="images/icons/fugue/navigation-180.png" width="16" height="16">
+              </a>
+            </li>
+            <li class="sep"></li>
+            <li class="controls-block">
+              <strong data-ng-show="commonCtrl.globalData.controlType == commonCtrl.globalData.CONTROL_TYPE.DATE">
+                {{commonCtrl.globalData.date | date:'MM-dd-yyyy'}}
+                <select data-ng-model="commonCtrl.globalData.fantasyLeague" data-ng-change="commonCtrl.globalData.refresh()">
+                  <option value="{{commonCtrl.globalData.FANTASY_LEAGUE.FAN_DUEL}}">Fan Duel</option>
+                  <option value="{{commonCtrl.globalData.FANTASY_LEAGUE.DRAFT_KINGS}}">Draft Kings</option>
+                </select>
+              </strong>
+              <strong data-ng-show="commonCtrl.globalData.controlType == commonCtrl.globalData.CONTROL_TYPE.SEASON">
+                {{commonCtrl.globalData.getSeason()}}
+              </strong>
+            </li>
+            <li class="sep"></li>
+            <li>
+              <a data-ng-click="commonCtrl.globalData.next()" title="Next">
+                <img src="images/icons/fugue/navigation.png" width="16" height="16">
+              </a>
+            </li>
+            <li>
+              <button data-ng-click="commonCtrl.globalData.refresh()">Refresh</button>
+            </li>
+          </span>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <!-- End control bar -->
+
+  <!-- Content -->
+  <article class="container_12">
+    <div data-ng-view></div>
+  </article>
+  <!-- End content -->
+
+  <footer>
+    <div class="float-right">
+      <a href="#top" class="button"><img src="images/icons/fugue/navigation-090.png" width="16" height="16">Page top</a>
+    </div>
+  </footer>
+</div>
+
+<!--
+
+Updated as v1.5:
+Libs are moved here to improve performance
+
+-->
+
+<!-- Generic libs -->
+<script src="js/libs/jquery.hashchange.js"></script>
+
+<!-- Template libs -->
+<script src="js/jquery.accessibleList.js"></script>
+<script src="js/searchField.js"></script>
+<script src="js/common.js"></script>
+<script src="js/standard.js"></script>
+<!--[if lte IE 8]><script src="js/standard.ie.js"></script><![endif]-->
+<script src="js/jquery.tip.js"></script>
+<script src="js/jquery.contextMenu.js"></script>
+<script src="js/jquery.modal.js"></script>
+
+<!-- Custom styles lib -->
+<script src="js/list.js"></script>
+
+<!-- Plugins -->
+<script src="js/libs/jquery.dataTables-1.10.0.js"></script>
+<script src="js/libs/jquery.datepick/jquery.datepick.js"></script>
+
+<script>
+		/*
+		 * This script shows how to setup the various template plugins and functions
+		 */
+		var setupPage = function() {
+
+			/*
+			 * Example context menu
+			 */
+
+			// Context menu for all favorites
+			$('.favorites li').bind('contextMenu', function(event, list) {
+				var li = $(this);
+
+				// Add links to the menu
+				if (li.prev().length > 0) {
+					list.push({ text: 'Move up', link:'#', icon:'up' });
+				}
+				if (li.next().length > 0) {
+					list.push({ text: 'Move down', link:'#', icon:'down' });
+				}
+				list.push(false);	// Separator
+				list.push({ text: 'Delete', link:'#', icon:'delete' });
+				list.push({ text: 'Edit', link:'#', icon:'edit' });
+			});
+
+			// Extra options for the first one
+			$('.favorites li:first').bind('contextMenu', function(event, list)
+			{
+				list.push(false);	// Separator
+				list.push({ text: 'Settings', icon:'terminal', link:'#', subs:[
+					{ text: 'General settings', link: '#', icon: 'blog' },
+					{ text: 'System settings', link: '#', icon: 'server' },
+					{ text: 'Website settings', link: '#', icon: 'network' }
+				] });
+			});
+
+			/*
+			 * Dynamic tab content loading
+			 */
+
+			$('#tab-comments').onTabShow(function() {
+				$(this).loadWithEffect('ajax-tab.html', function() {
+					notify('Content loaded via ajax');
+				});
+			}, true);
+
+			// A small classes setup...
+			$.fn.dataTableExt.oStdClasses.sWrapper = 'no-margin last-child';
+			$.fn.dataTableExt.oStdClasses.sInfo = 'message no-margin';
+			$.fn.dataTableExt.oStdClasses.sLength = 'float-left';
+			$.fn.dataTableExt.oStdClasses.sFilter = 'float-right';
+			$.fn.dataTableExt.oStdClasses.sPaging = 'sub-hover paging_';
+			$.fn.dataTableExt.oStdClasses.sPagePrevEnabled = 'control-prev';
+			$.fn.dataTableExt.oStdClasses.sPagePrevDisabled = 'control-prev disabled';
+			$.fn.dataTableExt.oStdClasses.sPageNextEnabled = 'control-next';
+			$.fn.dataTableExt.oStdClasses.sPageNextDisabled = 'control-next disabled';
+			$.fn.dataTableExt.oStdClasses.sPageFirst = 'control-first';
+			$.fn.dataTableExt.oStdClasses.sPagePrevious = 'control-prev';
+			$.fn.dataTableExt.oStdClasses.sPageNext = 'control-next';
+			$.fn.dataTableExt.oStdClasses.sPageLast = 'control-last';
+		};
+
+		$(document).ready(setupPage());
+	</script>
 
 </body>
 </html>

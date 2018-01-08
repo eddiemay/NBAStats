@@ -1,0 +1,18 @@
+<div>
+  <label>Filter:<input data-ng-model="filterText"/></label>
+  <table class="table sortable no-margin" cellspacing="0" width="50%">
+    <thead>
+      <tr>
+        <th></th><th>NBA ID</th><th>Name</th><th>AKA</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr data-ng-repeat="player in playersCtrl.players | filter:filterText | orderBy:'name'">
+        <td>{{$index + 1}}</td>
+        <td>{{player.playerId}}</td>
+        <td>{{player.name}}</td>
+        <td><input type="text" data-ng-model="player.aka" data-on-change="playersCtrl.update(player, 'aka')"></td>
+      </tr>
+    </tbody>
+  </table>
+</div>

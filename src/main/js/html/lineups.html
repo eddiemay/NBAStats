@@ -1,0 +1,63 @@
+<div>
+  <select data-ng-model="lineUpsCtrl.globalData.projectionMethod" data-ng-change="lineUpsCtrl.refresh()">
+    <option value="RotoG Proj">RotoGrinders Projected</option>
+    <option value="RotoG Ceil">RotoGrinders Ceiling</option>
+    <option value="RotoG Floor">RotoGrinders Floor</option>
+    <option value="30 Game Average">30 Game Average</option>
+    <option value="30 Game 40th Percentile">30 Game 40th Percentile</option>
+  </select>
+  <label>Filter:<input data-ng-model="filterText"/></label>
+  <table class="table sortable no-margin" cellspacing="0" width="100%"
+         data-ng-show="lineUpsCtrl.globalData.fantasyLeague === lineUpsCtrl.globalData.FANTASY_LEAGUE.DRAFT_KINGS">
+    <thead>
+    <tr>
+      <th></th>
+      <th><button data-ng-click="sortBy('projected')">Projected</button></th>
+      <th>Salary</th><th>Point Guard</th><th>Shooting Guard</th><th>Small Forward</th>
+      <th>Power Forward</th><th>Center</th><th>Guard</th><th>Forward</th><th>Utility</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr data-ng-repeat="lineUp in lineUpsCtrl.lineUps | filter:filterText | orderBy:'-projected'">
+      <td>{{$index + 1}}</td>
+      <td>{{lineUp.projected | number:3}}</td>
+      <td>${{lineUp.totalSalary}}</td>
+      <th>{{lineUp.player[0].name}} {{lineUp.player[0].projected | number:1}} ${{lineUp.player[0].cost}}</th>
+      <th>{{lineUp.player[1].name}} {{lineUp.player[1].projected | number:1}} ${{lineUp.player[1].cost}}</th>
+      <th>{{lineUp.player[2].name}} {{lineUp.player[2].projected | number:1}} ${{lineUp.player[2].cost}}</th>
+      <th>{{lineUp.player[3].name}} {{lineUp.player[3].projected | number:1}} ${{lineUp.player[3].cost}}</th>
+      <th>{{lineUp.player[4].name}} {{lineUp.player[4].projected | number:1}} ${{lineUp.player[4].cost}}</th>
+      <th>{{lineUp.player[5].name}} {{lineUp.player[5].projected | number:1}} ${{lineUp.player[5].cost}}</th>
+      <th>{{lineUp.player[6].name}} {{lineUp.player[6].projected | number:1}} ${{lineUp.player[6].cost}}</th>
+      <th>{{lineUp.player[7].name}} {{lineUp.player[7].projected | number:1}} ${{lineUp.player[7].cost}}</th>
+    </tr>
+    </tbody>
+  </table>
+
+  <table class="table sortable no-margin" cellspacing="0" width="100%"
+         data-ng-show="lineUpsCtrl.globalData.fantasyLeague === lineUpsCtrl.globalData.FANTASY_LEAGUE.FAN_DUEL">
+    <thead>
+    <tr>
+      <th></th><th>Projected</th><th>Salary</th>
+      <th>Point Guard</th><th>Point Guard</th><th>Shooting Guard</th><th>Shooting Guard</th>
+      <th>Small Forward</th><th>Small Forward</th><th>Power Forward</th><th>Power Forward</th><th>Center</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr data-ng-repeat="lineUp in lineUpsCtrl.lineUps | filter:filterText | orderBy:'-projected'">
+      <td>{{$index + 1}}</td>
+      <td>{{lineUp.projected | number:3}}</td>
+      <td>${{lineUp.totalSalary}}</td>
+      <th>{{lineUp.player[0].name}} {{lineUp.player[0].projected | number:1}} ${{lineUp.player[0].cost}}</th>
+      <th>{{lineUp.player[1].name}} {{lineUp.player[1].projected | number:1}} ${{lineUp.player[1].cost}}</th>
+      <th>{{lineUp.player[2].name}} {{lineUp.player[2].projected | number:1}} ${{lineUp.player[2].cost}}</th>
+      <th>{{lineUp.player[3].name}} {{lineUp.player[3].projected | number:1}} ${{lineUp.player[3].cost}}</th>
+      <th>{{lineUp.player[4].name}} {{lineUp.player[4].projected | number:1}} ${{lineUp.player[4].cost}}</th>
+      <th>{{lineUp.player[5].name}} {{lineUp.player[5].projected | number:1}} ${{lineUp.player[5].cost}}</th>
+      <th>{{lineUp.player[6].name}} {{lineUp.player[6].projected | number:1}} ${{lineUp.player[6].cost}}</th>
+      <th>{{lineUp.player[7].name}} {{lineUp.player[7].projected | number:1}} ${{lineUp.player[7].cost}}</th>
+      <th>{{lineUp.player[8].name}} {{lineUp.player[8].projected | number:1}} ${{lineUp.player[8].cost}}</th>
+    </tr>
+    </tbody>
+  </table>
+</div>

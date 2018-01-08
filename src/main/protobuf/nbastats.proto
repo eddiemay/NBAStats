@@ -5,6 +5,30 @@ package nbastats;
 option java_package = "com.digitald4.nbastats.proto";
 option java_outer_classname = "NBAStatsProtos";
 
+message Player {
+  int64 id = 1;
+  string season = 2;
+  int32 player_id = 3;
+  string name = 4;
+  string aka = 5;
+}
+
+message GameLog {
+  int32 player_id = 1;
+  string season = 2;
+  string date = 3;
+  double points = 4;
+  double rebounds = 5;
+  double assists = 6;
+  double blocks = 7;
+  double steals = 8;
+  double made3s = 9;
+  double turnovers = 10;
+  double double_doubles = 11;
+  double triple_doubles = 12;
+  map<string, double> fantasy_site_points = 13;
+}
+
 enum Position {
   POS_UNKNOWN = 0;
   PG = 1;
@@ -14,17 +38,10 @@ enum Position {
   C = 5;
 }
 
-message Player {
-  int64 id = 1;
-  int32 player_id = 2;
-  string name = 3;
-  string a_k_a = 4;
-}
-
 message PlayerDay {
   int64 id = 1;
   int32 player_id = 2;
-  string as_of_date = 3;
+  string date = 3;
   string name = 4;
 
   enum Status {
@@ -41,39 +58,35 @@ message PlayerDay {
   message FantasySiteInfo {
     repeated Position position = 1;
     int32 cost = 2;
+    // What the player is projected to score.
+    map<string, double> projection = 3;
   }
   map<string, FantasySiteInfo> fantasy_site_info = 8;
-
-  message Stats {
-    double points = 1;
-    double rebounds = 2;
-    double assists = 3;
-    double blocks = 4;
-    double steals = 5;
-    double made3s = 6;
-    double turnovers = 7;
-    double double_doubles = 8;
-    double triple_doubles = 9;
-
-    map<string, double> fantasy_site_points = 10;
-  }
-  map<string, Stats> stats = 9;
+  bool low_data_warn = 9;
 }
 
 message LineUp {
   int64 id = 1;
   string date = 2;
   string fantasy_site = 3;
-  double projected = 4;
-  double total_salary = 5;
+  string projection_method = 4;
+  double projected = 5;
+  double total_salary = 6;
   message LineUpPlayer {
     string name = 1;
     int32 player_id = 2;
     repeated Position position = 3;
     int32 cost = 4;
     double projected = 5;
-    int32 hash_id = 6;
+    map<string, double> projection = 6;
   }
-  repeated LineUpPlayer player = 6;
-  int32 hash_id = 7;
+  repeated LineUpPlayer player = 7;
+}
+
+message PlayerListRequest {
+  string season = 1;
+}
+
+message ProcessStatsRequest {
+  string date = 1;
 }

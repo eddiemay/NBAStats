@@ -1,0 +1,36 @@
+<div>
+  <label>Filter:<input data-ng-model="filterText"/></label>
+  <button data-ng-click="playerOptionsCtrl.processStats()">Process Stats</button>
+  <table class="table sortable no-margin" cellspacing="0" width="100%">
+    <thead>
+      <tr>
+        <th></th>
+        <th>NBA ID</th>
+        <th><button data-ng-click="playerOptionsCtrl.sortBy('name')">Name</button></th>
+        <th><button data-ng-click="playerOptionsCtrl.sortBy('status')">Status</button></th>
+        <th><button data-ng-click="playerOptionsCtrl.sortBy('team')">Team</button></th>
+        <th><button data-ng-click="playerOptionsCtrl.sortBy('opponent')">Opponent</button></th>
+        <th><button data-ng-click="playerOptionsCtrl.sortBy('position')">Pos</button></th>
+        <th><button data-ng-click="playerOptionsCtrl.sortBy('cost')">Cost</button></th>
+        <th data-ng-repeat="method in playerOptionsCtrl.projectionMethods">
+          <button data-ng-click="playerOptionsCtrl.sortBy('projection[\'' + method + '\']')">{{method}}</button>
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr data-ng-repeat="player in playerOptionsCtrl.players | filter:filterText | orderBy:playerOptionsCtrl.sortProp:playerOptionsCtrl.reverse">
+        <td>{{$index + 1}}</td>
+        <td>{{player.playerId}}</td>
+        <td>{{player.name}}</td>
+        <td>{{player.status}}</td>
+        <td>{{player.team}}</td>
+        <td>{{player.opponent}}</td>
+        <td>{{player.position}}</td>
+        <td>${{player.cost}}</td>
+        <td data-ng-repeat="method in playerOptionsCtrl.projectionMethods">
+          {{player.projection[method] | number:3}}
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
