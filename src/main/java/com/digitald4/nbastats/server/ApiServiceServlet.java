@@ -19,7 +19,8 @@ public class ApiServiceServlet extends com.digitald4.common.server.ApiServiceSer
 		PlayerStore playerStore = new PlayerStore(daoProvider, apiDAO);
 		PlayerDayStore playerDayStore = new PlayerDayStore(daoProvider, apiDAO);
 		GameLogStore gameLogStore = new GameLogStore(daoProvider, apiDAO);
-		StatsProcessor statsProcessor = new StatsProcessor(playerStore, gameLogStore, playerDayStore);
+		LineUpStore lineUpStore = new LineUpStore(daoProvider);
+		StatsProcessor statsProcessor = new StatsProcessor(playerStore, gameLogStore, playerDayStore, lineUpStore);
 
 		addService("player", new PlayerService(playerStore));
 		addService("playerDay", new PlayerDayService(playerDayStore, statsProcessor));
@@ -29,11 +30,6 @@ public class ApiServiceServlet extends com.digitald4.common.server.ApiServiceSer
 				return false;
 			}
 		});
-		addService("lineUp", new SingleProtoService<LineUp>(new LineUpStore(daoProvider)) {
-			@Override
-			public boolean requiresLogin(String action) {
-				return false;
-			}
-		});
+		addService("lineUp", new LineUpService(lineUpStore, statsProcessor));
 	}
 }

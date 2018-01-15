@@ -47,7 +47,7 @@ com.digitald4.nbastats.module = angular.module('nbastats', ['DD4Common', 'ngRout
       };
       return service;
     })
-    .service('playerOptionService', function(apiConnector) {
+    .service('playerDayService', function(apiConnector) {
       var service = new com.digitald4.common.JSONService('playerDay', apiConnector);
       service.list = function(date, onSuccess, onError) {
         service.list_(undefined, {date: date}, onSuccess, onError);
@@ -61,6 +61,9 @@ com.digitald4.nbastats.module = angular.module('nbastats', ['DD4Common', 'ngRout
       var service = new com.digitald4.common.JSONService('lineup', apiConnector);
       service.list = function(date, site, method, onSuccess, onError) {
         service.list_(undefined, {date: date, fantasy_site: site, projection_method: method}, onSuccess, onError);
+      };
+      service.updateActuals = function(date, onSuccess, onError) {
+        this.performRequest(['updateActuals', 'POST'], undefined, {date: date}, onSuccess, onError);
       };
       return service;
     });

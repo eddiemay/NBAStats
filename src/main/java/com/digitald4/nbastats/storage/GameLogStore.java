@@ -40,6 +40,24 @@ public class GameLogStore extends GenericStore<GameLog> {
 		return queryResult;
 	}
 
+	public GameLog get(int playerId, DateTime date) {
+		Query query = Query.newBuilder()
+				.addFilter(Filter.newBuilder().setColumn("player_id").setValue(String.valueOf(playerId)))
+				.addFilter(Filter.newBuilder().setColumn("season").setValue(Constaints.getSeason(date)))
+				.addFilter(Filter.newBuilder().setColumn("date").setValue(date.toString(Constaints.COMPUTER_DATE)))
+				.build();
+		List<GameLog> gameLog = super.list(query).getResultList();
+		if (gameLog.size() > 0) {
+			return gameLog.get(0);
+		}
+		refreshGames(playerId, date);
+		gameLog = super.list(query).getResultList();
+		if (gameLog.size() > 0) {
+			return gameLog.get(0);
+		}
+		return null;
+	}
+
 	public void refreshGames(int playerId, DateTime date) {
 		String season = Constaints.getSeason(date);
 		List<GameLog> gameLog = super.list(Query.newBuilder()

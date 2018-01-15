@@ -11,6 +11,7 @@ import com.digitald4.nbastats.proto.NBAStatsProtos.Player;
 import com.digitald4.nbastats.proto.NBAStatsProtos.PlayerDay;
 import com.digitald4.nbastats.proto.NBAStatsProtos.PlayerDay.FantasySiteInfo;
 import com.digitald4.nbastats.storage.GameLogStore;
+import com.digitald4.nbastats.storage.LineUpStore;
 import com.digitald4.nbastats.storage.PlayerDayStore;
 import com.digitald4.nbastats.storage.PlayerStore;
 import com.digitald4.nbastats.util.Constaints;
@@ -24,16 +25,21 @@ import org.joda.time.DateTime;
 public class StatsProcessor {
 	private static final int SAMPLE_SIZE = 30;
 	// Sets the data at -10% from the center which is the 40th percentile, 80% of mean. Giving a 60% chance of hitting the number.
-	private static final double Z_SCORE = -.25;
+	private static final double Z_SCORE_10P = .25;
+	// Sets the data at -10% from the center which is the 40th percentile, 80% of mean. Giving a 60% chance of hitting the number.
+	private static final double Z_SCORE_20P = .53;
 
 	private final PlayerStore playerStore;
 	private final GameLogStore gameLogStore;
 	private final PlayerDayStore playerDayStore;
+	private final LineUpStore lineUpStore;
 
-	public StatsProcessor(PlayerStore playerStore, GameLogStore gameLogStore, PlayerDayStore playerDayStore) {
+	public StatsProcessor(PlayerStore playerStore, GameLogStore gameLogStore,
+												PlayerDayStore playerDayStore, LineUpStore lineUpStore) {
 		this.playerStore = playerStore;
 		this.gameLogStore = gameLogStore;
 		this.playerDayStore = playerDayStore;
+		this.lineUpStore = lineUpStore;
 	}
 
 	public List<PlayerDay> processStats(DateTime date) {
@@ -100,11 +106,12 @@ public class StatsProcessor {
 
 			for (FantasyLeague fantasyLeague : FantasyLeague.values()) {
 				double average = totals[fantasyLeague.ordinal()] / sampleSize;
-				double thirtyForty = round(standardDeviation(matrix[fantasyLeague.ordinal()]) * Z_SCORE + average);
 				builder.putFantasySiteInfo(fantasyLeague.name,
 						player.getFantasySiteInfoOrDefault(fantasyLeague.name, FantasySiteInfo.getDefaultInstance()).toBuilder()
+								.putProjection("30 Game 40th Percentile", round(standardDeviation(matrix[fantasyLeague.ordinal()]) * -Z_SCORE_10P + average))
 								.putProjection("30 Game Average", average)
-								.putProjection("30 Game 40th Percentile", thirtyForty)
+								.putProjection("30 Game 60th Percentile", round(standardDeviation(matrix[fantasyLeague.ordinal()]) * Z_SCORE_10P + average))
+								.putProjection("30 Game 70th Percentile", round(standardDeviation(matrix[fantasyLeague.ordinal()]) * Z_SCORE_20P + average))
 								.build());
 			}
 
@@ -114,6 +121,36 @@ public class StatsProcessor {
 			}
 		}
 		return builder.build();
+	}
+
+	public void updateActuals(DateTime date) {
+		String strDate = date.toString(Constaints.COMPUTER_DATE);
+		Map<Integer, PlayerDay> playerDaysMap = playerDayStore.list(date).getResultList()
+				.stream()
+				.map(playerDay -> {
+					GameLog gameLog = gameLogStore.get(playerDay.getPlayerId(), date);
+					if (gameLog != null) {
+						PlayerDay.Builder builder = playerDay.toBuilder();
+						for (String site : playerDay.getFantasySiteInfoMap().keySet()) {
+							builder.putFantasySiteInfo(site, builder.getFantasySiteInfoOrThrow(site).toBuilder()
+									.setActual(gameLog.getFantasySitePointsOrDefault(site, 0))
+									.build());
+						}
+						return playerDayStore.update(playerDay.getId(), playerDay1 ->
+								playerDay1.toBuilder().putAllFantasySiteInfo(builder.getFantasySiteInfoMap()).build());
+					}
+					return playerDay;
+				})
+				.collect(Collectors.toMap(PlayerDay::getPlayerId, Function.identity()));
+
+		lineUpStore.list(Query.newBuilder().addFilter(Filter.newBuilder().setColumn("date").setValue(strDate)).build())
+				.getResultList()
+				.forEach(lineUp -> lineUpStore.update(lineUp.getId(), lineUp1 -> lineUp1.toBuilder()
+						.setActual(lineUp1.getPlayerIdList()
+								.stream()
+								.mapToDouble(playerId -> playerDaysMap.get(playerId).getFantasySiteInfoOrThrow(lineUp1.getFantasySite()).getActual())
+								.sum())
+						.build()));
 	}
 
 	private double round(double n) {

@@ -180,9 +180,9 @@ public class APIDAO {
 								.addAllPosition(Arrays.stream(values[3].split("/"))
 										.map(Position::valueOf)
 										.collect(Collectors.toList()))
-								.putProjection("RotoG Ceil", Double.parseDouble(values[5]))
-								.putProjection("RotoG Floor", Double.parseDouble(values[6]))
-								.putProjection("RotoG Proj", Double.parseDouble(values[7]))
+								.putProjection("RotoG Ceil", Double.parseDouble(!values[5].isEmpty() ? values[5] : "0"))
+								.putProjection("RotoG Floor", Double.parseDouble(!values[6].isEmpty() ? values[6] : "0" ))
+								.putProjection("RotoG Proj", Double.parseDouble(!values[7].isEmpty() ? values[7] : "0"))
 								.build());
 			}
 			in.close();

@@ -1,8 +1,8 @@
-com.digitald4.nbastats.PlayerOptionsCtrl = function(globalData, playerOptionService) {
+com.digitald4.nbastats.PlayerOptionsCtrl = function(globalData, playerDayService) {
 	globalData.controlType = globalData.CONTROL_TYPE.DATE
 	globalData.refresh = this.refresh.bind(this);
 	this.globalData = globalData;
-	this.playerOptionService = playerOptionService;
+	this.playerDayService = playerDayService;
 	this.refresh();
 	this.sortProp = 'projection[\'RotoG Proj\']';
   this.reverse = true;
@@ -12,7 +12,7 @@ com.digitald4.nbastats.PlayerOptionsCtrl.prototype.refresh = function() {
   this.players = [];
   this.projectionMethods = [];
   var fantasyLeague = this.globalData.fantasyLeague;
-	this.playerOptionService.list(this.globalData.getApiDate(), function(response) {
+	this.playerDayService.list(this.globalData.getApiDate(), function(response) {
 	  for (var method in response.result[0].fantasySiteInfo[fantasyLeague].projection) {
 	    this.projectionMethods.push(method);
 	  }
@@ -34,13 +34,13 @@ com.digitald4.nbastats.PlayerOptionsCtrl.prototype.refresh = function() {
 
 com.digitald4.nbastats.PlayerOptionsCtrl.prototype.update = function(player, prop) {
   var index = this.players.indexOf(player);
-  this.playerOptionService.update(player, [prop], function(player) {
+  this.playerDayService.update(player, [prop], function(player) {
     this.players[index] = player;
   }.bind(this), notify);
 };
 
 com.digitald4.nbastats.PlayerOptionsCtrl.prototype.processStats = function() {
-  this.playerOptionService.processStats(this.globalData.getApiDate(), function(response) {
+  this.playerDayService.processStats(this.globalData.getApiDate(), function(response) {
     console.log('Processing...');
   }.bind(this), notify);
 };

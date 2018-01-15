@@ -56,10 +56,14 @@ message PlayerDay {
   string opponent = 7;
 
   message FantasySiteInfo {
+    // The positions this player can play.
     repeated Position position = 1;
+    // The salary cost of this player.
     int32 cost = 2;
     // What the player is projected to score.
     map<string, double> projection = 3;
+    // What the player actually scored on this day.
+    double actual = 4;
   }
   map<string, FantasySiteInfo> fantasy_site_info = 8;
   bool low_data_warn = 9;
@@ -70,17 +74,11 @@ message LineUp {
   string date = 2;
   string fantasy_site = 3;
   string projection_method = 4;
-  double projected = 5;
-  double total_salary = 6;
-  message LineUpPlayer {
-    string name = 1;
-    int32 player_id = 2;
-    repeated Position position = 3;
-    int32 cost = 4;
-    double projected = 5;
-    map<string, double> projection = 6;
-  }
-  repeated LineUpPlayer player = 7;
+  double total_salary = 5;
+  double projected = 6;
+  double actual = 7;
+  repeated int32 player_id = 8;
+  bool selected = 9;
 }
 
 message PlayerListRequest {

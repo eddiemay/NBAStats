@@ -35,6 +35,7 @@ public class ProcessFanDuel {
 	public static class FDMapper extends Mapper<Object, Text, DoubleWritable, Text> {
 		private static final String PLAYER_OUT = ",%d";
 		private final String[] projectionMethods;
+		private final Map<Integer, LineUpPlayer> playerMap = new HashMap<>();
 		private final List<PlayerPair> sgPairs = new ArrayList<>(100);
 		private final List<PlayerPair> sfPairs = new ArrayList<>(100);
 		private final List<PlayerPair> pfPairs = new ArrayList<>(100);
@@ -42,38 +43,49 @@ public class ProcessFanDuel {
 
 		public FDMapper() {
 			try {
-				BufferedReader reader = new BufferedReader(new FileReader(DATA_PATH + "sg_pairs.txt"));
+				BufferedReader reader = new BufferedReader(new FileReader(DATA_PATH + "players.csv"));
 				String line = reader.readLine();
 				projectionMethods = line.split(",");
 				while ((line = reader.readLine()) != null) {
-					sgPairs.add(new PlayerPair(line));
+					LineUpPlayer lineUpPlayer = new LineUpPlayer(line);
+					playerMap.put(lineUpPlayer.playerId, lineUpPlayer);
 				}
 				reader.close();
-				reader = new BufferedReader(new FileReader(DATA_PATH + "sf_pairs.txt"));
+				reader = new BufferedReader(new FileReader(DATA_PATH + "sg_pairs.csv"));
 				while ((line = reader.readLine()) != null) {
-					sfPairs.add(new PlayerPair(line));
+					String[] ids = line.split(",");
+					sgPairs.add(new PlayerPair(playerMap.get(Integer.parseInt(ids[0])), playerMap.get(Integer.parseInt(ids[1]))));
 				}
 				reader.close();
-				reader = new BufferedReader(new FileReader(DATA_PATH + "pf_pairs.txt"));
+				reader = new BufferedReader(new FileReader(DATA_PATH + "sf_pairs.csv"));
 				while ((line = reader.readLine()) != null) {
-					pfPairs.add(new PlayerPair(line));
+					String[] ids = line.split(",");
+					sfPairs.add(new PlayerPair(playerMap.get(Integer.parseInt(ids[0])), playerMap.get(Integer.parseInt(ids[1]))));
 				}
 				reader.close();
-				reader = new BufferedReader(new FileReader(DATA_PATH + "centers.txt"));
+				reader = new BufferedReader(new FileReader(DATA_PATH + "pf_pairs.csv"));
 				while ((line = reader.readLine()) != null) {
-					cs.add(new LineUpPlayer(line));
+					String[] ids = line.split(",");
+					pfPairs.add(new PlayerPair(playerMap.get(Integer.parseInt(ids[0])), playerMap.get(Integer.parseInt(ids[1]))));
 				}
 				reader.close();
-			} catch (IOException ioe) {
+				reader = new BufferedReader(new FileReader(DATA_PATH + "centers.csv"));
+				while ((line = reader.readLine()) != null) {
+					cs.add(playerMap.get(Integer.parseInt(line)));
+				}
+				reader.close();
+			} catch (Exception ioe) {
+				ioe.printStackTrace();
 				throw new RuntimeException(ioe);
 			}
 		}
 
 		public void map(Object key, Text value, Context context) throws IOException, InterruptedException {
 			long sTime = System.currentTimeMillis();
-			PlayerPair pgPair = new PlayerPair(value.toString());
-			LineUpPlayer pg1 = pgPair.one;
-			LineUpPlayer pg2 = pgPair.two;
+			// System.out.println("Processing: " + value);
+			String[] ids = value.toString().split(",");
+			LineUpPlayer pg1 = playerMap.get(Integer.parseInt(ids[0]));
+			LineUpPlayer pg2 = playerMap.get(Integer.parseInt(ids[1]));
 			Map<String, TopLineUps> topLineUpsMap = new HashMap<>();
 			sgPairs.parallelStream().forEach(sgPair -> {
 				Map<String, TopLineUps> subTopLineUpsMap = new HashMap<>();
@@ -88,16 +100,20 @@ public class ProcessFanDuel {
 						for (LineUpPlayer c : cs) {
 							int totalSalary = pg1.cost + pg2.cost + sg1.cost + sg2.cost
 									+ sf1.cost + sf2.cost + pf1.cost + pf2.cost + c.cost;
-							if (totalSalary <= SALARY_CAP) {
-								for (int pm = 0; pm < projectionMethods.length; pm++) {
-									String method = projectionMethods[pm];
-									TopLineUps topLineUps = subTopLineUpsMap.computeIfAbsent(method, m -> new TopLineUps());
-									double projected = pg1.projection[pm] + pg2.projection[pm] + sg1.projection[pm] + sg2.projection[pm]
-											+ sf1.projection[pm] + sf2.projection[pm] + pf1.projection[pm] + pf2.projection[pm] + c.projection[pm];
-									if (topLineUps.size() < LINEUP_LIMIT || projected > topLineUps.last().projected) {
-										topLineUps.add(new LineUp(projected, totalSalary, pg1, pg2, sg1, sg2, sf1, sf2, pf1, pf2, c));
+							try {
+								if (totalSalary <= SALARY_CAP) {
+									for (int pm = 0; pm < projectionMethods.length; pm++) {
+										String method = projectionMethods[pm];
+										TopLineUps topLineUps = subTopLineUpsMap.computeIfAbsent(method, m -> new TopLineUps());
+										double projected = pg1.projection[pm] + pg2.projection[pm] + sg1.projection[pm] + sg2.projection[pm]
+												+ sf1.projection[pm] + sf2.projection[pm] + pf1.projection[pm] + pf2.projection[pm] + c.projection[pm];
+										if (topLineUps.size() < LINEUP_LIMIT || projected > topLineUps.last().projected) {
+											topLineUps.add(new LineUp(projected, totalSalary, pg1, pg2, sg1, sg2, sf1, sf2, pf1, pf2, c));
+										}
 									}
 								}
+							} catch (Exception e) {
+								e.printStackTrace();
 							}
 						}
 					}
@@ -174,6 +190,10 @@ public class ProcessFanDuel {
 		private LineUpPlayer(String in) {
 			String[] parts = in.split(",");
 			this.playerId = Integer.parseInt(parts[0]);
+			if (parts.length < 9) {
+				System.out.println("Not enough data: " + in + " only " + parts.length + " parts");
+				throw new RuntimeException("Not enough data: " + in + " only " + parts.length + " parts");
+			}
 			this.cost = Integer.parseInt(parts[1]);
 			this.projection = new double[parts.length - 2];
 			for (int p = 2; p < parts.length; p++) {
@@ -186,10 +206,9 @@ public class ProcessFanDuel {
 		private final LineUpPlayer one;
 		private final LineUpPlayer two;
 
-		private PlayerPair(String in) {
-			String[] parts = in.split("\\|");
-			one = new LineUpPlayer(parts[0]);
-			two = new LineUpPlayer(parts[1]);
+		private PlayerPair(LineUpPlayer one, LineUpPlayer two) {
+			this.one = one;
+			this.two = two;
 		}
 	}
 
@@ -209,7 +228,7 @@ public class ProcessFanDuel {
 		}
 	}
 
-	public static void main(String[] args) throws Exception {
+	public static boolean run(DateTime date) throws Exception {
 		long startTime = System.currentTimeMillis();
 		Configuration conf = new Configuration();
 		Job job = Job.getInstance(conf, "Process Fan Duel");
@@ -221,10 +240,14 @@ public class ProcessFanDuel {
 		job.setOutputKeyClass(DoubleWritable.class);
 		job.setOutputValueClass(Text.class);
 		FileInputFormat.addInputPath(job, new Path(PROCESS_PATH));
-		DateTime date = DateTime.now();
 		FileOutputFormat.setOutputPath(job, new Path(String.format(OUTPUT_PATH, date.toString(DateTimeFormat.forPattern("yyyy-MM-dd")))));
 		boolean result = job.waitForCompletion(true);
 		System.out.println("Total Time: " + ((System.currentTimeMillis() - startTime) / 1000) + " secs");
-		System.exit(result ? 0 : 1);
+		return result;
+	}
+
+	public static void main(String[] args) throws Exception {
+		DateTime date = DateTime.now();
+		System.exit(run(date) ? 0 : 1);;
 	}
 }
