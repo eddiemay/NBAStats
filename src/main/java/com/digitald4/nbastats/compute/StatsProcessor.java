@@ -43,7 +43,7 @@ public class StatsProcessor {
 	}
 
 	public List<PlayerDay> processStats(DateTime date) {
-		List<Player> playerList = playerStore.list(Constaints.getSeason(date)).getResultList();
+		List<Player> playerList = playerStore.list(Constaints.getSeason(date));
 		Map<String, Player> playerMap = playerList.stream()
 				.parallel()
 				.collect(Collectors.toMap(Player::getName, Function.identity()));
@@ -51,7 +51,7 @@ public class StatsProcessor {
 				.parallel()
 				.filter(player -> !player.getAka().isEmpty())
 				.collect(Collectors.toMap(Player::getAka, Function.identity())));
-		return playerDayStore.list(date).getResultList().stream()
+		return playerDayStore.list(date).stream()
 				//.parallel()
 				.map(playerDay -> {
 					if (playerDay.getFantasySiteInfoOrThrow(FantasyLeague.FAN_DUEL.name).getProjectionCount() < 5) {
@@ -83,14 +83,14 @@ public class StatsProcessor {
 				.addFilter(Filter.newBuilder().setColumn("date").setOperator("<").setValue(strDate))
 				.addOrderBy(OrderBy.newBuilder().setColumn("date").setDesc(true))
 				.setLimit(SAMPLE_SIZE)
-				.build()).getResultList();
+				.build());
 		if (games.size() < SAMPLE_SIZE) {
 			games.addAll(gameLogStore.list(Query.newBuilder()
 					.addFilter(Filter.newBuilder().setColumn("player_id").setValue(String.valueOf(player.getPlayerId())))
 					.addFilter(Filter.newBuilder().setColumn("season").setValue(Constaints.getPrevSeason(date)))
 					.addOrderBy(OrderBy.newBuilder().setColumn("date").setDesc(true))
 					.setLimit(SAMPLE_SIZE - games.size())
-					.build()).getResultList());
+					.build()));
 		}
 		if (games.size() > 0) {
 			int sampleSize = games.size();
@@ -125,7 +125,7 @@ public class StatsProcessor {
 
 	public void updateActuals(DateTime date) {
 		String strDate = date.toString(Constaints.COMPUTER_DATE);
-		Map<Integer, PlayerDay> playerDaysMap = playerDayStore.list(date).getResultList()
+		Map<Integer, PlayerDay> playerDaysMap = playerDayStore.list(date)
 				.stream()
 				.map(playerDay -> {
 					GameLog gameLog = gameLogStore.get(playerDay.getPlayerId(), date);
@@ -144,7 +144,6 @@ public class StatsProcessor {
 				.collect(Collectors.toMap(PlayerDay::getPlayerId, Function.identity()));
 
 		lineUpStore.list(Query.newBuilder().addFilter(Filter.newBuilder().setColumn("date").setValue(strDate)).build())
-				.getResultList()
 				.forEach(lineUp -> lineUpStore.update(lineUp.getId(), lineUp1 -> lineUp1.toBuilder()
 						.setActual(lineUp1.getPlayerIdList()
 								.stream()

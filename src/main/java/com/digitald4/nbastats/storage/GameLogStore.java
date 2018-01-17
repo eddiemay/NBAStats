@@ -21,7 +21,7 @@ public class GameLogStore extends GenericStore<GameLog> {
 
 	public QueryResult<GameLog> list(Query query) {
 		QueryResult<GameLog> queryResult = super.list(query);
-		if (queryResult.getResultCount() == 0) {
+		if (queryResult.size() == 0) {
 			int playerId = 0;
 			String season = null;
 			for (Filter filter : query.getFilterList()) {
@@ -46,12 +46,12 @@ public class GameLogStore extends GenericStore<GameLog> {
 				.addFilter(Filter.newBuilder().setColumn("season").setValue(Constaints.getSeason(date)))
 				.addFilter(Filter.newBuilder().setColumn("date").setValue(date.toString(Constaints.COMPUTER_DATE)))
 				.build();
-		List<GameLog> gameLog = super.list(query).getResultList();
+		List<GameLog> gameLog = super.list(query);
 		if (gameLog.size() > 0) {
 			return gameLog.get(0);
 		}
 		refreshGames(playerId, date);
-		gameLog = super.list(query).getResultList();
+		gameLog = super.list(query);
 		if (gameLog.size() > 0) {
 			return gameLog.get(0);
 		}
@@ -65,7 +65,7 @@ public class GameLogStore extends GenericStore<GameLog> {
 				.addFilter(Filter.newBuilder().setColumn("season").setValue(season))
 				.addOrderBy(OrderBy.newBuilder().setColumn("date").setDesc(true))
 				.setLimit(1)
-				.build()).getResultList();
+				.build());
 		DateTime dateFrom = null;
 		if (gameLog.size() > 0) {
 			dateFrom = DateTime.parse(gameLog.get(0).getDate(), Constaints.COMPUTER_DATE);

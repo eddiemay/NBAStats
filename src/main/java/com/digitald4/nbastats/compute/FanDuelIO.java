@@ -47,11 +47,11 @@ public class FanDuelIO {
 
 	public void output(DateTime date) throws IOException {
 		String league = FantasyLeague.FAN_DUEL.name;
-		List<PlayerDay> pgs = new DistinictSalaryList(2, league);
-		List<PlayerDay> sgs = new DistinictSalaryList(2, league);
-		List<PlayerDay> sfs = new DistinictSalaryList(2, league);
-		List<PlayerDay> pfs = new DistinictSalaryList(2, league);
-		List<PlayerDay> cs = new DistinictSalaryList(1, league);
+		List<PlayerDay> pgs = new DistinictSalaryList(20, league);
+		List<PlayerDay> sgs = new DistinictSalaryList(20, league);
+		List<PlayerDay> sfs = new DistinictSalaryList(20, league);
+		List<PlayerDay> pfs = new DistinictSalaryList(20, league);
+		List<PlayerDay> cs = new DistinictSalaryList(10, league);
 
 		List<PlayerDay> selected = statsProcessor.processStats(date)
 				.stream()

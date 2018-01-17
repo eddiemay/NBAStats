@@ -28,16 +28,15 @@ public class PlayerDayStore extends GenericStore<PlayerDay> {
 	@Override
 	public QueryResult<PlayerDay> list(Query query) {
 		QueryResult<PlayerDay> queryResult = super.list(query);
-		if (queryResult.getResultCount() == 0 && query.getFilterCount() == 1
+		if (queryResult.size() == 0 && query.getFilterCount() == 1
 				&& query.getFilter(0).getColumn().equals("date")) {
 			DateTime date = DateTime.parse(query.getFilter(0).getValue(), Constaints.COMPUTER_DATE);
 			List<PlayerDay> playerDays = apiDAO.getGameDay(date).stream().parallel()
 					.map(this::create)
 					.collect(Collectors.toList());
-			queryResult = QueryResult.<PlayerDay>newBuilder()
+			queryResult = new QueryResult<PlayerDay>()
 					.setResultList(playerDays)
-					.setTotalSize(playerDays.size())
-					.build();
+					.setTotalSize(playerDays.size());
 		}
 		return queryResult;
 	}
