@@ -1,6 +1,5 @@
 package com.digitald4.nbastats.server;
 
-import com.digitald4.common.server.APIConnector;
 import com.digitald4.common.server.SingleProtoService;
 import com.digitald4.nbastats.compute.StatsProcessor;
 import com.digitald4.nbastats.proto.NBAStatsProtos.GameLog;
@@ -14,7 +13,7 @@ import javax.servlet.ServletException;
 public class ApiServiceServlet extends com.digitald4.common.server.ApiServiceServlet {
 
 	public ApiServiceServlet() throws ServletException {
-		APIDAO apiDAO = new APIDAO(new APIConnector(null));
+		APIDAO apiDAO = null;
 		PlayerStore playerStore = new PlayerStore(daoProvider, apiDAO);
 		PlayerDayStore playerDayStore = new PlayerDayStore(daoProvider, apiDAO);
 		GameLogStore gameLogStore = new GameLogStore(daoProvider, apiDAO);

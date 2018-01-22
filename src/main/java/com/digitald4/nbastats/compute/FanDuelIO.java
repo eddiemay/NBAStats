@@ -159,7 +159,7 @@ public class FanDuelIO {
 	public static void main(String[] args) throws Exception {
 		long startTime = System.currentTimeMillis();
 		String command = (args.length > 0) ? args[0] : null;
-		DAO dao = new DAOAPIImpl(new APIConnector("https://"));
+		DAO dao = new DAOAPIImpl(new APIConnector("https://nba-stats-188619.appspot.com"));
 		Provider<DAO> daoProvider = () -> dao;
 		APIDAO apiDAO = new APIDAO(new APIConnector(null));
 		PlayerStore playerStore = new PlayerStore(daoProvider, apiDAO);
