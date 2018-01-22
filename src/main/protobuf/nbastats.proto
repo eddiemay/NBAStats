@@ -81,10 +81,6 @@ message LineUp {
   bool selected = 9;
 }
 
-message PlayerListRequest {
-  string season = 1;
-}
-
 message ProcessStatsRequest {
   string date = 1;
 }

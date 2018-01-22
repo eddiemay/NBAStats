@@ -2,7 +2,6 @@ package com.digitald4.nbastats.storage;
 
 import com.digitald4.common.proto.DD4Protos.Query;
 import com.digitald4.common.proto.DD4Protos.Query.Filter;
-import com.digitald4.common.proto.DD4Protos.Query.OrderBy;
 import com.digitald4.common.storage.DAO;
 import com.digitald4.common.storage.GenericStore;
 import com.digitald4.common.storage.QueryResult;
@@ -22,13 +21,18 @@ public class PlayerStore extends GenericStore<Player> {
 	}
 
 	public QueryResult<Player> list(String season) {
-		QueryResult<Player> queryResult = super.list(Query.newBuilder()
+		return list(Query.newBuilder()
 				.addFilter(Filter.newBuilder().setColumn("season").setValue(season))
-				.addOrderBy(OrderBy.newBuilder().setColumn("name"))
 				.build());
+	}
 
-		if (queryResult.size() == 0 && apiDAO != null) {
-			List<Player> players = refreshPlayerList(season);
+	@Override
+	public QueryResult<Player> list(Query query) {
+		QueryResult<Player> queryResult = super.list(query);
+
+		if (queryResult.size() == 0 && apiDAO != null && query.getFilterCount() == 1
+				&& query.getFilter(0).getColumn().equals("season")) {
+			List<Player> players = refreshPlayerList(query.getFilter(0).getValue());
 			return new QueryResult<>(players, players.size());
 		}
 		return queryResult;
