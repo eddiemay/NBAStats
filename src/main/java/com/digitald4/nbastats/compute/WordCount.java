@@ -1,6 +1,5 @@
 package com.digitald4.nbastats.compute;
 
-import com.digitald4.common.util.FormatText;
 import java.io.IOException;
 import java.util.StringTokenizer;
 import org.apache.hadoop.conf.Configuration;
@@ -14,7 +13,6 @@ import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
-import org.joda.time.DateTime;
 
 public class WordCount {
 
@@ -70,7 +68,7 @@ public class WordCount {
 		job.setOutputKeyClass(Text.class);
 		job.setOutputValueClass(IntWritable.class);
 		FileInputFormat.addInputPath(job, new Path("src/main/java/com/digitald4/nbastats/storage"));
-		FileOutputFormat.setOutputPath(job, new Path("target/output/wordcount/" + FormatText.formatDate(DateTime.now(), FormatText.MYSQL_DATETIME)));
+		FileOutputFormat.setOutputPath(job, new Path("target/output/wordcount"));
 		System.exit(job.waitForCompletion(true) ? 0 : 1);
 	}
 }

@@ -3,6 +3,7 @@ package com.digitald4.nbastats.storage;
 import static java.lang.String.format;
 
 import com.digitald4.common.exception.DD4StorageException;
+import com.digitald4.common.server.APIConnector;
 import com.digitald4.common.tools.DataImporter;
 import com.digitald4.nbastats.proto.NBAStatsProtos.GameLog;
 import com.digitald4.nbastats.proto.NBAStatsProtos.PlayerDay;
@@ -41,16 +42,16 @@ public class APIDAO {
 
 	private static final boolean fetchFromNBAApiEnabled = true;
 
-	private final DataImporter importer;
-	public APIDAO(DataImporter importer) {
-		this.importer = importer;
+	private final APIConnector apiConnector;
+	public APIDAO(APIConnector apiConnector) {
+		this.apiConnector = apiConnector;
 	}
 
 	public List<GameLog> getGames(int playerId, String season, DateTime dateFrom) {
 		List<GameLog> games = new ArrayList<>();
 		if (fetchFromNBAApiEnabled) {
 			try {
-				JSONObject json = new JSONObject(importer.sendGet(format(PLAYER_GAMELOG, playerId, season,
+				JSONObject json = new JSONObject(apiConnector.sendGet(format(PLAYER_GAMELOG, playerId, season,
 						dateFrom == null ? "" : dateFrom.toString(API_DATE))));
 				JSONArray resultSets = json.getJSONArray("resultSets");
 				for (int x = 0; x < resultSets.length(); x++) {
@@ -119,7 +120,7 @@ public class APIDAO {
 		try {
 			List<Player> players = new ArrayList<>();
 			if (fetchFromNBAApiEnabled) {
-				JSONObject json = new JSONObject(importer.sendGet(format(COMMON_ALL_PLAYERS, season)));
+				JSONObject json = new JSONObject(apiConnector.sendGet(format(COMMON_ALL_PLAYERS, season)));
 				JSONArray resultSets = json.getJSONArray("resultSets");
 				for (int x = 0; x < resultSets.length(); x++) {
 					JSONObject resultSet = resultSets.getJSONObject(x);

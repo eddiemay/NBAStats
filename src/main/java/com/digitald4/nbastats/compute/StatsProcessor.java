@@ -111,7 +111,7 @@ public class StatsProcessor {
 								.putProjection("30 Game 40th Percentile", round(standardDeviation(matrix[fantasyLeague.ordinal()]) * -Z_SCORE_10P + average))
 								.putProjection("30 Game Average", average)
 								.putProjection("30 Game 60th Percentile", round(standardDeviation(matrix[fantasyLeague.ordinal()]) * Z_SCORE_10P + average))
-								.putProjection("30 Game 70th Percentile", round(standardDeviation(matrix[fantasyLeague.ordinal()]) * Z_SCORE_20P + average))
+								// .putProjection("30 Game 70th Percentile", round(standardDeviation(matrix[fantasyLeague.ordinal()]) * Z_SCORE_20P + average))
 								.build());
 			}
 

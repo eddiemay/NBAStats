@@ -190,7 +190,7 @@ public class ProcessFanDuel {
 		private LineUpPlayer(String in) {
 			String[] parts = in.split(",");
 			this.playerId = Integer.parseInt(parts[0]);
-			if (parts.length < 9) {
+			if (parts.length < 8) {
 				System.out.println("Not enough data: " + in + " only " + parts.length + " parts");
 				throw new RuntimeException("Not enough data: " + in + " only " + parts.length + " parts");
 			}

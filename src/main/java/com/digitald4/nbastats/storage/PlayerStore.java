@@ -27,16 +27,14 @@ public class PlayerStore extends GenericStore<Player> {
 				.addOrderBy(OrderBy.newBuilder().setColumn("name"))
 				.build());
 
-		if (queryResult.size() == 0) {
+		if (queryResult.size() == 0 && apiDAO != null) {
 			List<Player> players = refreshPlayerList(season);
-			return new QueryResult<Player>()
-					.setResultList(players)
-					.setTotalSize(players.size());
+			return new QueryResult<>(players, players.size());
 		}
 		return queryResult;
 	}
 
-	public List<Player> refreshPlayerList(String season) {
+	private List<Player> refreshPlayerList(String season) {
 		Map<Integer, Player> playerMap =
 				list(Query.newBuilder().addFilter(Filter.newBuilder().setColumn("season").setValue(season)).build())
 						.stream()

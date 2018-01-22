@@ -31,7 +31,7 @@ public class GameLogStore extends GenericStore<GameLog> {
 					season = filter.getValue();
 				}
 			}
-			if (playerId != 0 && season != null) {
+			if (playerId != 0 && season != null && apiDAO != null) {
 				apiDAO.getGames(playerId, season, null)
 						.forEach(this::create);
 				queryResult = super.list(query);
@@ -71,7 +71,7 @@ public class GameLogStore extends GenericStore<GameLog> {
 			dateFrom = DateTime.parse(gameLog.get(0).getDate(), Constaints.COMPUTER_DATE);
 			dateFrom = dateFrom.plusDays(1);
 		}
-		if (dateFrom == null || dateFrom.isBefore(date)) {
+		if ((dateFrom == null || dateFrom.isBefore(date)) && apiDAO != null) {
 			apiDAO.getGames(playerId, season, dateFrom)
 					.forEach(this::create);
 		}

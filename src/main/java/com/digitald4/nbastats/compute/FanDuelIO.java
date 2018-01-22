@@ -1,11 +1,8 @@
 package com.digitald4.nbastats.compute;
 
-import com.digitald4.common.jdbc.DBConnectorThreadPoolImpl;
+import com.digitald4.common.server.APIConnector;
 import com.digitald4.common.storage.DAO;
-import com.digitald4.common.storage.DAOCloudDS;
-import com.digitald4.common.storage.DAOSQLImpl;
-import com.digitald4.common.tools.DataImporter;
-import com.digitald4.common.util.Calculate;
+import com.digitald4.common.storage.DAOAPIImpl;
 import com.digitald4.common.util.FormatText;
 import com.digitald4.common.util.Pair;
 import com.digitald4.common.util.Provider;
@@ -47,11 +44,11 @@ public class FanDuelIO {
 
 	public void output(DateTime date) throws IOException {
 		String league = FantasyLeague.FAN_DUEL.name;
-		List<PlayerDay> pgs = new DistinictSalaryList(20, league);
-		List<PlayerDay> sgs = new DistinictSalaryList(20, league);
-		List<PlayerDay> sfs = new DistinictSalaryList(20, league);
-		List<PlayerDay> pfs = new DistinictSalaryList(20, league);
-		List<PlayerDay> cs = new DistinictSalaryList(10, league);
+		List<PlayerDay> pgs = new DistinictSalaryList(40, league);
+		List<PlayerDay> sgs = new DistinictSalaryList(40, league);
+		List<PlayerDay> sfs = new DistinictSalaryList(40, league);
+		List<PlayerDay> pfs = new DistinictSalaryList(40, league);
+		List<PlayerDay> cs = new DistinictSalaryList(20, league);
 
 		List<PlayerDay> selected = statsProcessor.processStats(date)
 				.stream()
@@ -161,31 +158,24 @@ public class FanDuelIO {
 
 	public static void main(String[] args) throws Exception {
 		long startTime = System.currentTimeMillis();
-		System.out.println("CA Lottery Combinations: " + (Calculate.combinations(70, 5) * 25));
-		String dataStore = "cloud";
-		for (int a = 0; a < args.length; a++) {
-			if (args[a].equals("--datastore")) {
-				dataStore = args[++a];
-			}
-		}
-		DAO dao = dataStore.equals("cloud") ? new DAOCloudDS()
-				: new DAOSQLImpl(new DBConnectorThreadPoolImpl("org.gjt.mm.mysql.Driver",
-				"jdbc:mysql://localhost/NBAStats?autoReconnect=true",
-				"dd4_user", "getSchooled85"));
+		String command = (args.length > 0) ? args[0] : null;
+		DAO dao = new DAOAPIImpl(new APIConnector("https://"));
 		Provider<DAO> daoProvider = () -> dao;
-		APIDAO apiDAO = new APIDAO(new DataImporter(null, null));
+		APIDAO apiDAO = new APIDAO(new APIConnector(null));
 		PlayerStore playerStore = new PlayerStore(daoProvider, apiDAO);
 		GameLogStore gameLogStore = new GameLogStore(daoProvider, apiDAO);
 		PlayerDayStore playerDayStore = new PlayerDayStore(daoProvider, apiDAO);
 		LineUpStore lineUpStore = new LineUpStore(daoProvider);
 		StatsProcessor statsProcessor = new StatsProcessor(playerStore, gameLogStore, playerDayStore, lineUpStore);
 		FanDuelIO fanDuelIO = new FanDuelIO(statsProcessor, lineUpStore);
-		DateTime date = DateTime.now().minusHours(8);
-		// date = DateTime.parse("2018-01-04", Constaints.COMPUTER_DATE);
-		fanDuelIO.output(date);
-		// statsProcessor.updateActuals(date.minusDays(1));
-		ProcessFanDuel.run(date);
-		fanDuelIO.insertData(date);
+		DateTime date = DateTime.now().minusHours(6);
+		if ("output".equals(command)) {
+			fanDuelIO.output(date);
+		} else if ("updateActuals".equals(command)) {
+			statsProcessor.updateActuals(date.minusDays(1));
+		} else if ("insert".equals(command)) {
+			fanDuelIO.insertData(date);
+		}
 		System.out.println("Total Time: " + FormatText.formatElapshed((System.currentTimeMillis() - startTime)));
 	}
 }
