@@ -1,0 +1,6 @@
+indexes:
+- kind: Player
+  properties:
+  - name: season
+  - name: name
+    direction: asc
