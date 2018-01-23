@@ -14,19 +14,20 @@ message Player {
 }
 
 message GameLog {
-  int32 player_id = 1;
-  string season = 2;
-  string date = 3;
-  double points = 4;
-  double rebounds = 5;
-  double assists = 6;
-  double blocks = 7;
-  double steals = 8;
-  double made3s = 9;
-  double turnovers = 10;
-  double double_doubles = 11;
-  double triple_doubles = 12;
-  map<string, double> fantasy_site_points = 13;
+  int64 id = 1;
+  int32 player_id = 2;
+  string season = 3;
+  string date = 4;
+  double points = 5;
+  double rebounds = 6;
+  double assists = 7;
+  double blocks = 8;
+  double steals = 9;
+  double made3s = 10;
+  double turnovers = 11;
+  double double_doubles = 12;
+  double triple_doubles = 13;
+  map<string, double> fantasy_site_points = 14;
 }
 
 enum Position {
