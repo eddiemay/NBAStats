@@ -4,3 +4,9 @@ indexes:
   - name: season
   - name: name
     direction: asc
+- kind: GameLog
+  properties:
+  - name: season
+  - name: player_id
+  - name: date
+    direction: desc

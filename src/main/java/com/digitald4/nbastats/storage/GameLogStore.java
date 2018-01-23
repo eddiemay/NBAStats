@@ -33,6 +33,7 @@ public class GameLogStore extends GenericStore<GameLog> {
 			}
 			if (playerId != 0 && season != null && apiDAO != null) {
 				apiDAO.getGames(playerId, season, null)
+						.parallelStream()
 						.forEach(this::create);
 				queryResult = super.list(query);
 			}
@@ -73,6 +74,7 @@ public class GameLogStore extends GenericStore<GameLog> {
 		}
 		if ((dateFrom == null || dateFrom.isBefore(date)) && apiDAO != null) {
 			apiDAO.getGames(playerId, season, dateFrom)
+					.parallelStream()
 					.forEach(this::create);
 		}
 	}
