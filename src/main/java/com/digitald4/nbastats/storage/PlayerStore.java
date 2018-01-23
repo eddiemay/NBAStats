@@ -40,7 +40,7 @@ public class PlayerStore extends GenericStore<Player> {
 
 	private List<Player> refreshPlayerList(String season) {
 		Map<Integer, Player> playerMap =
-				list(Query.newBuilder().addFilter(Filter.newBuilder().setColumn("season").setValue(season)).build())
+				super.list(Query.newBuilder().addFilter(Filter.newBuilder().setColumn("season").setValue(season)).build())
 						.stream()
 						.collect(Collectors.toMap(Player::getPlayerId, Function.identity()));
 		return apiDAO.listAllPlayers(season)
