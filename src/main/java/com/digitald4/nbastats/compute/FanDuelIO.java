@@ -7,6 +7,7 @@ import com.digitald4.common.util.Calculate;
 import com.digitald4.common.util.FormatText;
 import com.digitald4.common.util.Pair;
 import com.digitald4.common.util.Provider;
+import com.digitald4.nbastats.hadoop.ProcessFanDuel;
 import com.digitald4.nbastats.proto.NBAStatsProtos.LineUp;
 import com.digitald4.nbastats.proto.NBAStatsProtos.PlayerDay;
 import com.digitald4.nbastats.proto.NBAStatsProtos.PlayerDay.FantasySiteInfo;
