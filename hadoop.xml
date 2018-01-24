@@ -20,6 +20,7 @@
       <version>2.9.0</version>
       <scope>provided</scope>
     </dependency>
+  </dependencies>
 
   <build>
     <outputDirectory>target/${project.artifactId}/WEB-INF/classes</outputDirectory>
