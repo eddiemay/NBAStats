@@ -3,6 +3,7 @@ package com.digitald4.nbastats.compute;
 import com.digitald4.common.server.APIConnector;
 import com.digitald4.common.storage.DAO;
 import com.digitald4.common.storage.DAOAPIImpl;
+import com.digitald4.common.util.Calculate;
 import com.digitald4.common.util.FormatText;
 import com.digitald4.common.util.Pair;
 import com.digitald4.common.util.Provider;
@@ -33,7 +34,6 @@ import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormat;
 
 public class FanDuelIO {
-	private static final String PLAYER_OUTPUT = "%d,%d,%s";
 	private final StatsProcessor statsProcessor;
 	private final LineUpStore lineUpStore;
 
@@ -115,10 +115,11 @@ public class FanDuelIO {
 	}
 
 	private static String write(PlayerDay player) {
-		StringBuilder sb = new StringBuilder();
 		FantasySiteInfo fantasySiteInfo = player.getFantasySiteInfoOrThrow(FantasyLeague.FAN_DUEL.name);
-		fantasySiteInfo.getProjectionMap().values().forEach(projection -> sb.append(projection).append(","));
-		return String.format(PLAYER_OUTPUT, player.getPlayerId(), fantasySiteInfo.getCost(), sb.toString());
+		return player.getPlayerId() + "," + fantasySiteInfo.getCost() + "," + fantasySiteInfo.getProjectionMap().values()
+				.stream()
+				.map(proj -> String.valueOf(Calculate.round(proj, 1)))
+				.collect(Collectors.joining(","));
 	}
 
 	private static List<Pair<PlayerDay, PlayerDay>> toPairList(List<PlayerDay> players) {
@@ -168,13 +169,13 @@ public class FanDuelIO {
 		LineUpStore lineUpStore = new LineUpStore(daoProvider);
 		StatsProcessor statsProcessor = new StatsProcessor(playerStore, gameLogStore, playerDayStore, lineUpStore);
 		FanDuelIO fanDuelIO = new FanDuelIO(statsProcessor, lineUpStore);
-		DateTime date = DateTime.now().minusHours(6);
+		DateTime now = DateTime.now();
 		if ("output".equals(command)) {
-			fanDuelIO.output(date);
+			fanDuelIO.output(now.minusHours(8));
 		} else if ("updateActuals".equals(command)) {
-			statsProcessor.updateActuals(date.minusDays(1));
+			statsProcessor.updateActuals(now.minusDays(1));
 		} else if ("insert".equals(command)) {
-			fanDuelIO.insertData(date);
+			fanDuelIO.insertData(now.minusHours(8));
 		}
 		System.out.println("Total Time: " + FormatText.formatElapshed((System.currentTimeMillis() - startTime)));
 	}
