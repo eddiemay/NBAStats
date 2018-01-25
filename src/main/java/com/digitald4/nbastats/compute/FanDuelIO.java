@@ -1,8 +1,10 @@
 package com.digitald4.nbastats.compute;
 
+import com.digitald4.common.jdbc.DBConnectorThreadPoolImpl;
 import com.digitald4.common.server.APIConnector;
 import com.digitald4.common.storage.DAO;
 import com.digitald4.common.storage.DAOAPIImpl;
+import com.digitald4.common.storage.DAOSQLImpl;
 import com.digitald4.common.util.Calculate;
 import com.digitald4.common.util.FormatText;
 import com.digitald4.common.util.Pair;
@@ -35,6 +37,7 @@ import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormat;
 
 public class FanDuelIO {
+	private static final boolean runLocal = false;
 	private final StatsProcessor statsProcessor;
 	private final LineUpStore lineUpStore;
 
@@ -161,7 +164,10 @@ public class FanDuelIO {
 	public static void main(String[] args) throws Exception {
 		long startTime = System.currentTimeMillis();
 		String command = (args.length > 0) ? args[0] : "output";
-		DAO dao = new DAOAPIImpl(new APIConnector("https://fantasy-predictor.appspot.com/api"));
+		DAO dao = !runLocal ? new DAOAPIImpl(new APIConnector("https://fantasy-predictor.appspot.com/api"))
+				: new DAOSQLImpl(new DBConnectorThreadPoolImpl("org.gjt.mm.mysql.Driver",
+				"jdbc:mysql://localhost/NBAStats?autoReconnect=true",
+				"dd4_user", "getSchooled85"));
 		Provider<DAO> daoProvider = () -> dao;
 		APIDAO apiDAO = new APIDAO(new APIConnector(null));
 		PlayerStore playerStore = new PlayerStore(daoProvider, apiDAO);
@@ -174,7 +180,7 @@ public class FanDuelIO {
 		if ("output".equals(command)) {
 			fanDuelIO.output(now.minusHours(8));
 		} else if ("updateActuals".equals(command)) {
-			statsProcessor.updateActuals(now.minusDays(1));
+			statsProcessor.updateActuals(DateTime.parse("2018-01-21", Constaints.COMPUTER_DATE));
 		} else if ("insert".equals(command)) {
 			fanDuelIO.insertData(now.minusHours(8));
 		}
