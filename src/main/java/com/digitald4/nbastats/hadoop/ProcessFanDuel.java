@@ -10,13 +10,13 @@ import java.util.Calendar;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.PriorityQueue;
 import java.util.TreeSet;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.DoubleWritable;
+import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.WritableComparable;
 import org.apache.hadoop.io.WritableComparator;
@@ -34,7 +34,7 @@ public class ProcessFanDuel {
 	public static final String PROCESS_PATH = "input/fanduel/process/";
 	public static final String OUTPUT_PATH = "target/output/fanduel/%s/";
 
-	public static class FDMapper extends Mapper<Object, Text, DoubleWritable, Text> {
+	public static class FDMapper extends Mapper<Object, Text, IntWritable, Text> {
 		private static final String PLAYER_OUT = ",%d";
 		private final String[] projectionMethods;
 		private final Map<Integer, LineUpPlayer> playerMap = new HashMap<>();
@@ -86,31 +86,24 @@ public class ProcessFanDuel {
 			long sTime = System.currentTimeMillis();
 			// System.out.println("Processing: " + value);
 			String[] ids = value.toString().split(",");
-			LineUpPlayer pg1 = playerMap.get(Integer.parseInt(ids[0]));
-			LineUpPlayer pg2 = playerMap.get(Integer.parseInt(ids[1]));
+			PlayerPair pgPair = new PlayerPair(playerMap.get(Integer.parseInt(ids[0])), playerMap.get(Integer.parseInt(ids[1])));
 			Map<String, TopLineUps> topLineUpsMap = new HashMap<>();
 			sgPairs.parallelStream().forEach(sgPair -> {
 				Map<String, TopLineUps> subTopLineUpsMap = new HashMap<>();
-				LineUpPlayer sg1 = sgPair.one;
-				LineUpPlayer sg2 = sgPair.two;
 				for (PlayerPair sfPair : sfPairs) {
-					LineUpPlayer sf1 = sfPair.one;
-					LineUpPlayer sf2 = sfPair.two;
 					for (PlayerPair pfPair : pfPairs) {
-						LineUpPlayer pf1 = pfPair.one;
-						LineUpPlayer pf2 = pfPair.two;
 						for (LineUpPlayer c : cs) {
-							int totalSalary = pg1.cost + pg2.cost + sg1.cost + sg2.cost
-									+ sf1.cost + sf2.cost + pf1.cost + pf2.cost + c.cost;
+							int totalSalary = pgPair.cost + sgPair.cost + sfPair.cost + pfPair.cost + c.cost;
 							try {
 								if (totalSalary <= SALARY_CAP) {
 									for (int pm = 0; pm < projectionMethods.length; pm++) {
 										String method = projectionMethods[pm];
 										TopLineUps topLineUps = subTopLineUpsMap.computeIfAbsent(method, m -> new TopLineUps());
-										double projected = pg1.projection[pm] + pg2.projection[pm] + sg1.projection[pm] + sg2.projection[pm]
-												+ sf1.projection[pm] + sf2.projection[pm] + pf1.projection[pm] + pf2.projection[pm] + c.projection[pm];
-										if (topLineUps.size() < LINEUP_LIMIT || projected > topLineUps.last().projected) {
-											topLineUps.add(new LineUp(projected, totalSalary, pg1, pg2, sg1, sg2, sf1, sf2, pf1, pf2, c));
+										int projected = pgPair.projection[pm] + sgPair.projection[pm]
+												+ sfPair.projection[pm] + pfPair.projection[pm] + c.projection[pm];
+										if (topLineUps.size() < LINEUP_LIMIT || projected > topLineUps.peek().projected) {
+											topLineUps.add(new LineUp(projected, totalSalary, pgPair.one, pgPair.two, sgPair.one, sgPair.two,
+													sfPair.one, sfPair.two, pfPair.one, pfPair.two, c));
 										}
 									}
 								}
@@ -123,13 +116,12 @@ public class ProcessFanDuel {
 				synchronized (this) {
 					subTopLineUpsMap.forEach((method, subTopLineUps) -> {
 						TopLineUps topLineUps = topLineUpsMap.computeIfAbsent(method, m -> new TopLineUps());
-						Iterator<LineUp> iterator = subTopLineUps.iterator();
-						if (iterator.hasNext()) {
-							LineUp lineUp = iterator.next();
-							while (lineUp != null && (topLineUps.size() < LINEUP_LIMIT || lineUp.projected > topLineUps.last().projected)) {
-								topLineUps.add(lineUp);
-								lineUp = iterator.hasNext() ? iterator.next() : null;
-							}
+						while (topLineUps.size() >= LINEUP_LIMIT && subTopLineUps.size() > 0 && subTopLineUps.peek().projected < topLineUps.peek().projected) {
+							subTopLineUps.poll();
+						}
+						topLineUps.addAll(subTopLineUps);
+						while (topLineUps.size() > LINEUP_LIMIT) {
+							topLineUps.poll();
 						}
 					});
 				}
@@ -139,7 +131,7 @@ public class ProcessFanDuel {
 					StringBuilder sb = new StringBuilder(",").append(method).append(",").append(lineUp.totalSalary);
 					Arrays.stream(lineUp.players).forEach(p -> sb.append(String.format(PLAYER_OUT, p.playerId)));
 					try {
-						context.write(new DoubleWritable(lineUp.projected), new Text(sb.toString()));
+						context.write(new IntWritable(lineUp.projected), new Text(sb.toString()));
 					} catch (Exception e) {
 						e.printStackTrace();
 						throw new RuntimeException(e);
@@ -150,8 +142,8 @@ public class ProcessFanDuel {
 		}
 	}
 
-	public static class LineUpReducer extends Reducer<DoubleWritable, Text, DoubleWritable, Text> {
-		public void reduce(DoubleWritable projected, Iterable<Text> values, Context context) throws IOException, InterruptedException {
+	public static class LineUpReducer extends Reducer<IntWritable, Text, IntWritable, Text> {
+		public void reduce(IntWritable projected, Iterable<Text> values, Context context) throws IOException, InterruptedException {
 			// TODO(eddiemay) Reduce to 100 best lineups.
 			for (Text value : values) {
 				context.write(projected, value);
@@ -160,7 +152,7 @@ public class ProcessFanDuel {
 	}
 	private static class ReverseSort extends WritableComparator {
 		protected ReverseSort() {
-			super(DoubleWritable.class, true);
+			super(IntWritable.class, true);
 		}
 
 		@Override
@@ -169,16 +161,16 @@ public class ProcessFanDuel {
 		}
 	}
 
-	private static class TopLineUps extends TreeSet<LineUp> {
+	private static class TopLineUps extends PriorityQueue<LineUp> {
 		private TopLineUps() {
-			super(Comparator.comparing(LineUp::getProjected).reversed());
+			super(100, Comparator.comparing(LineUp::getProjected));
 		}
 
 		@Override
 		public boolean add(LineUp lineUp) {
 			boolean ret = super.add(lineUp);
 			if (size() > LINEUP_LIMIT) {
-				remove(last());
+				poll();
 			}
 			return ret;
 		}
@@ -187,7 +179,7 @@ public class ProcessFanDuel {
 	private static class LineUpPlayer {
 		private final int playerId;
 		private final int cost;
-		private final double[] projection;
+		private final int[] projection;
 
 		private LineUpPlayer(String in) {
 			String[] parts = in.split(",");
@@ -197,9 +189,9 @@ public class ProcessFanDuel {
 				throw new RuntimeException("Not enough data: " + in + " only " + parts.length + " parts");
 			}
 			this.cost = Integer.parseInt(parts[1]);
-			this.projection = new double[parts.length - 2];
+			this.projection = new int[parts.length - 2];
 			for (int p = 2; p < parts.length; p++) {
-				projection[p - 2] = Double.parseDouble(parts[p]);
+				projection[p - 2] = (int) Math.round(Double.parseDouble(parts[p]));
 			}
 		}
 	}
@@ -207,19 +199,27 @@ public class ProcessFanDuel {
 	private static class PlayerPair {
 		private final LineUpPlayer one;
 		private final LineUpPlayer two;
+		private final int cost;
+		private final int[] projection;
 
 		private PlayerPair(LineUpPlayer one, LineUpPlayer two) {
 			this.one = one;
 			this.two = two;
+			cost = one.cost + two.cost;
+			projection = new int[one.projection.length];
+			long sTime = System.currentTimeMillis();
+			for (int i = 0; i < projection.length; i++) {
+				projection[i] = one.projection[i] + two.projection[i];
+			}
 		}
 	}
 
 	private static class LineUp {
-		private final double projected;
+		private final int projected;
 		private final int totalSalary;
 		private final LineUpPlayer[] players;
 
-		private LineUp(double projected, int totalSalary, LineUpPlayer... players) {
+		private LineUp(int projected, int totalSalary, LineUpPlayer... players) {
 			this.projected = projected;
 			this.totalSalary = totalSalary;
 			this.players = players;
@@ -238,8 +238,8 @@ public class ProcessFanDuel {
 		job.setMapperClass(FDMapper.class);
 		job.setCombinerClass(LineUpReducer.class);
 		job.setReducerClass(LineUpReducer.class);
-		job.setSortComparatorClass(ReverseSort.class);
-		job.setOutputKeyClass(DoubleWritable.class);
+		//job.setSortComparatorClass(ReverseSort.class);
+		job.setOutputKeyClass(IntWritable.class);
 		job.setOutputValueClass(Text.class);
 		FileInputFormat.addInputPath(job, new Path(PROCESS_PATH));
 		FileOutputFormat.setOutputPath(job, new Path(String.format(OUTPUT_PATH, COMPUTER_DATE.format(date))));
