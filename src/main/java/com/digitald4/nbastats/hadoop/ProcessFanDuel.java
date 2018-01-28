@@ -237,7 +237,7 @@ public class ProcessFanDuel {
 		job.setMapperClass(FDMapper.class);
 		job.setCombinerClass(LineUpReducer.class);
 		job.setReducerClass(LineUpReducer.class);
-		//job.setSortComparatorClass(ReverseSort.class);
+		job.setSortComparatorClass(ReverseSort.class);
 		job.setOutputKeyClass(IntWritable.class);
 		job.setOutputValueClass(Text.class);
 		FileInputFormat.addInputPath(job, new Path(PROCESS_PATH));
