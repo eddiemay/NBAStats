@@ -13,7 +13,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
-import java.util.TreeSet;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IntWritable;
@@ -138,7 +137,7 @@ public class ProcessFanDuel {
 					}
 				}
 			});
-			System.out.println("Finished: " + value + " " + ((System.currentTimeMillis() - sTime) / 1000) + " secs");
+			System.out.println("Finished: " + value + " " + ((System.currentTimeMillis() - sTime) / 1000.0) + " secs");
 		}
 	}
 
@@ -225,7 +224,7 @@ public class ProcessFanDuel {
 			this.players = players;
 		}
 
-		private double getProjected() {
+		private int getProjected() {
 			return projected;
 		}
 	}
