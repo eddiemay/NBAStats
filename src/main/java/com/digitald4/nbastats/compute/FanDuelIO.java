@@ -38,6 +38,8 @@ import org.joda.time.format.DateTimeFormat;
 
 public class FanDuelIO {
 	private static final boolean runLocal = false;
+	private static final int PAIR_LIMIT = 20;
+	private static final int SINGLE_LIMIT = 20;
 	private final StatsProcessor statsProcessor;
 	private final LineUpStore lineUpStore;
 
@@ -48,11 +50,11 @@ public class FanDuelIO {
 
 	public void output(DateTime date) throws IOException {
 		String league = FantasyLeague.FAN_DUEL.name;
-		List<PlayerDay> pgs = new DistinictSalaryList(40, league);
-		List<PlayerDay> sgs = new DistinictSalaryList(40, league);
-		List<PlayerDay> sfs = new DistinictSalaryList(40, league);
-		List<PlayerDay> pfs = new DistinictSalaryList(40, league);
-		List<PlayerDay> cs = new DistinictSalaryList(20, league);
+		List<PlayerDay> pgs = new DistinictSalaryList(PAIR_LIMIT, league);
+		List<PlayerDay> sgs = new DistinictSalaryList(PAIR_LIMIT, league);
+		List<PlayerDay> sfs = new DistinictSalaryList(PAIR_LIMIT, league);
+		List<PlayerDay> pfs = new DistinictSalaryList(PAIR_LIMIT, league);
+		List<PlayerDay> cs = new DistinictSalaryList(SINGLE_LIMIT, league);
 
 		List<PlayerDay> selected = statsProcessor.processStats(date)
 				.stream()
@@ -86,12 +88,12 @@ public class FanDuelIO {
 
 		String processPath = ProcessFanDuel.PROCESS_PATH + "pg_pairs.csv";
 		String dataPath = ProcessFanDuel.DATA_PATH;
-		write(processPath, pgPs.subList(0, Math.min(pgPs.size(), 465)));
+		write(processPath, pgPs);
 		write(selected);
 		write(dataPath + "sg_pairs.csv", sgPs);
 		write(dataPath + "sf_pairs.csv", sfPs);
 		write(dataPath + "pf_pairs.csv", pfPs);
-		FileWriter fw = new FileWriter("input/fanduel/data/centers.csv");
+		FileWriter fw = new FileWriter(dataPath + "centers.csv");
 		for (PlayerDay center : cs) {
 			fw.write(center.getPlayerId() + "\n");
 		}

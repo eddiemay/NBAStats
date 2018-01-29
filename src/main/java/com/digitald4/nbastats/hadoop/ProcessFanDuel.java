@@ -36,38 +36,39 @@ public class ProcessFanDuel {
 	public static class FDMapper extends Mapper<Object, Text, IntWritable, Text> {
 		private static final String PLAYER_OUT = ",%d";
 		private final String[] projectionMethods;
-		private final Map<Integer, LineUpPlayer> playerMap = new HashMap<>();
-		private final List<PlayerPair> sgPairs = new ArrayList<>(100);
-		private final List<PlayerPair> sfPairs = new ArrayList<>(100);
-		private final List<PlayerPair> pfPairs = new ArrayList<>(100);
-		private final List<LineUpPlayer> cs = new ArrayList<>(100);
+		private final Map<Integer, Player> playerMap = new HashMap<>();
+		private final List<PlayerGroup> sgPairs = new ArrayList<>(100);
+		private final PriorityQueue<PlayerGroup> frontCourts;
 
 		public FDMapper() {
 			try {
+				List<PlayerGroup> sfPairs = new ArrayList<>(100);
+				List<PlayerGroup> pfPairs = new ArrayList<>(100);
+				List<Player> cs = new ArrayList<>(100);
 				BufferedReader reader = new BufferedReader(new FileReader(DATA_PATH + "players.csv"));
 				String line = reader.readLine();
 				projectionMethods = line.split(",");
 				while ((line = reader.readLine()) != null) {
-					LineUpPlayer lineUpPlayer = new LineUpPlayer(line);
-					playerMap.put(lineUpPlayer.playerId, lineUpPlayer);
+					Player player = new Player(line);
+					playerMap.put(player.playerId, player);
 				}
 				reader.close();
 				reader = new BufferedReader(new FileReader(DATA_PATH + "sg_pairs.csv"));
 				while ((line = reader.readLine()) != null) {
 					String[] ids = line.split(",");
-					sgPairs.add(new PlayerPair(playerMap.get(Integer.parseInt(ids[0])), playerMap.get(Integer.parseInt(ids[1]))));
+					sgPairs.add(new PlayerGroup(playerMap.get(Integer.parseInt(ids[0])), playerMap.get(Integer.parseInt(ids[1]))));
 				}
 				reader.close();
 				reader = new BufferedReader(new FileReader(DATA_PATH + "sf_pairs.csv"));
 				while ((line = reader.readLine()) != null) {
 					String[] ids = line.split(",");
-					sfPairs.add(new PlayerPair(playerMap.get(Integer.parseInt(ids[0])), playerMap.get(Integer.parseInt(ids[1]))));
+					sfPairs.add(new PlayerGroup(playerMap.get(Integer.parseInt(ids[0])), playerMap.get(Integer.parseInt(ids[1]))));
 				}
 				reader.close();
 				reader = new BufferedReader(new FileReader(DATA_PATH + "pf_pairs.csv"));
 				while ((line = reader.readLine()) != null) {
 					String[] ids = line.split(",");
-					pfPairs.add(new PlayerPair(playerMap.get(Integer.parseInt(ids[0])), playerMap.get(Integer.parseInt(ids[1]))));
+					pfPairs.add(new PlayerGroup(playerMap.get(Integer.parseInt(ids[0])), playerMap.get(Integer.parseInt(ids[1]))));
 				}
 				reader.close();
 				reader = new BufferedReader(new FileReader(DATA_PATH + "centers.csv"));
@@ -75,6 +76,16 @@ public class ProcessFanDuel {
 					cs.add(playerMap.get(Integer.parseInt(line)));
 				}
 				reader.close();
+				frontCourts = new PriorityQueue<>(sfPairs.size() * pfPairs.size() * cs.size(),
+						Comparator.comparing(PlayerGroup::getCost));
+				for (PlayerGroup sfPair : sfPairs) {
+					for (PlayerGroup pfPair : pfPairs) {
+						for (Player c : cs) {
+							frontCourts.add(
+									new PlayerGroup(sfPair.players[0], sfPair.players[1], pfPair.players[0], pfPair.players[1], c));
+						}
+					}
+				}
 			} catch (Exception ioe) {
 				ioe.printStackTrace();
 				throw new RuntimeException(ioe);
@@ -85,30 +96,24 @@ public class ProcessFanDuel {
 			long sTime = System.currentTimeMillis();
 			// System.out.println("Processing: " + value);
 			String[] ids = value.toString().split(",");
-			PlayerPair pgPair = new PlayerPair(playerMap.get(Integer.parseInt(ids[0])), playerMap.get(Integer.parseInt(ids[1])));
+			Player pg1 = playerMap.get(Integer.parseInt(ids[0]));
+			Player pg2 = playerMap.get(Integer.parseInt(ids[1]));
 			Map<String, TopLineUps> topLineUpsMap = new HashMap<>();
 			sgPairs.parallelStream().forEach(sgPair -> {
 				Map<String, TopLineUps> subTopLineUpsMap = new HashMap<>();
-				for (PlayerPair sfPair : sfPairs) {
-					for (PlayerPair pfPair : pfPairs) {
-						for (LineUpPlayer c : cs) {
-							int totalSalary = pgPair.cost + sgPair.cost + sfPair.cost + pfPair.cost + c.cost;
-							try {
-								if (totalSalary <= SALARY_CAP) {
-									for (int pm = 0; pm < projectionMethods.length; pm++) {
-										String method = projectionMethods[pm];
-										TopLineUps topLineUps = subTopLineUpsMap.computeIfAbsent(method, m -> new TopLineUps());
-										int projected = pgPair.projection[pm] + sgPair.projection[pm]
-												+ sfPair.projection[pm] + pfPair.projection[pm] + c.projection[pm];
-										if (topLineUps.size() < LINEUP_LIMIT || projected > topLineUps.peek().projected) {
-											topLineUps.add(new LineUp(projected, totalSalary, pgPair.one, pgPair.two, sgPair.one, sgPair.two,
-													sfPair.one, sfPair.two, pfPair.one, pfPair.two, c));
-										}
-									}
-								}
-							} catch (Exception e) {
-								e.printStackTrace();
-							}
+				PlayerGroup backCourt = new PlayerGroup(pg1, pg2, sgPair.players[0], sgPair.players[1]);
+				for (PlayerGroup frontCourt : frontCourts) {
+					int totalSalary = backCourt.cost + frontCourt.cost;
+					if (totalSalary > SALARY_CAP) {
+						break;
+					}
+					for (int pm = 0; pm < projectionMethods.length; pm++) {
+						String method = projectionMethods[pm];
+						TopLineUps topLineUps = subTopLineUpsMap.computeIfAbsent(method, m -> new TopLineUps());
+						int projected = backCourt.projection[pm] + frontCourt.projection[pm];
+						if (topLineUps.size() < LINEUP_LIMIT || projected > topLineUps.peek().projected) {
+							topLineUps.add(new LineUp(projected, totalSalary, pg1, pg2, sgPair.players[0], sgPair.players[1],
+									frontCourt.players[0], frontCourt.players[1], frontCourt.players[2], frontCourt.players[3], frontCourt.players[4]));
 						}
 					}
 				}
@@ -175,12 +180,12 @@ public class ProcessFanDuel {
 		}
 	}
 
-	private static class LineUpPlayer {
+	private static class Player {
 		private final int playerId;
 		private final int cost;
 		private final int[] projection;
 
-		private LineUpPlayer(String in) {
+		private Player(String in) {
 			String[] parts = in.split(",");
 			this.playerId = Integer.parseInt(parts[0]);
 			if (parts.length < 8) {
@@ -195,30 +200,35 @@ public class ProcessFanDuel {
 		}
 	}
 
-	private static class PlayerPair {
-		private final LineUpPlayer one;
-		private final LineUpPlayer two;
+	private static class PlayerGroup {
+		private final Player[] players;
 		private final int cost;
 		private final int[] projection;
 
-		private PlayerPair(LineUpPlayer one, LineUpPlayer two) {
-			this.one = one;
-			this.two = two;
-			cost = one.cost + two.cost;
-			projection = new int[one.projection.length];
-			long sTime = System.currentTimeMillis();
-			for (int i = 0; i < projection.length; i++) {
-				projection[i] = one.projection[i] + two.projection[i];
+		private PlayerGroup(Player... players) {
+			this.players = players;
+			int cost = 0;
+			projection = new int[players[0].projection.length];
+			for (Player player : players) {
+				cost += player.cost;
+				for (int i = 0; i < projection.length; i++) {
+					projection[i] += player.projection[i];
+				}
 			}
+			this.cost = cost;
+		}
+
+		public int getCost() {
+			return cost;
 		}
 	}
 
 	private static class LineUp {
 		private final int projected;
 		private final int totalSalary;
-		private final LineUpPlayer[] players;
+		private final Player[] players;
 
-		private LineUp(int projected, int totalSalary, LineUpPlayer... players) {
+		private LineUp(int projected, int totalSalary, Player... players) {
 			this.projected = projected;
 			this.totalSalary = totalSalary;
 			this.players = players;
