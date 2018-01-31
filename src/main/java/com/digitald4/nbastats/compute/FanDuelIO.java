@@ -38,8 +38,8 @@ import org.joda.time.format.DateTimeFormat;
 
 public class FanDuelIO {
 	private static final boolean runLocal = false;
-	private static final int PAIR_LIMIT = 20;
-	private static final int SINGLE_LIMIT = 20;
+	private static final int PAIR_LIMIT = 4;
+	private static final int SINGLE_LIMIT = 2;
 	private final StatsProcessor statsProcessor;
 	private final LineUpStore lineUpStore;
 
@@ -83,21 +83,25 @@ public class FanDuelIO {
 		System.out.println("SG Pairs: " + sgPs.size());
 		System.out.println("SF Pairs: " + sfPs.size());
 		System.out.println("PF Pairs: " + pfPs.size());
+		System.out.println("Outer Players: " + (pgPs.size() * cs.size()));
+		System.out.println("Forwards: " + (sfPs.size() * pfPs.size()));
 		System.out.println("Iterations: " + NumberFormat.getInstance().format(
 				((long) pgPs.size()) * sgPs.size() * sfPs.size() * pfPs.size() * cs.size()));
 
-		String processPath = ProcessFanDuel.PROCESS_PATH + "pg_pairs.csv";
+		String processPath = ProcessFanDuel.PROCESS_PATH + "outer.csv";
 		String dataPath = ProcessFanDuel.DATA_PATH;
 		write(processPath, pgPs);
 		write(selected);
+		FileWriter fw = new FileWriter(processPath);
+		for (Pair<PlayerDay, PlayerDay> pgPair : pgPs) {
+			for (PlayerDay c : cs) {
+				fw.write(pgPair.getLeft().getPlayerId() + "," + pgPair.getRight().getPlayerId() + "," + c.getPlayerId() + "\n");
+			}
+		}
+		fw.close();
 		write(dataPath + "sg_pairs.csv", sgPs);
 		write(dataPath + "sf_pairs.csv", sfPs);
 		write(dataPath + "pf_pairs.csv", pfPs);
-		FileWriter fw = new FileWriter(dataPath + "centers.csv");
-		for (PlayerDay center : cs) {
-			fw.write(center.getPlayerId() + "\n");
-		}
-		fw.close();
 	}
 
 	private static void write(String fileName, List<Pair<PlayerDay, PlayerDay>> pairs) throws IOException {
@@ -182,7 +186,7 @@ public class FanDuelIO {
 		if ("output".equals(command)) {
 			fanDuelIO.output(now.minusHours(8));
 		} else if ("updateActuals".equals(command)) {
-			statsProcessor.updateActuals(DateTime.parse("2018-01-21", Constaints.COMPUTER_DATE));
+			statsProcessor.updateActuals(now.minusDays(1));
 		} else if ("insert".equals(command)) {
 			fanDuelIO.insertData(now.minusHours(8));
 		}

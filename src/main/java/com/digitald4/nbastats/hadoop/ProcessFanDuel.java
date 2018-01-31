@@ -1,8 +1,7 @@
 package com.digitald4.nbastats.hadoop;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
 import java.io.IOException;
+import java.net.URI;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -13,7 +12,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
+import java.util.stream.Collectors;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FSDataInputStream;
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.Text;
@@ -34,18 +36,19 @@ public class ProcessFanDuel {
 	public static final String OUTPUT_PATH = "target/output/fanduel/%s/";
 
 	public static class FDMapper extends Mapper<Object, Text, IntWritable, Text> {
-		private static final String PLAYER_OUT = ",%d";
 		private final String[] projectionMethods;
 		private final Map<Integer, Player> playerMap = new HashMap<>();
 		private final List<PlayerGroup> sgPairs = new ArrayList<>(100);
-		private final PriorityQueue<PlayerGroup> frontCourts;
+		private final PriorityQueue<PlayerGroup> forwards;
+
 
 		public FDMapper() {
 			try {
 				List<PlayerGroup> sfPairs = new ArrayList<>(100);
 				List<PlayerGroup> pfPairs = new ArrayList<>(100);
-				List<Player> cs = new ArrayList<>(100);
-				BufferedReader reader = new BufferedReader(new FileReader(DATA_PATH + "players.csv"));
+				Configuration conf = new Configuration ();
+				FileSystem fs = FileSystem.get(URI.create(DATA_PATH), conf);
+				FSDataInputStream reader = fs.open(new Path(URI.create(DATA_PATH + "players.csv")));
 				String line = reader.readLine();
 				projectionMethods = line.split(",");
 				while ((line = reader.readLine()) != null) {
@@ -53,37 +56,30 @@ public class ProcessFanDuel {
 					playerMap.put(player.playerId, player);
 				}
 				reader.close();
-				reader = new BufferedReader(new FileReader(DATA_PATH + "sg_pairs.csv"));
+				reader = fs.open(new Path(URI.create(DATA_PATH + "sg_pairs.csv")));
 				while ((line = reader.readLine()) != null) {
 					String[] ids = line.split(",");
 					sgPairs.add(new PlayerGroup(playerMap.get(Integer.parseInt(ids[0])), playerMap.get(Integer.parseInt(ids[1]))));
 				}
 				reader.close();
-				reader = new BufferedReader(new FileReader(DATA_PATH + "sf_pairs.csv"));
+				reader = fs.open(new Path(URI.create(DATA_PATH + "sf_pairs.csv")));
 				while ((line = reader.readLine()) != null) {
 					String[] ids = line.split(",");
 					sfPairs.add(new PlayerGroup(playerMap.get(Integer.parseInt(ids[0])), playerMap.get(Integer.parseInt(ids[1]))));
 				}
 				reader.close();
-				reader = new BufferedReader(new FileReader(DATA_PATH + "pf_pairs.csv"));
+				reader = fs.open(new Path(URI.create(DATA_PATH + "pf_pairs.csv")));
 				while ((line = reader.readLine()) != null) {
 					String[] ids = line.split(",");
 					pfPairs.add(new PlayerGroup(playerMap.get(Integer.parseInt(ids[0])), playerMap.get(Integer.parseInt(ids[1]))));
 				}
 				reader.close();
-				reader = new BufferedReader(new FileReader(DATA_PATH + "centers.csv"));
-				while ((line = reader.readLine()) != null) {
-					cs.add(playerMap.get(Integer.parseInt(line)));
-				}
-				reader.close();
-				frontCourts = new PriorityQueue<>(sfPairs.size() * pfPairs.size() * cs.size(),
-						Comparator.comparing(PlayerGroup::getCost));
+				int forwardCount = sfPairs.size() * pfPairs.size();
+				System.out.println("Forwards to process: " + forwardCount);
+				forwards = new PriorityQueue<>(forwardCount, Comparator.comparing(PlayerGroup::getCost));
 				for (PlayerGroup sfPair : sfPairs) {
 					for (PlayerGroup pfPair : pfPairs) {
-						for (Player c : cs) {
-							frontCourts.add(
-									new PlayerGroup(sfPair.players[0], sfPair.players[1], pfPair.players[0], pfPair.players[1], c));
-						}
+						forwards.add(new PlayerGroup(sfPair.players[0], sfPair.players[1], pfPair.players[0], pfPair.players[1]));
 					}
 				}
 			} catch (Exception ioe) {
@@ -98,22 +94,23 @@ public class ProcessFanDuel {
 			String[] ids = value.toString().split(",");
 			Player pg1 = playerMap.get(Integer.parseInt(ids[0]));
 			Player pg2 = playerMap.get(Integer.parseInt(ids[1]));
+			Player c = playerMap.get(Integer.parseInt(ids[2]));
+			PlayerGroup outerPlayers = new PlayerGroup(pg1, pg2, c);
 			Map<String, TopLineUps> topLineUpsMap = new HashMap<>();
 			sgPairs.parallelStream().forEach(sgPair -> {
 				Map<String, TopLineUps> subTopLineUpsMap = new HashMap<>();
-				PlayerGroup backCourt = new PlayerGroup(pg1, pg2, sgPair.players[0], sgPair.players[1]);
-				for (PlayerGroup frontCourt : frontCourts) {
-					int totalSalary = backCourt.cost + frontCourt.cost;
+				for (PlayerGroup forwardSet : forwards) {
+					int totalSalary = outerPlayers.cost + forwardSet.cost;
 					if (totalSalary > SALARY_CAP) {
 						break;
 					}
 					for (int pm = 0; pm < projectionMethods.length; pm++) {
 						String method = projectionMethods[pm];
 						TopLineUps topLineUps = subTopLineUpsMap.computeIfAbsent(method, m -> new TopLineUps());
-						int projected = backCourt.projection[pm] + frontCourt.projection[pm];
+						int projected = outerPlayers.projection[pm] + forwardSet.projection[pm];
 						if (topLineUps.size() < LINEUP_LIMIT || projected > topLineUps.peek().projected) {
 							topLineUps.add(new LineUp(projected, totalSalary, pg1, pg2, sgPair.players[0], sgPair.players[1],
-									frontCourt.players[0], frontCourt.players[1], frontCourt.players[2], frontCourt.players[3], frontCourt.players[4]));
+									forwardSet.players[0], forwardSet.players[1], forwardSet.players[2], forwardSet.players[3], c));
 						}
 					}
 				}
@@ -132,8 +129,10 @@ public class ProcessFanDuel {
 			});
 			topLineUpsMap.forEach((method, topLineUps) -> {
 				for (LineUp lineUp : topLineUps) {
-					StringBuilder sb = new StringBuilder(",").append(method).append(",").append(lineUp.totalSalary);
-					Arrays.stream(lineUp.players).forEach(p -> sb.append(String.format(PLAYER_OUT, p.playerId)));
+					StringBuilder sb = new StringBuilder(",").append(method).append(",").append(lineUp.totalSalary)
+							.append(Arrays.stream(lineUp.players)
+									.map(p -> String.valueOf(p.playerId))
+									.collect(Collectors.joining(",")));
 					try {
 						context.write(new IntWritable(lineUp.projected), new Text(sb.toString()));
 					} catch (Exception e) {
