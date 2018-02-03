@@ -22,6 +22,7 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.WritableComparable;
 import org.apache.hadoop.io.WritableComparator;
 import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.mapreduce.JobPriority;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
@@ -213,6 +214,7 @@ public class ProcessFanDuel {
 	public static boolean run(Date date) throws Exception {
 		long startTime = System.currentTimeMillis();
 		Configuration conf = new Configuration();
+		conf.set("mapred.job.priority", JobPriority.VERY_HIGH.toString());
 		Job job = Job.getInstance(conf, "Process Fan Duel");
 		job.setJarByClass(FDMapper.class);
 		job.setMapperClass(FDMapper.class);
