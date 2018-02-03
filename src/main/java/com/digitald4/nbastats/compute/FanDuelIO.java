@@ -38,8 +38,8 @@ import org.joda.time.format.DateTimeFormat;
 
 public class FanDuelIO {
 	private static final boolean runLocal = false;
-	private static final int PAIR_LIMIT = 4;
-	private static final int SINGLE_LIMIT = 2;
+	private static final int PAIR_LIMIT = 40;
+	private static final int SINGLE_LIMIT = 20;
 	private final StatsProcessor statsProcessor;
 	private final LineUpStore lineUpStore;
 
@@ -99,9 +99,15 @@ public class FanDuelIO {
 			}
 		}
 		fw.close();
-		write(dataPath + "sg_pairs.csv", sgPs);
-		write(dataPath + "sf_pairs.csv", sfPs);
-		write(dataPath + "pf_pairs.csv", pfPs);
+		write(dataPath + "first_group.csv", sgPs);
+		fw = new FileWriter(dataPath + "second_group.csv");
+		for (Pair<PlayerDay, PlayerDay> sfP : sfPs) {
+			for (Pair<PlayerDay, PlayerDay> pfP : pfPs) {
+				fw.write(sfP.getLeft().getPlayerId() + "," + sfP.getRight().getPlayerId() + ","
+						+ pfP.getLeft().getPlayerId() + "," + pfP.getRight().getPlayerId() + "\n");
+			}
+		}
+		fw.close();
 	}
 
 	private static void write(String fileName, List<Pair<PlayerDay, PlayerDay>> pairs) throws IOException {
@@ -184,7 +190,7 @@ public class FanDuelIO {
 		FanDuelIO fanDuelIO = new FanDuelIO(statsProcessor, lineUpStore);
 		DateTime now = DateTime.now();
 		if ("output".equals(command)) {
-			fanDuelIO.output(now.minusHours(8));
+			fanDuelIO.output(DateTime.parse("2018-01-25T08:24:14"));
 		} else if ("updateActuals".equals(command)) {
 			statsProcessor.updateActuals(now.minusDays(1));
 		} else if ("insert".equals(command)) {

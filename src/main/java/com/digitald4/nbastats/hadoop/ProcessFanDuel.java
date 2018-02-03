@@ -38,14 +38,11 @@ public class ProcessFanDuel {
 	public static class FDMapper extends Mapper<Object, Text, IntWritable, Text> {
 		private final String[] projectionMethods;
 		private final Map<Integer, Player> playerMap = new HashMap<>();
-		private final List<PlayerGroup> sgPairs = new ArrayList<>(100);
-		private final PriorityQueue<PlayerGroup> forwards;
-
+		private final List<PlayerGroup> firstGroup = new ArrayList<>(100);
+		private final PriorityQueue<PlayerGroup> secondGroup = new PriorityQueue<>(100000, Comparator.comparing(PlayerGroup::getCost));
 
 		public FDMapper() {
 			try {
-				List<PlayerGroup> sfPairs = new ArrayList<>(100);
-				List<PlayerGroup> pfPairs = new ArrayList<>(100);
 				Configuration conf = new Configuration ();
 				FileSystem fs = FileSystem.get(URI.create(DATA_PATH), conf);
 				FSDataInputStream reader = fs.open(new Path(URI.create(DATA_PATH + "players.csv")));
@@ -56,32 +53,20 @@ public class ProcessFanDuel {
 					playerMap.put(player.playerId, player);
 				}
 				reader.close();
-				reader = fs.open(new Path(URI.create(DATA_PATH + "sg_pairs.csv")));
+				reader = fs.open(new Path(URI.create(DATA_PATH + "first_group.csv")));
 				while ((line = reader.readLine()) != null) {
-					String[] ids = line.split(",");
-					sgPairs.add(new PlayerGroup(playerMap.get(Integer.parseInt(ids[0])), playerMap.get(Integer.parseInt(ids[1]))));
+					firstGroup.add(new PlayerGroup(Arrays.stream(line.split(","))
+							.map(id -> playerMap.get(Integer.parseInt(id)))
+							.toArray(Player[]::new)));
 				}
 				reader.close();
-				reader = fs.open(new Path(URI.create(DATA_PATH + "sf_pairs.csv")));
+				reader = fs.open(new Path(URI.create(DATA_PATH + "second_group.csv")));
 				while ((line = reader.readLine()) != null) {
-					String[] ids = line.split(",");
-					sfPairs.add(new PlayerGroup(playerMap.get(Integer.parseInt(ids[0])), playerMap.get(Integer.parseInt(ids[1]))));
+					secondGroup.add(new PlayerGroup(Arrays.stream(line.split(","))
+							.map(id -> playerMap.get(Integer.parseInt(id)))
+							.toArray(Player[]::new)));
 				}
 				reader.close();
-				reader = fs.open(new Path(URI.create(DATA_PATH + "pf_pairs.csv")));
-				while ((line = reader.readLine()) != null) {
-					String[] ids = line.split(",");
-					pfPairs.add(new PlayerGroup(playerMap.get(Integer.parseInt(ids[0])), playerMap.get(Integer.parseInt(ids[1]))));
-				}
-				reader.close();
-				int forwardCount = sfPairs.size() * pfPairs.size();
-				System.out.println("Forwards to process: " + forwardCount);
-				forwards = new PriorityQueue<>(forwardCount, Comparator.comparing(PlayerGroup::getCost));
-				for (PlayerGroup sfPair : sfPairs) {
-					for (PlayerGroup pfPair : pfPairs) {
-						forwards.add(new PlayerGroup(sfPair.players[0], sfPair.players[1], pfPair.players[0], pfPair.players[1]));
-					}
-				}
 			} catch (Exception ioe) {
 				ioe.printStackTrace();
 				throw new RuntimeException(ioe);
@@ -97,34 +82,21 @@ public class ProcessFanDuel {
 			Player c = playerMap.get(Integer.parseInt(ids[2]));
 			PlayerGroup outerPlayers = new PlayerGroup(pg1, pg2, c);
 			Map<String, TopLineUps> topLineUpsMap = new HashMap<>();
-			sgPairs.parallelStream().forEach(sgPair -> {
-				Map<String, TopLineUps> subTopLineUpsMap = new HashMap<>();
-				for (PlayerGroup forwardSet : forwards) {
+			firstGroup.forEach(sgPair -> {
+				for (PlayerGroup forwardSet : secondGroup) {
 					int totalSalary = outerPlayers.cost + forwardSet.cost;
 					if (totalSalary > SALARY_CAP) {
 						break;
 					}
 					for (int pm = 0; pm < projectionMethods.length; pm++) {
 						String method = projectionMethods[pm];
-						TopLineUps topLineUps = subTopLineUpsMap.computeIfAbsent(method, m -> new TopLineUps());
+						TopLineUps topLineUps = topLineUpsMap.computeIfAbsent(method, m -> new TopLineUps());
 						int projected = outerPlayers.projection[pm] + forwardSet.projection[pm];
 						if (topLineUps.size() < LINEUP_LIMIT || projected > topLineUps.peek().projected) {
 							topLineUps.add(new LineUp(projected, totalSalary, pg1, pg2, sgPair.players[0], sgPair.players[1],
 									forwardSet.players[0], forwardSet.players[1], forwardSet.players[2], forwardSet.players[3], c));
 						}
 					}
-				}
-				synchronized (this) {
-					subTopLineUpsMap.forEach((method, subTopLineUps) -> {
-						TopLineUps topLineUps = topLineUpsMap.computeIfAbsent(method, m -> new TopLineUps());
-						while (topLineUps.size() >= LINEUP_LIMIT && subTopLineUps.size() > 0 && subTopLineUps.peek().projected < topLineUps.peek().projected) {
-							subTopLineUps.poll();
-						}
-						topLineUps.addAll(subTopLineUps);
-						while (topLineUps.size() > LINEUP_LIMIT) {
-							topLineUps.poll();
-						}
-					});
 				}
 			});
 			topLineUpsMap.forEach((method, topLineUps) -> {
@@ -141,7 +113,7 @@ public class ProcessFanDuel {
 					}
 				}
 			});
-			System.out.println("Finished: " + value + " " + ((System.currentTimeMillis() - sTime) / 1000.0) + " secs");
+			// System.out.println("Finished: " + value + " " + ((System.currentTimeMillis() - sTime) / 1000.0) + " secs");
 		}
 	}
 
