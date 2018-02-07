@@ -1,5 +1,9 @@
-package com.digitald4.nbastats.hadoop;
+package com.digitald4.nbastats.distributed.hadoop;
 
+import com.digitald4.nbastats.distributed.Model.LineUp;
+import com.digitald4.nbastats.distributed.Model.Player;
+import com.digitald4.nbastats.distributed.Model.PlayerGroup;
+import com.digitald4.nbastats.distributed.Model.TopLineUps;
 import java.io.IOException;
 import java.net.URI;
 import java.text.SimpleDateFormat;
@@ -85,17 +89,16 @@ public class ProcessFanDuel {
 			Map<String, TopLineUps> topLineUpsMap = new HashMap<>();
 			firstGroup.forEach(sgPair -> {
 				for (PlayerGroup forwardSet : secondGroup) {
-					int totalSalary = outerPlayers.cost + forwardSet.cost;
+					int totalSalary = outerPlayers.cost + sgPair.cost + forwardSet.cost;
 					if (totalSalary > SALARY_CAP) {
 						break;
 					}
 					for (int pm = 0; pm < projectionMethods.length; pm++) {
 						String method = projectionMethods[pm];
-						TopLineUps topLineUps = topLineUpsMap.computeIfAbsent(method, m -> new TopLineUps());
-						int projected = outerPlayers.projection[pm] + forwardSet.projection[pm];
+						TopLineUps topLineUps = topLineUpsMap.computeIfAbsent(method, m -> new TopLineUps(LINEUP_LIMIT));
+						int projected = outerPlayers.projection[pm] + sgPair.projection[pm] + forwardSet.projection[pm];
 						if (topLineUps.size() < LINEUP_LIMIT || projected > topLineUps.peek().projected) {
-							topLineUps.add(new LineUp(projected, totalSalary, pg1, pg2, sgPair.players[0], sgPair.players[1],
-									forwardSet.players[0], forwardSet.players[1], forwardSet.players[2], forwardSet.players[3], c));
+							topLineUps.add(new LineUp(projected, totalSalary, outerPlayers, sgPair, forwardSet));
 						}
 					}
 				}
@@ -103,8 +106,8 @@ public class ProcessFanDuel {
 			topLineUpsMap.forEach((method, topLineUps) -> {
 				for (LineUp lineUp : topLineUps) {
 					StringBuilder sb = new StringBuilder(",").append(method).append(",").append(lineUp.totalSalary)
-							.append(Arrays.stream(lineUp.players)
-									.map(p -> String.valueOf(p.playerId))
+							.append(Arrays.stream(lineUp.playerIds)
+									.mapToObj(String::valueOf)
 									.collect(Collectors.joining(",")));
 					try {
 						context.write(new IntWritable(lineUp.projected), new Text(sb.toString()));
@@ -134,80 +137,6 @@ public class ProcessFanDuel {
 		@Override
 		public int compare(WritableComparable o1, WritableComparable o2) {
 			return o2.compareTo(o1); // sort descending
-		}
-	}
-
-	private static class TopLineUps extends PriorityQueue<LineUp> {
-		private TopLineUps() {
-			super(100, Comparator.comparing(LineUp::getProjected));
-		}
-
-		@Override
-		public boolean add(LineUp lineUp) {
-			boolean ret = super.add(lineUp);
-			if (size() > LINEUP_LIMIT) {
-				poll();
-			}
-			return ret;
-		}
-	}
-
-	private static class Player {
-		private final int playerId;
-		private final int cost;
-		private final int[] projection;
-
-		private Player(String in) {
-			String[] parts = in.split(",");
-			this.playerId = Integer.parseInt(parts[0]);
-			if (parts.length < 8) {
-				System.out.println("Not enough data: " + in + " only " + parts.length + " parts");
-				throw new RuntimeException("Not enough data: " + in + " only " + parts.length + " parts");
-			}
-			this.cost = Integer.parseInt(parts[1]);
-			this.projection = new int[parts.length - 2];
-			for (int p = 2; p < parts.length; p++) {
-				projection[p - 2] = (int) Math.round(Double.parseDouble(parts[p]));
-			}
-		}
-	}
-
-	private static class PlayerGroup {
-		private final Player[] players;
-		private final int cost;
-		private final int[] projection;
-
-		private PlayerGroup(Player... players) {
-			this.players = players;
-			int cost = 0;
-			projection = new int[players[0].projection.length];
-			for (Player player : players) {
-				cost += player.cost;
-				for (int i = 0; i < projection.length; i++) {
-					projection[i] += player.projection[i];
-				}
-			}
-			this.cost = cost;
-		}
-
-		public int getCost() {
-			return cost;
-		}
-	}
-
-	private static class LineUp {
-		private final int projected;
-		private final int totalSalary;
-		private final Player[] players;
-
-		private LineUp(int projected, int totalSalary, Player... players) {
-			this.projected = projected;
-			this.totalSalary = totalSalary;
-			this.players = players;
-		}
-
-		private int getProjected() {
-			return projected;
 		}
 	}
 

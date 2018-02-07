@@ -4,7 +4,7 @@
   <version>1.0</version>
 
   <groupId>com.digitald4</groupId>
-  <artifactId>NBAStats-hadoop</artifactId>
+  <artifactId>NBAStats-distributed</artifactId>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -15,15 +15,15 @@
   <dependencies>
     <!-- Compile/runtime dependencies -->
     <dependency>
-      <groupId>org.apache.hadoop</groupId>
-      <artifactId>hadoop-client</artifactId>
-      <version>2.9.0</version>
+      <groupId>org.apache.spark</groupId>
+      <artifactId>spark-sql_2.11</artifactId>
+      <version>2.2.1</version>
       <scope>provided</scope>
     </dependency>
   </dependencies>
 
   <build>
     <outputDirectory>target/${project.artifactId}/WEB-INF/classes</outputDirectory>
-    <sourceDirectory>src/main/java/com/digitald4/nbastats/hadoop</sourceDirectory>
+    <sourceDirectory>src/main/java/com/digitald4/nbastats/distributed</sourceDirectory>
   </build>
 </project>

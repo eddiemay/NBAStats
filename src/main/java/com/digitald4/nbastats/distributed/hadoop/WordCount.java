@@ -1,4 +1,4 @@
-package com.digitald4.nbastats.hadoop;
+package com.digitald4.nbastats.distributed.hadoop;
 
 import java.io.IOException;
 import java.util.StringTokenizer;
