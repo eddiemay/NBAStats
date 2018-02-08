@@ -18,7 +18,7 @@ import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.broadcast.Broadcast;
 import org.apache.spark.sql.SparkSession;
 
-public class ProcessFanDuel {
+public class FantasyProcessor {
 	private static final int SALARY_CAP = 60000;
 	private static final int LINEUP_LIMIT = 100;
 	private static final String DATA_PATH = "input/fanduel/data/";
@@ -28,7 +28,10 @@ public class ProcessFanDuel {
 
 		// Should be some file on your system
 		String logFile = "input/fanduel/process/outer.csv";
-		SparkSession spark = SparkSession.builder().appName("Process FanDuel").getOrCreate();
+		SparkSession spark = SparkSession.builder()
+				.appName("Process FanDuel")
+				//.config("spark.default.parallelism", 100)
+				.getOrCreate();
 		JavaSparkContext javaCtx = new JavaSparkContext(spark.sparkContext());
 		Map<Integer, Player> playerMap_ = new HashMap<>();
 		BufferedReader br = new BufferedReader(new FileReader(DATA_PATH + "players.csv"));
