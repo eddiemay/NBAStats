@@ -4,5 +4,5 @@ $SPARK_HOME/bin/spark-submit \
   --master local[*] \
   target/NBAStats-distributed-1.0.jar
 
-  # --master local[*] \
+  # --master local[*]
   # --master spark://poweredge410:7077
