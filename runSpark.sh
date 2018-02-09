@@ -6,3 +6,4 @@ $SPARK_HOME/bin/spark-submit \
 
   # --master local[*]
   # --master spark://poweredge410:7077
+  # --conf spark.default.parallelism=100
