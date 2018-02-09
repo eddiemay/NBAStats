@@ -34,7 +34,6 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import org.joda.time.DateTime;
-import org.joda.time.format.DateTimeFormat;
 
 public class FanDuelIO {
 	private static final boolean runLocal = false;
@@ -150,8 +149,8 @@ public class FanDuelIO {
 	}
 
 	private void insertData(DateTime date) throws IOException {
-		BufferedReader reader = new BufferedReader(new FileReader(
-				String.format(ProcessFanDuel.OUTPUT_PATH, date.toString(DateTimeFormat.forPattern("yyyy-MM-dd"))) + "part-r-00000"));
+		BufferedReader reader = new BufferedReader(new FileReader("output.csv"));
+				//String.format(ProcessFanDuel.OUTPUT_PATH, date.toString(DateTimeFormat.forPattern("yyyy-MM-dd"))) + "part-r-00000"));
 		Map<String, AtomicInteger> methodCounts = new HashMap<>();
 		String line;
 		while ((line = reader.readLine()) != null) {
@@ -188,13 +187,14 @@ public class FanDuelIO {
 		LineUpStore lineUpStore = new LineUpStore(daoProvider);
 		StatsProcessor statsProcessor = new StatsProcessor(playerStore, gameLogStore, playerDayStore, lineUpStore);
 		FanDuelIO fanDuelIO = new FanDuelIO(statsProcessor, lineUpStore);
-		DateTime now = DateTime.now();
+		DateTime processDate = DateTime.now().minusHours(8);
+		// processDate = DateTime.parse("2018-01-25T08:30:00");
 		if ("output".equals(command)) {
-			fanDuelIO.output(DateTime.parse("2018-01-25T08:24:14"));
+			fanDuelIO.output(processDate);
 		} else if ("updateActuals".equals(command)) {
-			statsProcessor.updateActuals(now.minusDays(1));
+			statsProcessor.updateActuals(processDate.plusHours(8).minusDays(1));
 		} else if ("insert".equals(command)) {
-			fanDuelIO.insertData(now.minusHours(8));
+			fanDuelIO.insertData(processDate);
 		}
 		System.out.println("Total Time: " + FormatText.formatElapshed((System.currentTimeMillis() - startTime)));
 	}

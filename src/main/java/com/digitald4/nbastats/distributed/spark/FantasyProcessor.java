@@ -6,6 +6,8 @@ import com.digitald4.nbastats.distributed.Model.PlayerGroup;
 import com.digitald4.nbastats.distributed.Model.TopLineUps;
 import java.io.BufferedReader;
 import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -30,7 +32,7 @@ public class FantasyProcessor {
 		String logFile = "input/fanduel/process/outer.csv";
 		SparkSession spark = SparkSession.builder()
 				.appName("Process FanDuel")
-				//.config("spark.default.parallelism", 100)
+				// .config("spark.default.parallelism", 100)
 				.getOrCreate();
 		JavaSparkContext javaCtx = new JavaSparkContext(spark.sparkContext());
 		Map<Integer, Player> playerMap_ = new HashMap<>();
@@ -43,7 +45,7 @@ public class FantasyProcessor {
 		}
 		br.close();
 
-		List<PlayerGroup> aGroups = new ArrayList<>(100);
+		List<PlayerGroup> aGroups = new ArrayList<>(10000);
 		br = new BufferedReader(new FileReader(logFile));
 		while ((line = br.readLine()) != null) {
 			aGroups.add(new PlayerGroup(Arrays.stream(line.split(","))
@@ -53,7 +55,7 @@ public class FantasyProcessor {
 		br.close();
 		JavaRDD<PlayerGroup> aGroupsRDD = javaCtx.parallelize(aGroups);
 
-		List<PlayerGroup> bGroups = new ArrayList<>(100);
+		List<PlayerGroup> bGroups = new ArrayList<>(1000);
 		br = new BufferedReader(new FileReader(DATA_PATH + "first_group.csv"));
 		while ((line = br.readLine()) != null) {
 			bGroups.add(new PlayerGroup(Arrays.stream(line.split(","))
@@ -71,7 +73,9 @@ public class FantasyProcessor {
 					.toArray(Player[]::new)));
 		}
 		br.close();
-		Broadcast<List<PlayerGroup>> cGroupsBroadcast = javaCtx.broadcast(new ArrayList<>(cGroups));
+		PlayerGroup[] cGroupsArray = cGroups.toArray(new PlayerGroup[cGroups.size()]);
+		Arrays.sort(cGroupsArray, Comparator.comparing(PlayerGroup::getCost));
+		Broadcast<PlayerGroup[]> cGroupsBroadcast = javaCtx.broadcast(cGroupsArray);
 		System.out.println("Setup Time: " + ((System.currentTimeMillis() - startTime) / 1000) + " secs");
 
 		System.out.println("Number of lines: " + aGroupsRDD.count());
@@ -81,7 +85,7 @@ public class FantasyProcessor {
 					//long sTime = System.currentTimeMillis();
 					// System.out.println("Processing: " + value);
 					Map<String, TopLineUps> topLineUpsMap = new HashMap<>();
-					List<PlayerGroup> cGroups_ = cGroupsBroadcast.getValue();
+					PlayerGroup[] cGroups_ = cGroupsBroadcast.getValue();
 					bGroupsBroadcast.getValue().forEach(bGroup -> {
 						for (PlayerGroup cGroup : cGroups_) {
 							int totalSalary = aGroup.cost + bGroup.cost + cGroup.cost;
@@ -93,7 +97,7 @@ public class FantasyProcessor {
 								TopLineUps topLineUps = topLineUpsMap.computeIfAbsent(method, m -> new TopLineUps(LINEUP_LIMIT));
 								int projected = aGroup.projection[pm] + bGroup.projection[pm] + cGroup.projection[pm];
 								if (topLineUps.size() < LINEUP_LIMIT || projected > topLineUps.peek().projected) {
-									topLineUps.add(new LineUp(projected, totalSalary, aGroup, bGroup, cGroup));
+									topLineUps.add(new LineUp(method, projected, totalSalary, aGroup, bGroup, cGroup));
 								}
 							}
 						}
@@ -105,10 +109,18 @@ public class FantasyProcessor {
 					topLineupsMapA.forEach((method, topLineUps) -> topLineUps.addSorted(topLineupsMapB.get(method)));
 					return topLineupsMapA;
 				});
+		FileWriter fileWriter = new FileWriter("output.csv");
 		lineups.forEach((method, topLineUps) -> {
 			System.out.println("\nTop lineUps for " + method);
-			topLineUps.forEach(topLineup -> System.out.println(topLineup.projected));
+			try {
+				for (LineUp lineup : topLineUps) {
+					fileWriter.write(lineup + "\n");
+				}
+			} catch (IOException ioe) {
+				throw new RuntimeException("Error writing file");
+			}
 		});
+		fileWriter.close();
 		System.out.println("Total Time: " + ((System.currentTimeMillis() - startTime) / 1000) + " secs");
 	}
 }

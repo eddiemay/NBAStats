@@ -58,6 +58,7 @@ public class ProcessFanDuel {
 					playerMap.put(player.playerId, player);
 				}
 				reader.close();
+
 				reader = fs.open(new Path(URI.create(DATA_PATH + "first_group.csv")));
 				while ((line = reader.readLine()) != null) {
 					firstGroup.add(new PlayerGroup(Arrays.stream(line.split(","))
@@ -65,6 +66,7 @@ public class ProcessFanDuel {
 							.toArray(Player[]::new)));
 				}
 				reader.close();
+
 				reader = fs.open(new Path(URI.create(DATA_PATH + "second_group.csv")));
 				while ((line = reader.readLine()) != null) {
 					secondGroup.add(new PlayerGroup(Arrays.stream(line.split(","))
@@ -98,7 +100,7 @@ public class ProcessFanDuel {
 						TopLineUps topLineUps = topLineUpsMap.computeIfAbsent(method, m -> new TopLineUps(LINEUP_LIMIT));
 						int projected = outerPlayers.projection[pm] + sgPair.projection[pm] + forwardSet.projection[pm];
 						if (topLineUps.size() < LINEUP_LIMIT || projected > topLineUps.peek().projected) {
-							topLineUps.add(new LineUp(projected, totalSalary, outerPlayers, sgPair, forwardSet));
+							topLineUps.add(new LineUp(method, projected, totalSalary, outerPlayers, sgPair, forwardSet));
 						}
 					}
 				}

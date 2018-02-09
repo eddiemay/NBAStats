@@ -2,7 +2,6 @@ package com.digitald4.nbastats.distributed;
 
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.PriorityQueue;
 
@@ -54,31 +53,39 @@ public class Model {
 	}
 
 	public static class LineUp implements Serializable, Comparable<LineUp> {
+		public final String method;
 		public final int projected;
 		public final int totalSalary;
 		public final int[] playerIds;
+		public final String toString;
 
-		public LineUp(int projected, int totalSalary, PlayerGroup... groups) {
+		public LineUp(String method, int projected, int totalSalary, PlayerGroup... groups) {
+			this.method = method;
 			this.projected = projected;
 			this.totalSalary = totalSalary;
+			StringBuilder toString = new StringBuilder(projected + "," + method + "," + totalSalary);
 			List<Integer> ids = new ArrayList<>();
 			for (PlayerGroup group : groups) {
 				for (int id : group.playerIds) {
+					toString.append(",").append(id);
 					ids.add(id);
 				}
 			}
+			this.toString = toString.toString();
 			this.playerIds = new int[ids.size()];
 			for (int p = 0; p < ids.size(); p++) {
 				this.playerIds[p] = ids.get(p);
 			}
 		}
 
-		public int getProjected() {
-			return projected;
-		}
-
+		@Override
 		public int compareTo(LineUp lineUp) {
 			return Integer.compare(projected, lineUp.projected);
+		}
+
+		@Override
+		public String toString() {
+			return toString;
 		}
 	}
 
