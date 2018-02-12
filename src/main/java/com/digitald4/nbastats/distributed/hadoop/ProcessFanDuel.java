@@ -38,7 +38,7 @@ public class ProcessFanDuel {
 	private static final int LINEUP_LIMIT = 100;
 	public static final String DATA_PATH = "input/fanduel/data/";
 	public static final String PROCESS_PATH = "input/fanduel/process/";
-	public static final String OUTPUT_PATH = "target/output/fanduel/%s/";
+	public static final String OUTPUT_PATH = "lineups-%s.csv";
 
 	public static class FDMapper extends Mapper<Object, Text, IntWritable, Text> {
 		private final String[] projectionMethods;

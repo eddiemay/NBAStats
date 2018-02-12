@@ -28,9 +28,9 @@ public class Model {
 	}
 
 	public static class PlayerGroup implements Serializable {
-		public final int[] playerIds;
-		public final int cost;
-		public final int[] projection;
+		public final int[] playerIds; // 2 bytes
+		public final int cost; // 2 bytes
+		public final int[] projection; // 2 * 6 = 12 bytes
 
 		public PlayerGroup(Player... players) {
 			this.playerIds = new int[players.length];
@@ -106,6 +106,7 @@ public class Model {
 		}
 
 		public void addSorted(PriorityQueue<LineUp> queue) {
+			if (queue == null) return;
 			if (size() >= limit) {
 				while (queue.size() > 0 && queue.peek().projected < peek().projected) {
 					queue.poll();

@@ -34,11 +34,14 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import org.joda.time.DateTime;
+import org.joda.time.format.DateTimeFormat;
+import org.joda.time.format.DateTimeFormatter;
 
 public class FanDuelIO {
+	private static final DateTimeFormatter DATE_FORMAT = DateTimeFormat.forPattern("yyyy-MM-dd");
 	private static final boolean runLocal = false;
-	private static final int PAIR_LIMIT = 40;
-	private static final int SINGLE_LIMIT = 20;
+	private static final int PAIR_LIMIT = 4;
+	private static final int SINGLE_LIMIT = 4;
 	private final StatsProcessor statsProcessor;
 	private final LineUpStore lineUpStore;
 
@@ -82,24 +85,24 @@ public class FanDuelIO {
 		System.out.println("SG Pairs: " + sgPs.size());
 		System.out.println("SF Pairs: " + sfPs.size());
 		System.out.println("PF Pairs: " + pfPs.size());
-		System.out.println("Outer Players: " + (pgPs.size() * cs.size()));
-		System.out.println("Forwards: " + (sfPs.size() * pfPs.size()));
-		System.out.println("Iterations: " + NumberFormat.getInstance().format(
-				((long) pgPs.size()) * sgPs.size() * sfPs.size() * pfPs.size() * cs.size()));
+		long gi = pgPs.size() * sgPs.size();
+		long fi = sfPs.size() * pfPs.size();
+		System.out.println("Guard Iterations: " + gi);
+		System.out.println("Forward Iterations: " + fi);
+		System.out.println("Iterations: " + NumberFormat.getInstance().format(gi * fi * cs.size()));
 
-		String processPath = ProcessFanDuel.PROCESS_PATH + "outer.csv";
+		String processPath = ProcessFanDuel.PROCESS_PATH + "groupA.csv";
 		String dataPath = ProcessFanDuel.DATA_PATH;
-		write(processPath, pgPs);
-		write(selected);
+		write(selected, date);
 		FileWriter fw = new FileWriter(processPath);
 		for (Pair<PlayerDay, PlayerDay> pgPair : pgPs) {
-			for (PlayerDay c : cs) {
-				fw.write(pgPair.getLeft().getPlayerId() + "," + pgPair.getRight().getPlayerId() + "," + c.getPlayerId() + "\n");
+			for (Pair<PlayerDay, PlayerDay> sgPair : sgPs) {
+				fw.write(pgPair.getLeft().getPlayerId() + "," + pgPair.getRight().getPlayerId() + ","
+						+ sgPair.getLeft().getPlayerId() + "," + sgPair.getRight().getPlayerId() + "\n");
 			}
 		}
 		fw.close();
-		write(dataPath + "first_group.csv", sgPs);
-		fw = new FileWriter(dataPath + "second_group.csv");
+		fw = new FileWriter(dataPath + "groupB.csv");
 		for (Pair<PlayerDay, PlayerDay> sfP : sfPs) {
 			for (Pair<PlayerDay, PlayerDay> pfP : pfPs) {
 				fw.write(sfP.getLeft().getPlayerId() + "," + sfP.getRight().getPlayerId() + ","
@@ -107,18 +110,16 @@ public class FanDuelIO {
 			}
 		}
 		fw.close();
-	}
-
-	private static void write(String fileName, List<Pair<PlayerDay, PlayerDay>> pairs) throws IOException {
-		FileWriter fw = new FileWriter(fileName);
-		for (Pair<PlayerDay, PlayerDay> pair : pairs) {
-			fw.write(pair.getLeft().getPlayerId() + "," + pair.getRight().getPlayerId() + "\n");
+		fw = new FileWriter(dataPath + "groupC.csv");
+		for (PlayerDay c : cs) {
+			fw.write(c.getPlayerId() + "\n");
 		}
 		fw.close();
 	}
 
-	private static void write(List<PlayerDay> players) throws IOException {
+	private static void write(List<PlayerDay> players, DateTime date) throws IOException {
 		FileWriter fw = new FileWriter(ProcessFanDuel.DATA_PATH + "players.csv");
+		fw.write(date.toString(DATE_FORMAT) + "\n");
 		for (String method : players.get(0).getFantasySiteInfoOrThrow(FantasyLeague.FAN_DUEL.name).getProjectionMap().keySet()) {
 			fw.write(method + ",");
 		}
@@ -149,8 +150,8 @@ public class FanDuelIO {
 	}
 
 	private void insertData(DateTime date) throws IOException {
-		BufferedReader reader = new BufferedReader(new FileReader("output.csv"));
-				//String.format(ProcessFanDuel.OUTPUT_PATH, date.toString(DateTimeFormat.forPattern("yyyy-MM-dd"))) + "part-r-00000"));
+		BufferedReader reader = new BufferedReader(new FileReader(
+				String.format(ProcessFanDuel.OUTPUT_PATH, date.toString(DATE_FORMAT))));
 		Map<String, AtomicInteger> methodCounts = new HashMap<>();
 		String line;
 		while ((line = reader.readLine()) != null) {
