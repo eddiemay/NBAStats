@@ -11,7 +11,7 @@
         <th><button data-ng-click="playerOptionsCtrl.sortBy('opponent')">Opponent</button></th>
         <th><button data-ng-click="playerOptionsCtrl.sortBy('position')">Pos</button></th>
         <th><button data-ng-click="playerOptionsCtrl.sortBy('cost')">Cost</button></th>
-        <th><button data-ng-click="playerOptionsCtrl.sortBy('actual')">Cost</button></th>
+        <th><button data-ng-click="playerOptionsCtrl.sortBy('actual')">Actual</button></th>
         <th data-ng-repeat="method in playerOptionsCtrl.projectionMethods">
           <button data-ng-click="playerOptionsCtrl.sortBy('projection[\'' + method + '\']')">{{method}}</button>
         </th>
@@ -27,9 +27,9 @@
         <td>{{player.opponent}}</td>
         <td>{{player.position}}</td>
         <td>${{player.cost}}</td>
-        <td>${{player.actual}}</td>
+        <td>{{player.actual | number:1}}</td>
         <td data-ng-repeat="method in playerOptionsCtrl.projectionMethods">
-          {{player.projection[method] | number:3}}
+          {{player.projection[method] | number:1}}
         </td>
       </tr>
     </tbody>
