@@ -16,6 +16,7 @@ import com.digitald4.nbastats.storage.PlayerDayStore;
 import com.digitald4.nbastats.storage.PlayerStore;
 import com.digitald4.nbastats.util.Constaints;
 import com.digitald4.nbastats.util.Constaints.FantasyLeague;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -24,10 +25,8 @@ import org.joda.time.DateTime;
 
 public class StatsProcessor {
 	private static final int SAMPLE_SIZE = 30;
-	// Sets the data at -10% from the center which is the 40th percentile, 80% of mean. Giving a 60% chance of hitting the number.
-	private static final double Z_SCORE_10P = .25;
-	// Sets the data at -10% from the center which is the 40th percentile, 80% of mean. Giving a 60% chance of hitting the number.
-	private static final double Z_SCORE_20P = .53;
+	// Sets the data at 25% from the center which is the 25th percentile, or 75th percentile on the right side.
+	private static final double Z_SCORE_25P = .675;
 
 	private final PlayerStore playerStore;
 	private final GameLogStore gameLogStore;
@@ -108,10 +107,10 @@ public class StatsProcessor {
 				double average = totals[fantasyLeague.ordinal()] / sampleSize;
 				builder.putFantasySiteInfo(fantasyLeague.name,
 						player.getFantasySiteInfoOrDefault(fantasyLeague.name, FantasySiteInfo.getDefaultInstance()).toBuilder()
-								.putProjection("30 Game 40th Percentile", round(standardDeviation(matrix[fantasyLeague.ordinal()]) * -Z_SCORE_10P + average))
+								// .putProjection("30 Game 40th Percentile", round(standardDeviation(matrix[fantasyLeague.ordinal()]) * -Z_SCORE_10P + average))
 								.putProjection("30 Game Average", average)
-								.putProjection("30 Game 60th Percentile", round(standardDeviation(matrix[fantasyLeague.ordinal()]) * Z_SCORE_10P + average))
-								// .putProjection("30 Game 70th Percentile", round(standardDeviation(matrix[fantasyLeague.ordinal()]) * Z_SCORE_20P + average))
+								// .putProjection("30 Game 60th Percentile", round(standardDeviation(matrix[fantasyLeague.ordinal()]) * Z_SCORE_10P + average))
+								.putProjection("30 Game 75th Pct", round(standardDeviation(matrix[fantasyLeague.ordinal()]) * Z_SCORE_25P + average))
 								.build());
 			}
 
@@ -123,10 +122,11 @@ public class StatsProcessor {
 		return builder.build();
 	}
 
-	public void updateActuals(DateTime date) {
+	public List<PlayerDay> updateActuals(DateTime date) {
 		String strDate = date.toString(Constaints.COMPUTER_DATE);
+		// playerStore.refreshPlayerList(Constaints.getSeason(date));
 		Map<Integer, PlayerDay> playerDaysMap = playerDayStore.list(date)
-				.stream()
+				.parallelStream()
 				.map(playerDay -> {
 					GameLog gameLog = gameLogStore.get(playerDay.getPlayerId(), date);
 					if (gameLog != null) {
@@ -144,12 +144,15 @@ public class StatsProcessor {
 				.collect(Collectors.toMap(PlayerDay::getPlayerId, Function.identity()));
 
 		lineUpStore.list(Query.newBuilder().addFilter(Filter.newBuilder().setColumn("date").setValue(strDate)).build())
+				.parallelStream()
 				.forEach(lineUp -> lineUpStore.update(lineUp.getId(), lineUp1 -> lineUp1.toBuilder()
 						.setActual(lineUp1.getPlayerIdList()
 								.stream()
 								.mapToDouble(playerId -> playerDaysMap.get(playerId).getFantasySiteInfoOrThrow(lineUp1.getFantasySite()).getActual())
 								.sum())
 						.build()));
+
+		return new ArrayList<>(playerDaysMap.values());
 	}
 
 	private double round(double n) {

@@ -26,6 +26,7 @@ com.digitald4.nbastats.PlayerOptionsCtrl.prototype.refresh = function() {
 	      opponent: player.opponent,
 	      position: player.fantasySiteInfo[fantasyLeague].position.join('/'),
 	      cost: player.fantasySiteInfo[fantasyLeague].cost,
+	      actual: player.fantasySiteInfo[fantasyLeague].actual,
 	      projection: player.fantasySiteInfo[fantasyLeague].projection,
 	    });
 	  }

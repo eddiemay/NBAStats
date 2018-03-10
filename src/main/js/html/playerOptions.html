@@ -1,6 +1,5 @@
 <div>
   <label>Filter:<input data-ng-model="filterText"/></label>
-  <button data-ng-click="playerOptionsCtrl.processStats()">Process Stats</button>
   <table class="table sortable no-margin" cellspacing="0" width="100%">
     <thead>
       <tr>
@@ -12,6 +11,7 @@
         <th><button data-ng-click="playerOptionsCtrl.sortBy('opponent')">Opponent</button></th>
         <th><button data-ng-click="playerOptionsCtrl.sortBy('position')">Pos</button></th>
         <th><button data-ng-click="playerOptionsCtrl.sortBy('cost')">Cost</button></th>
+        <th><button data-ng-click="playerOptionsCtrl.sortBy('actual')">Cost</button></th>
         <th data-ng-repeat="method in playerOptionsCtrl.projectionMethods">
           <button data-ng-click="playerOptionsCtrl.sortBy('projection[\'' + method + '\']')">{{method}}</button>
         </th>
@@ -27,6 +27,7 @@
         <td>{{player.opponent}}</td>
         <td>{{player.position}}</td>
         <td>${{player.cost}}</td>
+        <td>${{player.actual}}</td>
         <td data-ng-repeat="method in playerOptionsCtrl.projectionMethods">
           {{player.projection[method] | number:3}}
         </td>

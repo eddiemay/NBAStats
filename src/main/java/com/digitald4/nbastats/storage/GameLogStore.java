@@ -51,16 +51,12 @@ public class GameLogStore extends GenericStore<GameLog> {
 		if (gameLog.size() > 0) {
 			return gameLog.get(0);
 		}
-		refreshGames(playerId, date);
-		gameLog = super.list(query);
-		if (gameLog.size() > 0) {
-			return gameLog.get(0);
-		}
-		return null;
+		return refreshGames(playerId, date.plusDays(1));
 	}
 
-	public void refreshGames(int playerId, DateTime date) {
+	public GameLog refreshGames(int playerId, DateTime date) {
 		String season = Constaints.getSeason(date);
+		String dateStr = date.toString(Constaints.COMPUTER_DATE);
 		List<GameLog> gameLog = super.list(Query.newBuilder()
 				.addFilter(Filter.newBuilder().setColumn("player_id").setValue(String.valueOf(playerId)))
 				.addFilter(Filter.newBuilder().setColumn("season").setValue(season))
@@ -72,10 +68,17 @@ public class GameLogStore extends GenericStore<GameLog> {
 			dateFrom = DateTime.parse(gameLog.get(0).getDate(), Constaints.COMPUTER_DATE);
 			dateFrom = dateFrom.plusDays(1);
 		}
+		GameLog[] ret = new GameLog[1];
 		if ((dateFrom == null || dateFrom.isBefore(date)) && apiDAO != null) {
 			apiDAO.getGames(playerId, season, dateFrom)
 					.parallelStream()
-					.forEach(this::create);
+					.forEach(game -> {
+						create(game);
+						if (dateStr.equals(game.getDate())) {
+							ret[0] = game;
+						}
+					});
 		}
+		return ret[0];
 	}
 }

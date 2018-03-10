@@ -1,4 +1,4 @@
-package com.digitald4.nbastats.distributed.spark;
+package com.digitald4.nbastats.distributed;
 
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.Dataset;

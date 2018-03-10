@@ -43,6 +43,7 @@ com.digitald4.nbastats.LineUpsCtrl.prototype.refresh = function() {
         for (var projectionMethod in playerDay.fantasySiteInfo[league].projection) {
           this.projectionMethods.push({name: projectionMethod});
         }
+        this.projectionMethods.push({name: 'Actual'});
       }
     }
     this.playerDayMap = playerDayMap;
