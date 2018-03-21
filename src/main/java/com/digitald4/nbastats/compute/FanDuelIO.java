@@ -33,11 +33,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.joda.time.DateTime;
-import org.joda.time.format.DateTimeFormat;
-import org.joda.time.format.DateTimeFormatter;
 
 public class FanDuelIO {
-	private static final DateTimeFormatter DATE_FORMAT = DateTimeFormat.forPattern("yyyy-MM-dd");
 	private static final boolean runLocal = false;
 	private static final int PAIR_LIMIT = 6;
 	private static final int SINGLE_LIMIT = 6;
@@ -182,7 +179,7 @@ public class FanDuelIO {
 
 	private static void write(List<PlayerDay> players, DateTime date) throws IOException {
 		FileWriter fw = new FileWriter(FantasyProcessor.DATA_PATH + "players.csv");
-		fw.write(date.toString(DATE_FORMAT) + "\n");
+		fw.write(date.toString(Constaints.COMPUTER_DATE) + "\n");
 		for (String method : players.get(0).getFantasySiteInfoOrThrow(league).getProjectionMap().keySet()) {
 			fw.write(method + ",");
 		}
@@ -202,7 +199,7 @@ public class FanDuelIO {
 
 	private static void writeActual(List<PlayerDay> players, DateTime date) throws IOException {
 		FileWriter fw = new FileWriter(FantasyProcessor.DATA_PATH + "players.csv");
-		fw.write(date.toString(DATE_FORMAT) + "\n");
+		fw.write(date.toString(Constaints.COMPUTER_DATE) + "\n");
 		fw.write("Actual");
 		for (PlayerDay player : players) {
 			FantasySiteInfo fantasySiteInfo = player.getFantasySiteInfoOrThrow(league);
@@ -223,13 +220,9 @@ public class FanDuelIO {
 	}
 
 	private void insertData(DateTime date) {
-		lineUpStore.delete(Query.newBuilder()
-				.addFilter(Filter.newBuilder().setColumn("fantasy_site").setValue(league))
-				.addFilter(Filter.newBuilder().setColumn("date").setValue(date.toString(DATE_FORMAT)))
-				.build());
 		playerDayStore
 				.list(Query.newBuilder()
-						.addFilter(Filter.newBuilder().setColumn("date").setValue(date.toString(DATE_FORMAT)))
+						.addFilter(Filter.newBuilder().setColumn("date").setValue(date.toString(Constaints.COMPUTER_DATE)))
 						.setLimit(1)
 						.build())
 				.get(0)
@@ -238,7 +231,12 @@ public class FanDuelIO {
 				.keySet()
 				.parallelStream()
 				.forEach(method -> {
-					String fileName = String.format(FantasyProcessor.OUTPUT_PATH, date.toString(DATE_FORMAT), method);
+					lineUpStore.delete(Query.newBuilder()
+							.addFilter(Filter.newBuilder().setColumn("fantasy_site").setValue(league))
+							.addFilter(Filter.newBuilder().setColumn("date").setValue(date.toString(Constaints.COMPUTER_DATE)))
+							.addFilter(Filter.newBuilder().setColumn("projection_method").setValue(method))
+							.build());
+					String fileName = String.format(FantasyProcessor.OUTPUT_PATH, date.toString(Constaints.COMPUTER_DATE), method);
 					try (BufferedReader reader = new BufferedReader(new FileReader(fileName))) {
 						String line;
 						while ((line = reader.readLine()) != null) {
@@ -262,10 +260,10 @@ public class FanDuelIO {
 	private void insertActuals(DateTime date) {
 		lineUpStore.delete(Query.newBuilder()
 				.addFilter(Filter.newBuilder().setColumn("fantasy_site").setValue(league))
-				.addFilter(Filter.newBuilder().setColumn("date").setValue(date.toString(DATE_FORMAT)))
+				.addFilter(Filter.newBuilder().setColumn("date").setValue(date.toString(Constaints.COMPUTER_DATE)))
 				.addFilter(Filter.newBuilder().setColumn("projection_method").setValue("Actual"))
 				.build());
-		String fileName = String.format(FantasyProcessor.OUTPUT_PATH, date.toString(DATE_FORMAT), "Actual");
+		String fileName = String.format(FantasyProcessor.OUTPUT_PATH, date.toString(Constaints.COMPUTER_DATE), "Actual");
 		try (BufferedReader reader = new BufferedReader(new FileReader(fileName))) {
 			String line;
 			while ((line = reader.readLine()) != null) {
@@ -273,7 +271,7 @@ public class FanDuelIO {
 				lineUpStore.create(LineUp.newBuilder()
 						.setDate(date.toString(Constaints.COMPUTER_DATE))
 						.setFantasySite(league)
-						.setProjected(Double.parseDouble(parts[0].trim()))
+						.setActual(Double.parseDouble(parts[0].trim()))
 						.setProjectionMethod("Actual")
 						.setTotalSalary(Integer.parseInt(parts[2]))
 						.addAllPlayerId(Arrays.asList(parts).subList(3, parts.length).stream()

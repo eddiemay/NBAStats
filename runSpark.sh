@@ -1,4 +1,4 @@
-mvn -f distributed.xml package
+#mvn -f distributed.xml package
 $SPARK_HOME/bin/spark-submit \
   --class "com.digitald4.nbastats.distributed.FantasyProcessor" \
   --master spark://poweredge410:7077 \

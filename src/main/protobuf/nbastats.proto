@@ -18,16 +18,21 @@ message GameLog {
   int32 player_id = 2;
   string season = 3;
   string date = 4;
-  double points = 5;
-  double rebounds = 6;
-  double assists = 7;
-  double blocks = 8;
-  double steals = 9;
-  double made3s = 10;
-  double turnovers = 11;
-  double double_doubles = 12;
-  double triple_doubles = 13;
-  map<string, double> fantasy_site_points = 14;
+  string match_up = 5;
+  string result = 6;
+  double minutes = 7;
+  int32 points = 8;
+  int32 rebounds = 9;
+  int32 assists = 10;
+  int32 blocks = 11;
+  int32 steals = 12;
+  int32 made3s = 13;
+  int32 turnovers = 14;
+  bool double_double = 15;
+  bool triple_double = 16;
+  int32 plus_minus = 17;
+  double n_b_a_fantasy_points = 18;
+  map<string, double> fantasy_site_points = 19;
 }
 
 enum Position {

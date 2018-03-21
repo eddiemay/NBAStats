@@ -4,7 +4,6 @@ import static java.lang.String.format;
 
 import com.digitald4.common.exception.DD4StorageException;
 import com.digitald4.common.server.APIConnector;
-import com.digitald4.common.tools.DataImporter;
 import com.digitald4.nbastats.proto.NBAStatsProtos.GameLog;
 import com.digitald4.nbastats.proto.NBAStatsProtos.PlayerDay;
 import com.digitald4.nbastats.proto.NBAStatsProtos.PlayerDay.FantasySiteInfo;
@@ -33,12 +32,12 @@ public class APIDAO {
 	private static final String ROTO_GRINDER =
 			"https://rotogrinders.com/projected-stats/nba-player.csv?site=%s&date=%s";
 	private static final String COMMON_ALL_PLAYERS =
-			"http://stats.nba.com/stats/commonallplayers/?Season=%s&LeagueID=00&IsOnlyCurrentSeason=1";
-	private static final String PLAYER_GAMELOG =
-			"http://stats.nba.com/stats/playergamelog/?PlayerID=%d&Season=%s&SeasonType=Regular Season&dateFrom=%s";
+			"http://stats.nba.com/stats/commonallplayers?LeagueID=00&Season=%s&IsOnlyCurrentSeason=1";
+	private static final String PLAYER_GAMELOGS =
+			"http://stats.nba.com/stats/playergamelogs?LeagueID=00&Season=%s&SeasonType=Regular Season&PlayerID=%d&DateFrom=%s";
+	//http://stats.nba.com/stats/playergamelogs?DateFrom=&DateTo=&GameSegment=&LastNGames=0&Location=&MeasureType=Base&Month=0&OpponentTeamID=0&Outcome=&PORound=0&PaceAdjust=N&PerMode=Totals&Period=0&PlayerID=203584&PlusMinus=N&Rank=N&Season=2017-18&SeasonSegment=&SeasonType=Regular+Season&ShotClockRange=&VsConference=&VsDivision=
 
-	public static final DateTimeFormatter API_DATE = DateTimeFormat.forPattern("MM/dd/yyyy");
-	public static final DateTimeFormatter API_GAME_DATE = DateTimeFormat.forPattern("MMM dd, yyyy");
+	private static final DateTimeFormatter API_DATE = DateTimeFormat.forPattern("MM/dd/yyyy");
 
 	private static final boolean fetchFromNBAApiEnabled = true;
 
@@ -51,26 +50,34 @@ public class APIDAO {
 		List<GameLog> games = new ArrayList<>();
 		if (fetchFromNBAApiEnabled) {
 			try {
-				JSONObject json = new JSONObject(apiConnector.sendGet(format(PLAYER_GAMELOG, playerId, season,
+				JSONObject json = new JSONObject(apiConnector.sendGet(format(PLAYER_GAMELOGS, season, playerId,
 						dateFrom == null ? "" : dateFrom.toString(API_DATE))));
+				System.out.println(json.toString());
 				JSONArray resultSets = json.getJSONArray("resultSets");
 				for (int x = 0; x < resultSets.length(); x++) {
 					JSONObject resultSet = resultSets.getJSONObject(x);
-					if (resultSet.get("name").equals("PlayerGameLog")) {
+					if (resultSet.get("name").equals("PlayerGameLogs")) {
 						JSONArray rowSets = resultSet.getJSONArray("rowSet");
 						for (int i = 0; i < rowSets.length(); i++) {
 							JSONArray rowSet = rowSets.getJSONArray(i);
-							GameLog game = fillFantasy(fillMultiples(GameLog.newBuilder()
+							GameLog game = fillFantasy(GameLog.newBuilder()
 									.setPlayerId(playerId)
 									.setSeason(season)
-									.setDate(DateTime.parse(rowSet.getString(3), API_GAME_DATE).toString(Constaints.COMPUTER_DATE))
-									.setPoints(rowSet.getDouble(24))
-									.setMade3S(rowSet.getDouble(10))
-									.setRebounds(rowSet.getDouble(18))
-									.setAssists(rowSet.getDouble(19))
-									.setSteals(rowSet.getDouble(20))
-									.setBlocks(rowSet.getDouble(21))
-									.setTurnovers(rowSet.getDouble(22))));
+									.setDate(DateTime.parse(rowSet.getString(7)).toString(Constaints.COMPUTER_DATE))
+									.setMatchUp(rowSet.getString(8))
+									.setResult(rowSet.getString(9))
+									.setMinutes(rowSet.getDouble(10))
+									.setMade3S(rowSet.getInt(14))
+									.setRebounds(rowSet.getInt(22))
+									.setAssists(rowSet.getInt(23))
+									.setTurnovers(rowSet.getInt(24))
+									.setSteals(rowSet.getInt(25))
+									.setBlocks(rowSet.getInt(26))
+									.setPoints(rowSet.getInt(30))
+									.setPlusMinus(rowSet.getInt(31))
+									.setNBAFantasyPoints(rowSet.getDouble(32))
+									.setDoubleDouble(rowSet.getBoolean(33))
+									.setTripleDouble(rowSet.getBoolean(34)));
 							games.add(game);
 						}
 					}
@@ -83,19 +90,6 @@ public class APIDAO {
 		return games;
 	}
 
-	private static int getDoublesCount(double... options) {
-		return (int) Arrays.stream(options)
-				.filter(option -> option >= 10)
-				.count();
-	}
-
-	private static GameLog.Builder fillMultiples(GameLog.Builder stats) {
-		int doubles = getDoublesCount(
-				stats.getPoints(), stats.getRebounds(), stats.getAssists(), stats.getBlocks(), stats.getSteals());
-		return stats.setDoubleDoubles(doubles == 2 || doubles > 3 ? 1 : 0)
-				.setTripleDoubles(doubles >= 3 ? 1 : 0);
-	}
-
 	private static GameLog fillFantasy(GameLog.Builder stats) {
 		return stats
 				.putFantasySitePoints("draftkings", stats.getPoints()
@@ -105,8 +99,8 @@ public class APIDAO {
 						+ stats.getSteals() * 2
 						+ stats.getBlocks() * 2
 						+ stats.getTurnovers() * -.5
-						+ stats.getDoubleDoubles() * 1.5
-						+ stats.getTripleDoubles() * 3)
+						+ (stats.getDoubleDouble() ? 1.5 : 0)
+						+ (stats.getTripleDouble() ? 3 : 0))
 				.putFantasySitePoints("fanduel", stats.getPoints()
 						+ stats.getRebounds() * 1.2
 						+ stats.getAssists() * 1.5

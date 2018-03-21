@@ -7,6 +7,7 @@ import com.digitald4.common.proto.DD4Protos.Query.Filter;
 import com.digitald4.common.proto.DD4Protos.Query.OrderBy;
 import com.digitald4.common.util.Calculate;
 import com.digitald4.nbastats.proto.NBAStatsProtos.GameLog;
+import com.digitald4.nbastats.proto.NBAStatsProtos.LineUp;
 import com.digitald4.nbastats.proto.NBAStatsProtos.Player;
 import com.digitald4.nbastats.proto.NBAStatsProtos.PlayerDay;
 import com.digitald4.nbastats.proto.NBAStatsProtos.PlayerDay.FantasySiteInfo;
@@ -24,6 +25,7 @@ import java.util.stream.Collectors;
 import org.joda.time.DateTime;
 
 public class StatsProcessor {
+	private static final boolean OVER_WRITE = false;
 	private static final int SAMPLE_SIZE = 30;
 	// Sets the data at 25% from the center which is the 25th percentile, or 75th percentile on the right side.
 	private static final double Z_SCORE_25P = .675;
@@ -53,7 +55,7 @@ public class StatsProcessor {
 		return playerDayStore.list(date).stream()
 				//.parallel()
 				.map(playerDay -> {
-					if (playerDay.getFantasySiteInfoOrThrow(FantasyLeague.FAN_DUEL.name).getProjectionCount() < 5) {
+					if (playerDay.getFantasySiteInfoOrThrow(FantasyLeague.FAN_DUEL.name).getProjectionCount() < 5 || OVER_WRITE) {
 						Player player = playerMap.get(playerDay.getName());
 						if (player != null) {
 							PlayerDay statsFilled = fillStats(playerDay.toBuilder()
@@ -109,6 +111,8 @@ public class StatsProcessor {
 						player.getFantasySiteInfoOrDefault(fantasyLeague.name, FantasySiteInfo.getDefaultInstance()).toBuilder()
 								// .putProjection("30 Game 40th Percentile", round(standardDeviation(matrix[fantasyLeague.ordinal()]) * -Z_SCORE_10P + average))
 								.putProjection("30 Game Average", average)
+								.removeProjection("30 Game 40th Percentile")
+								.removeProjection("30 Game 60th Percentile")
 								// .putProjection("30 Game 60th Percentile", round(standardDeviation(matrix[fantasyLeague.ordinal()]) * Z_SCORE_10P + average))
 								.putProjection("30 Game 75th Pct", round(standardDeviation(matrix[fantasyLeague.ordinal()]) * Z_SCORE_25P + average))
 								.build());
@@ -123,11 +127,17 @@ public class StatsProcessor {
 	}
 
 	public List<PlayerDay> updateActuals(DateTime date) {
+		/*gameLogStore.delete(Query.newBuilder()
+				.addFilter(Filter.newBuilder().setColumn("date").setValue(date.toString(Constaints.COMPUTER_DATE)))
+				.build());*/
 		String strDate = date.toString(Constaints.COMPUTER_DATE);
 		// playerStore.refreshPlayerList(Constaints.getSeason(date));
 		Map<Integer, PlayerDay> playerDaysMap = playerDayStore.list(date)
-				.parallelStream()
+				.stream()
+				.parallel()
+				.filter(playerDay -> playerDay.getPlayerId() != 0)
 				.map(playerDay -> {
+					boolean changeDetected  = false;
 					GameLog gameLog = gameLogStore.get(playerDay.getPlayerId(), date);
 					if (gameLog != null) {
 						PlayerDay.Builder builder = playerDay.toBuilder();
@@ -135,9 +145,14 @@ public class StatsProcessor {
 							builder.putFantasySiteInfo(site, builder.getFantasySiteInfoOrThrow(site).toBuilder()
 									.setActual(gameLog.getFantasySitePointsOrDefault(site, 0))
 									.build());
+							if (playerDay.getFantasySiteInfoOrThrow(site).getActual() != builder.getFantasySiteInfoOrThrow(site).getActual()) {
+								changeDetected = true;
+							}
 						}
-						return playerDayStore.update(playerDay.getId(), playerDay1 ->
-								playerDay1.toBuilder().putAllFantasySiteInfo(builder.getFantasySiteInfoMap()).build());
+						if (changeDetected) {
+							return playerDayStore.update(playerDay.getId(), playerDay1 ->
+									playerDay1.toBuilder().putAllFantasySiteInfo(builder.getFantasySiteInfoMap()).build());
+						}
 					}
 					return playerDay;
 				})
@@ -145,12 +160,18 @@ public class StatsProcessor {
 
 		lineUpStore.list(Query.newBuilder().addFilter(Filter.newBuilder().setColumn("date").setValue(strDate)).build())
 				.parallelStream()
-				.forEach(lineUp -> lineUpStore.update(lineUp.getId(), lineUp1 -> lineUp1.toBuilder()
-						.setActual(lineUp1.getPlayerIdList()
-								.stream()
-								.mapToDouble(playerId -> playerDaysMap.get(playerId).getFantasySiteInfoOrThrow(lineUp1.getFantasySite()).getActual())
-								.sum())
-						.build()));
+				.forEach(lineUp -> {
+					LineUp.Builder builder = lineUp.toBuilder()
+							.setActual(lineUp.getPlayerIdList()
+									.stream()
+									.mapToDouble(playerId -> playerDaysMap.get(playerId).getFantasySiteInfoOrThrow(lineUp.getFantasySite()).getActual())
+									.sum());
+					if (lineUp.getActual() != builder.getActual()) {
+						lineUpStore.update(lineUp.getId(), lineUp1 -> lineUp1.toBuilder()
+								.setActual(builder.getActual())
+								.build());
+					}
+				});
 
 		return new ArrayList<>(playerDaysMap.values());
 	}
