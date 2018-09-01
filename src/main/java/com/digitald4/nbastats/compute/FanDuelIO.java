@@ -76,7 +76,7 @@ public class FanDuelIO {
 
 		write(selected, date);
 
-		output(pgs, sgs, sfs, pfs, cs);
+		output(date, pgs, sgs, sfs, pfs, cs);
 	}
 
 	private void outputActuals(DateTime date) throws IOException {
@@ -106,10 +106,10 @@ public class FanDuelIO {
 
 		writeActual(selected, date);
 
-		output(pgs, sgs, sfs, pfs, cs);
+		output(date, pgs, sgs, sfs, pfs, cs);
 	}
 
-	private void output(List<PlayerDay> pgs, List<PlayerDay> sgs, List<PlayerDay> sfs, List<PlayerDay> pfs,
+	private void output(DateTime date, List<PlayerDay> pgs, List<PlayerDay> sgs, List<PlayerDay> sfs, List<PlayerDay> pfs,
 										 List<PlayerDay> cs) throws IOException {
 		List<Pair<PlayerDay, PlayerDay>> pgPs = toPairList(pgs);
 		List<Pair<PlayerDay, PlayerDay>> sgPs = toPairList(sgs);
@@ -130,7 +130,7 @@ public class FanDuelIO {
 		System.out.println("FrontCourt Iterations: " + fcI);
 		System.out.println("Iterations: " + NumberFormat.getInstance().format(bcI * fcI));
 
-		FileWriter fw = new FileWriter(FantasyProcessor.DATA_PATH + "backCourts.csv");
+		FileWriter fw = new FileWriter(String.format(FantasyProcessor.BACK_COURT_PATH, date.toString(Constaints.COMPUTER_DATE)));
 		long backCourtCount = 0;
 		final int FOUR_PLAYER_SALARY_LIMIT = FantasyLeague.FAN_DUEL.salaryCap - (4 * 3500);
 		for (Pair<PlayerDay, PlayerDay> pgPair : pgPs) {
@@ -150,7 +150,7 @@ public class FanDuelIO {
 		}
 		fw.close();
 
-		fw = new FileWriter(FantasyProcessor.DATA_PATH + "frontCourts.csv");
+		fw = new FileWriter(String.format(FantasyProcessor.FRONT_COURT_PATH, date.toString(Constaints.COMPUTER_DATE)));
 		long frontCourtCount = 0;
 		final int FIVE_PLAYER_SALARY_LIMIT = FantasyLeague.FAN_DUEL.salaryCap - (4 * 3500);
 		for (Pair<PlayerDay, PlayerDay> sfPair : sfPs) {
@@ -178,8 +178,7 @@ public class FanDuelIO {
 	}
 
 	private static void write(List<PlayerDay> players, DateTime date) throws IOException {
-		FileWriter fw = new FileWriter(FantasyProcessor.DATA_PATH + "players.csv");
-		fw.write(date.toString(Constaints.COMPUTER_DATE) + "\n");
+		FileWriter fw = new FileWriter(String.format(FantasyProcessor.PLAYERS_PATH, date.toString(Constaints.COMPUTER_DATE)));
 		for (String method : players.get(0).getFantasySiteInfoOrThrow(league).getProjectionMap().keySet()) {
 			fw.write(method + ",");
 		}
@@ -198,8 +197,7 @@ public class FanDuelIO {
 	}
 
 	private static void writeActual(List<PlayerDay> players, DateTime date) throws IOException {
-		FileWriter fw = new FileWriter(FantasyProcessor.DATA_PATH + "players.csv");
-		fw.write(date.toString(Constaints.COMPUTER_DATE) + "\n");
+		FileWriter fw = new FileWriter(String.format(FantasyProcessor.PLAYERS_PATH, date.toString(Constaints.COMPUTER_DATE)));
 		fw.write("Actual");
 		for (PlayerDay player : players) {
 			FantasySiteInfo fantasySiteInfo = player.getFantasySiteInfoOrThrow(league);

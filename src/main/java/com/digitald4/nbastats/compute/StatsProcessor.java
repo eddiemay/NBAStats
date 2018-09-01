@@ -53,7 +53,7 @@ public class StatsProcessor {
 				.filter(player -> !player.getAka().isEmpty())
 				.collect(Collectors.toMap(Player::getAka, Function.identity())));
 		return playerDayStore.list(date).stream()
-				//.parallel()
+				.parallel()
 				.map(playerDay -> {
 					if (playerDay.getFantasySiteInfoOrThrow(FantasyLeague.FAN_DUEL.name).getProjectionCount() < 5 || OVER_WRITE) {
 						Player player = playerMap.get(playerDay.getName());

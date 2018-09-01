@@ -34,7 +34,7 @@ public class APIDAO {
 	private static final String COMMON_ALL_PLAYERS =
 			"http://stats.nba.com/stats/commonallplayers?LeagueID=00&Season=%s&IsOnlyCurrentSeason=1";
 	private static final String PLAYER_GAMELOGS =
-			"http://stats.nba.com/stats/playergamelogs?LeagueID=00&Season=%s&SeasonType=Regular Season&PlayerID=%d&DateFrom=%s";
+			"http://stats.nba.com/stats/playergamelogs?LeagueID=00&Season=%s&SeasonType=Regular Season&PlayerID=%d&DateFrom=%s&DateTo=%s";
 	//http://stats.nba.com/stats/playergamelogs?DateFrom=&DateTo=&GameSegment=&LastNGames=0&Location=&MeasureType=Base&Month=0&OpponentTeamID=0&Outcome=&PORound=0&PaceAdjust=N&PerMode=Totals&Period=0&PlayerID=203584&PlusMinus=N&Rank=N&Season=2017-18&SeasonSegment=&SeasonType=Regular+Season&ShotClockRange=&VsConference=&VsDivision=
 
 	private static final DateTimeFormatter API_DATE = DateTimeFormat.forPattern("MM/dd/yyyy");
@@ -51,8 +51,7 @@ public class APIDAO {
 		if (fetchFromNBAApiEnabled) {
 			try {
 				JSONObject json = new JSONObject(apiConnector.sendGet(format(PLAYER_GAMELOGS, season, playerId,
-						dateFrom == null ? "" : dateFrom.toString(API_DATE))));
-				System.out.println(json.toString());
+						dateFrom == null ? "" : dateFrom.toString(API_DATE), DateTime.now().minusDays(1).toString(API_DATE))));
 				JSONArray resultSets = json.getJSONArray("resultSets");
 				for (int x = 0; x < resultSets.length(); x++) {
 					JSONObject resultSet = resultSets.getJSONObject(x);
@@ -76,8 +75,8 @@ public class APIDAO {
 									.setPoints(rowSet.getInt(30))
 									.setPlusMinus(rowSet.getInt(31))
 									.setNBAFantasyPoints(rowSet.getDouble(32))
-									.setDoubleDouble(rowSet.getBoolean(33))
-									.setTripleDouble(rowSet.getBoolean(34)));
+									.setDoubleDouble(rowSet.getInt(33) == 1)
+									.setTripleDouble(rowSet.getInt(34) == 1));
 							games.add(game);
 						}
 					}

@@ -7,9 +7,11 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -21,14 +23,19 @@ import org.apache.spark.sql.SparkSession;
 public class FantasyProcessor {
 	private static final int SALARY_CAP = 60000;
 	private static final int LINEUP_LIMIT = 100;
-	public static final String DATA_PATH = "input/fanduel/";
+	public static final String BACK_COURT_PATH = "target/backCourts-%s.csv";
+	public static final String FRONT_COURT_PATH = "target/frontCourts-%s.csv";
+	public static final String PLAYERS_PATH = "target/players-%s.csv";
 	public static final String OUTPUT_PATH = "target/lineups-%s-%s.csv";
+	private static final SimpleDateFormat COMPUTER_DATE = new SimpleDateFormat("yyyy-MM-dd");
 
 	public static void main(String[] args) throws Exception {
 		long startTime = System.currentTimeMillis();
+		String dateStr = (args.length > 0) ? args[0] : COMPUTER_DATE.format(new Date(startTime));
+		System.out.println("Processing for date: " + dateStr);
 
 		List<String> frontCourts = new ArrayList<>(40000000);
-		BufferedReader br = new BufferedReader(new FileReader(DATA_PATH + "frontCourts.csv"));
+		BufferedReader br = new BufferedReader(new FileReader(String.format(FRONT_COURT_PATH, dateStr)));
 		String line;
 		while ((line = br.readLine()) != null) {
 			frontCourts.add(line);
@@ -44,9 +51,7 @@ public class FantasyProcessor {
 		JavaRDD<String> frontCourtsRDD = javaCtx.parallelize(frontCourts);
 
 		Map<Integer, Player> playerMap_ = new HashMap<>();
-		br = new BufferedReader(new FileReader(DATA_PATH + "players.csv"));
-		String dateStr = br.readLine();
-		System.out.println("Processing for date: " + dateStr);
+		br = new BufferedReader(new FileReader(String.format(PLAYERS_PATH, dateStr)));
 		String[]  projectionMethods = br.readLine().split(",");
 		while ((line = br.readLine()) != null) {
 			Player player = new Player(line);
@@ -56,7 +61,7 @@ public class FantasyProcessor {
 		Broadcast<Map<Integer, Player>> playerMapBroadcast = javaCtx.broadcast(playerMap_);
 
 		List<PlayerGroup> backCourts = new ArrayList<>();
-		br = new BufferedReader(new FileReader(DATA_PATH + "backCourts.csv"));
+		br = new BufferedReader(new FileReader(String.format(BACK_COURT_PATH, dateStr)));
 		while ((line = br.readLine()) != null) {
 			backCourts.add(new PlayerGroup(Arrays.stream(line.split(","))
 					.map(id -> playerMap_.get(Integer.parseInt(id)))
