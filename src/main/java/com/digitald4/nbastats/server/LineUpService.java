@@ -17,10 +17,6 @@ public class LineUpService extends SingleProtoService<LineUp> {
 		this.statsProcessor = statsProcessor;
 	}
 
-	public JSONObject updateActuals(JSONObject jsonRequest) {
-		return convertToJSON(updateActuals(transformJSONRequest(ProcessStatsRequest.getDefaultInstance(), jsonRequest)));
-	}
-
 	public Empty updateActuals(ProcessStatsRequest request) {
 		DateTime date = DateTime.parse(request.getDate(), Constaints.COMPUTER_DATE);
 		new Thread(() -> statsProcessor.updateActuals(date)).start();
@@ -35,7 +31,7 @@ public class LineUpService extends SingleProtoService<LineUp> {
 	@Override
 	public JSONObject performAction(String action, JSONObject request) {
 		if (action.equals("updateActuals")) {
-			return updateActuals(request);
+			return toJSON(updateActuals(toProto(ProcessStatsRequest.getDefaultInstance(), request)));
 		}
 		return super.performAction(action, request);
 	}

@@ -11,16 +11,10 @@ import org.joda.time.DateTime;
 import org.json.JSONObject;
 
 public class PlayerDayService extends SingleProtoService<PlayerDay> {
-	private final PlayerDayStore playerDayStore;
 	private final StatsProcessor statsProcessor;
 	public PlayerDayService(PlayerDayStore playerDayStore, StatsProcessor statsProcessor) {
 		super(playerDayStore);
-		this.playerDayStore = playerDayStore;
 		this.statsProcessor = statsProcessor;
-	}
-
-	public JSONObject processStats(JSONObject jsonRequest) {
-		return convertToJSON(processStats(transformJSONRequest(ProcessStatsRequest.getDefaultInstance(), jsonRequest)));
 	}
 
 	public Empty processStats(ProcessStatsRequest request) {
@@ -37,7 +31,7 @@ public class PlayerDayService extends SingleProtoService<PlayerDay> {
 	@Override
 	public JSONObject performAction(String action, JSONObject request) {
 		if (action.equals("processStats")) {
-			return processStats(request);
+			return toJSON(processStats(toProto(ProcessStatsRequest.getDefaultInstance(), request)));
 		}
 		return super.performAction(action, request);
 	}
