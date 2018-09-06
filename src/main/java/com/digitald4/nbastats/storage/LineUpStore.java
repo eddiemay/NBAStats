@@ -2,10 +2,13 @@ package com.digitald4.nbastats.storage;
 
 import com.digitald4.common.storage.DAO;
 import com.digitald4.common.storage.GenericStore;
-import com.digitald4.common.util.Provider;
 import com.digitald4.nbastats.proto.NBAStatsProtos.LineUp;
+import javax.inject.Inject;
+import javax.inject.Provider;
 
 public class LineUpStore extends GenericStore<LineUp> {
+
+	@Inject
 	public LineUpStore(Provider<DAO> daoProvider) {
 		super(LineUp.class, daoProvider);
 	}

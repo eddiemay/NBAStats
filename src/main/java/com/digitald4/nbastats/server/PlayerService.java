@@ -6,13 +6,12 @@ import com.digitald4.nbastats.storage.PlayerStore;
 import com.google.api.server.spi.config.Api;
 import com.google.api.server.spi.config.ApiIssuer;
 import com.google.api.server.spi.config.ApiNamespace;
-
+import javax.inject.Inject;
 
 @Api(
 		name = "player",
 		version = "v1",
-		namespace =
-		@ApiNamespace(
+		namespace = @ApiNamespace(
 				ownerDomain = "nbastats.digitald4.com",
 				ownerName = "nbastats.digitald4.com",
 				packagePath = ""
@@ -22,14 +21,13 @@ import com.google.api.server.spi.config.ApiNamespace;
 				@ApiIssuer(
 						name = "firebase",
 						issuer = "https://securetoken.google.com/fantasy-predictor",
-						jwksUri =
-								"https://www.googleapis.com/service_accounts/v1/metadata/x509/securetoken@system"
-										+ ".gserviceaccount.com"
-				)
+						jwksUri = "https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com")
 		}
 		// [END_EXCLUDE]
 )
 public class PlayerService extends SingleProtoService<Player> {
+
+	@Inject
 	public PlayerService(PlayerStore playerStore) {
 		super(playerStore);
 	}

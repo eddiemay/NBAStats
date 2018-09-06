@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import javax.inject.Inject;
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
@@ -42,6 +43,8 @@ public class APIDAO {
 	private static final boolean fetchFromNBAApiEnabled = true;
 
 	private final APIConnector apiConnector;
+
+	@Inject
 	public APIDAO(APIConnector apiConnector) {
 		this.apiConnector = apiConnector;
 	}

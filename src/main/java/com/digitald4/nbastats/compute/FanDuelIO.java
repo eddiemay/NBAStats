@@ -10,7 +10,6 @@ import com.digitald4.common.storage.DAOSQLImpl;
 import com.digitald4.common.util.Calculate;
 import com.digitald4.common.util.FormatText;
 import com.digitald4.common.util.Pair;
-import com.digitald4.common.util.Provider;
 import com.digitald4.nbastats.distributed.FantasyProcessor;
 import com.digitald4.nbastats.proto.NBAStatsProtos.LineUp;
 import com.digitald4.nbastats.proto.NBAStatsProtos.PlayerDay;
@@ -32,6 +31,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
+import javax.inject.Provider;
 import org.joda.time.DateTime;
 
 public class FanDuelIO {

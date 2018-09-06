@@ -62,6 +62,11 @@
     </dependency>
     <dependency>
       <groupId>com.google.endpoints</groupId>
+      <artifactId>endpoints-framework-guice</artifactId>
+      <version>${endpoints.framework.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.google.endpoints</groupId>
       <artifactId>endpoints-management-control-appengine-all</artifactId>
       <version>1.0.10</version>
     </dependency>
@@ -141,10 +146,6 @@
                 <outputTarget>
                   <type>java</type>
                 </outputTarget>
-                <outputTarget>
-                  <type>grpc-java</type>
-                  <pluginArtifact>io.grpc:protoc-gen-grpc-java:1.0.1</pluginArtifact>
-                </outputTarget>
               </outputTargets>
             </configuration>
           </execution>
@@ -186,6 +187,12 @@
         <configuration>
           <!-- plugin configuration -->
           <hostname>${endpoints.project.id}.appspot.com</hostname>
+          <serviceClasses>
+            <serviceClass>com.digitald4.nbastats.server.Echo</serviceClass>
+            <serviceClass>com.digitald4.nbastats.server.LineUpService</serviceClass>
+            <serviceClass>com.digitald4.nbastats.server.PlayerDayService</serviceClass>
+            <serviceClass>com.digitald4.nbastats.server.PlayerService</serviceClass>
+          </serviceClasses>
         </configuration>
       </plugin>
       <plugin>

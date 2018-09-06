@@ -5,17 +5,20 @@ import com.digitald4.common.proto.DD4Protos.Query.Filter;
 import com.digitald4.common.storage.DAO;
 import com.digitald4.common.storage.GenericStore;
 import com.digitald4.common.storage.QueryResult;
-import com.digitald4.common.util.Provider;
 import com.digitald4.nbastats.proto.NBAStatsProtos.Player;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import javax.annotation.Nullable;
+import javax.inject.Inject;
+import javax.inject.Provider;
 
 public class PlayerStore extends GenericStore<Player> {
-
 	private final APIDAO apiDAO;
-	public PlayerStore(Provider<DAO> daoProvider, APIDAO apiDAO) {
+
+	@Inject
+	public PlayerStore(Provider<DAO> daoProvider, @Nullable APIDAO apiDAO) {
 		super(Player.class, daoProvider);
 		this.apiDAO = apiDAO;
 	}
@@ -37,7 +40,7 @@ public class PlayerStore extends GenericStore<Player> {
 		return queryResult;
 	}
 
-	public List<Player> refreshPlayerList(String season) {
+	private List<Player> refreshPlayerList(String season) {
 		Map<Integer, Player> playerMap =
 				super.list(Query.newBuilder().addFilter(Filter.newBuilder().setColumn("season").setValue(season)).build())
 						.stream()

@@ -6,15 +6,19 @@ import com.digitald4.common.proto.DD4Protos.Query.OrderBy;
 import com.digitald4.common.storage.DAO;
 import com.digitald4.common.storage.GenericStore;
 import com.digitald4.common.storage.QueryResult;
-import com.digitald4.common.util.Provider;
 import com.digitald4.nbastats.proto.NBAStatsProtos.GameLog;
 import com.digitald4.nbastats.util.Constaints;
 import java.util.List;
+import javax.annotation.Nullable;
+import javax.inject.Inject;
+import javax.inject.Provider;
 import org.joda.time.DateTime;
 
 public class GameLogStore extends GenericStore<GameLog> {
 	private final APIDAO apiDAO;
-	public GameLogStore(Provider<DAO> daoProvider, APIDAO apiDAO) {
+
+	@Inject
+	public GameLogStore(Provider<DAO> daoProvider, @Nullable APIDAO apiDAO) {
 		super(GameLog.class, daoProvider);
 		this.apiDAO = apiDAO;
 	}

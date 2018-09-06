@@ -13,34 +13,30 @@ import com.google.api.server.spi.config.ApiMethod;
 import com.google.api.server.spi.config.ApiNamespace;
 import com.google.api.server.spi.config.Named;
 import com.google.protobuf.Empty;
+import javax.inject.Inject;
 import org.joda.time.DateTime;
 import org.json.JSONObject;
 
-
-// [START echo_api_annotation]
 @Api(
 		name = "lineup",
 		version = "v1",
-		namespace =
-		@ApiNamespace(
+		namespace = @ApiNamespace(
 				ownerDomain = "nbastats.digitald4.com",
-				ownerName = "nbastats.digitald4.com",
-				packagePath = ""
+				ownerName = "nbastats.digitald4.com"
 		),
 		// [START_EXCLUDE]
 		issuers = {
 				@ApiIssuer(
 						name = "firebase",
 						issuer = "https://securetoken.google.com/fantasy-predictor",
-						jwksUri =
-								"https://www.googleapis.com/service_accounts/v1/metadata/x509/securetoken@system"
-										+ ".gserviceaccount.com"
-				)
+						jwksUri = "https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com")
 		}
 		// [END_EXCLUDE]
 )
 public class LineUpService extends SingleProtoService<LineUp> {
 	private final StatsProcessor statsProcessor;
+
+	@Inject
 	public LineUpService(LineUpStore lineUpStore, StatsProcessor statsProcessor) {
 		super(lineUpStore);
 		this.statsProcessor = statsProcessor;

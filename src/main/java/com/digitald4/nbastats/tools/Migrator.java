@@ -1,12 +1,10 @@
 package com.digitald4.nbastats.tools;
 
 import com.digitald4.common.jdbc.DBConnectorThreadPoolImpl;
-import com.digitald4.common.proto.DD4Protos.Query;
 import com.digitald4.common.storage.DAO;
 import com.digitald4.common.storage.DAOSQLImpl;
-import com.digitald4.common.util.Provider;
 import com.digitald4.nbastats.storage.LineUpStore;
-import java.util.stream.Collectors;
+import javax.inject.Provider;
 
 public class Migrator {
 	private final LineUpStore lineUpStore;

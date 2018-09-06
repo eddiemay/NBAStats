@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import javax.inject.Inject;
 import org.joda.time.DateTime;
 
 public class StatsProcessor {
@@ -35,6 +36,7 @@ public class StatsProcessor {
 	private final PlayerDayStore playerDayStore;
 	private final LineUpStore lineUpStore;
 
+	@Inject
 	public StatsProcessor(PlayerStore playerStore, GameLogStore gameLogStore,
 												PlayerDayStore playerDayStore, LineUpStore lineUpStore) {
 		this.playerStore = playerStore;

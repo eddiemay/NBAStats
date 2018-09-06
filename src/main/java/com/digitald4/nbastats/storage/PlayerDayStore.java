@@ -5,16 +5,20 @@ import com.digitald4.common.proto.DD4Protos.Query.Filter;
 import com.digitald4.common.storage.DAO;
 import com.digitald4.common.storage.GenericStore;
 import com.digitald4.common.storage.QueryResult;
-import com.digitald4.common.util.Provider;
 import com.digitald4.nbastats.proto.NBAStatsProtos.PlayerDay;
 import com.digitald4.nbastats.util.Constaints;
 import java.util.List;
 import java.util.stream.Collectors;
+import javax.annotation.Nullable;
+import javax.inject.Inject;
+import javax.inject.Provider;
 import org.joda.time.DateTime;
 
 public class PlayerDayStore extends GenericStore<PlayerDay> {
 	private final APIDAO apiDAO;
-	public PlayerDayStore(Provider<DAO> daoProvider, APIDAO apiDAO) {
+
+	@Inject
+	public PlayerDayStore(Provider<DAO> daoProvider, @Nullable APIDAO apiDAO) {
 		super(PlayerDay.class, daoProvider);
 		this.apiDAO = apiDAO;
 	}
