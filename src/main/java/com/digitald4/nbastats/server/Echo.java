@@ -143,7 +143,7 @@ public class Echo {
 		return response;
 	}
 
-	private class Message {
+	public class Message {
 		private String message;
 
 		public String getMessage() {
@@ -155,7 +155,7 @@ public class Echo {
 		}
 	}
 
-	private class Email {
+	public class Email {
 		private String email;
 
 		public String getEmail() {
