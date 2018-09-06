@@ -2,6 +2,7 @@ package com.digitald4.nbastats.server;
 
 import com.digitald4.common.server.GeneralDataService;
 import com.digitald4.common.server.UserService;
+import com.digitald4.nbastats.server.example.Echo;
 import com.digitald4.nbastats.storage.APIDAO;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.util.Providers;

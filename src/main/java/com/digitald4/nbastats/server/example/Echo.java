@@ -1,4 +1,4 @@
-package com.digitald4.nbastats.server;
+package com.digitald4.nbastats.server.example;
 
 import com.google.api.server.spi.auth.EspAuthenticator;
 import com.google.api.server.spi.auth.common.User;
@@ -141,29 +141,5 @@ public class Echo {
 		Email response = new Email();
 		response.setEmail(user.getEmail());
 		return response;
-	}
-
-	public class Message {
-		private String message;
-
-		public String getMessage() {
-			return message;
-		}
-
-		public void setMessage(String message) {
-			this.message = message;
-		}
-	}
-
-	public class Email {
-		private String email;
-
-		public String getEmail() {
-			return email;
-		}
-
-		public void setEmail(String email) {
-			this.email = email;
-		}
 	}
 }
