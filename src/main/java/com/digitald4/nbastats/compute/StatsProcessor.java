@@ -46,7 +46,7 @@ public class StatsProcessor {
 	}
 
 	public List<PlayerDay> processStats(DateTime date) {
-		List<Player> playerList = playerStore.list(Constaints.getSeason(date));
+		List<Player> playerList = playerStore.list(Constaints.getSeason(date)).getResults();
 		Map<String, Player> playerMap = playerList.stream()
 				.parallel()
 				.collect(Collectors.toMap(Player::getName, Function.identity()));
@@ -54,7 +54,7 @@ public class StatsProcessor {
 				.parallel()
 				.filter(player -> !player.getAka().isEmpty())
 				.collect(Collectors.toMap(Player::getAka, Function.identity())));
-		return playerDayStore.list(date).stream()
+		return playerDayStore.list(date).getResults().stream()
 				.parallel()
 				.map(playerDay -> {
 					if (playerDay.getFantasySiteInfoOrThrow(FantasyLeague.FAN_DUEL.name).getProjectionCount() < 5 || OVER_WRITE) {
@@ -86,14 +86,14 @@ public class StatsProcessor {
 				.addFilter(Filter.newBuilder().setColumn("date").setOperator("<").setValue(strDate))
 				.addOrderBy(OrderBy.newBuilder().setColumn("date").setDesc(true))
 				.setLimit(SAMPLE_SIZE)
-				.build());
+				.build()).getResults();
 		if (games.size() < SAMPLE_SIZE) {
 			games.addAll(gameLogStore.list(Query.newBuilder()
 					.addFilter(Filter.newBuilder().setColumn("player_id").setValue(String.valueOf(player.getPlayerId())))
 					.addFilter(Filter.newBuilder().setColumn("season").setValue(Constaints.getPrevSeason(date)))
 					.addOrderBy(OrderBy.newBuilder().setColumn("date").setDesc(true))
 					.setLimit(SAMPLE_SIZE - games.size())
-					.build()));
+					.build()).getResults());
 		}
 		if (games.size() > 0) {
 			int sampleSize = games.size();
@@ -135,6 +135,7 @@ public class StatsProcessor {
 		String strDate = date.toString(Constaints.COMPUTER_DATE);
 		// playerStore.refreshPlayerList(Constaints.getSeason(date));
 		Map<Integer, PlayerDay> playerDaysMap = playerDayStore.list(date)
+				.getResults()
 				.stream()
 				.parallel()
 				.filter(playerDay -> playerDay.getPlayerId() != 0)
@@ -161,6 +162,7 @@ public class StatsProcessor {
 				.collect(Collectors.toMap(PlayerDay::getPlayerId, Function.identity()));
 
 		lineUpStore.list(Query.newBuilder().addFilter(Filter.newBuilder().setColumn("date").setValue(strDate)).build())
+				.getResults()
 				.parallelStream()
 				.forEach(lineUp -> {
 					LineUp.Builder builder = lineUp.toBuilder()

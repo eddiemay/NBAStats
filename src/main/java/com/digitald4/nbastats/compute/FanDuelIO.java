@@ -223,6 +223,7 @@ public class FanDuelIO {
 						.addFilter(Filter.newBuilder().setColumn("date").setValue(date.toString(Constaints.COMPUTER_DATE)))
 						.setLimit(1)
 						.build())
+				.getResults()
 				.get(0)
 				.getFantasySiteInfoOrThrow(league)
 				.getProjectionMap()

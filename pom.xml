@@ -67,7 +67,17 @@
     </dependency>
     <dependency>
       <groupId>com.google.endpoints</groupId>
-      <artifactId>endpoints-management-control-appengine-all</artifactId>
+      <artifactId>endpoints-framework-auth</artifactId>
+      <version>1.0.10</version>
+    </dependency>
+    <dependency>
+      <groupId>com.google.endpoints</groupId>
+      <artifactId>endpoints-management-control</artifactId>
+      <version>1.0.10</version>
+    </dependency>
+    <dependency>
+      <groupId>com.google.endpoints</groupId>
+      <artifactId>endpoints-management-control-appengine</artifactId>
       <version>1.0.10</version>
     </dependency>
     <dependency>
