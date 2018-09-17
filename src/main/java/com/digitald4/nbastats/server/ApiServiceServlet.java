@@ -1,9 +1,7 @@
 package com.digitald4.nbastats.server;
 
-import com.digitald4.common.proto.DD4Protos.GeneralData;
 import com.digitald4.common.server.JSONServiceImpl;
 import com.digitald4.common.server.SingleProtoService;
-import com.digitald4.common.util.ProtoUtil;
 import com.digitald4.nbastats.compute.StatsProcessor;
 import com.digitald4.nbastats.proto.NBAStatsProtos.GameLog;
 import com.digitald4.nbastats.proto.NBAStatsProtos.Player;
@@ -15,10 +13,6 @@ import com.digitald4.nbastats.storage.PlayerDayStore;
 import com.digitald4.nbastats.storage.PlayerStore;
 
 public class ApiServiceServlet extends com.digitald4.common.server.ApiServiceServlet {
-
-	static {
-		ProtoUtil.init(GeneralData.getDescriptor(), GameLog.getDescriptor());
-	}
 
 	public ApiServiceServlet() {
 		PlayerStore playerStore = new PlayerStore(daoProvider, null);
