@@ -18,7 +18,7 @@ import org.joda.time.DateTime;
 import org.json.JSONObject;
 
 @Api(
-		name = "playerDay",
+		name = "playerDays",
 		version = "v1",
 		namespace = @ApiNamespace(
 				ownerDomain = "nbastats.digitald4.com",
@@ -42,7 +42,7 @@ public class PlayerDayService extends SingleProtoService<PlayerDay> {
 		this.statsProcessor = statsProcessor;
 	}
 
-	@ApiMethod(name = "processStats", httpMethod = ApiMethod.HttpMethod.GET)
+	@ApiMethod(httpMethod = ApiMethod.HttpMethod.GET, path = "processStats/{date}")
 	public Empty processStats(@Named("date") String date) {
 		new Thread(() -> statsProcessor.processStats(DateTime.parse(date, Constaints.COMPUTER_DATE))).start();
 		return Empty.getDefaultInstance();
@@ -52,7 +52,7 @@ public class PlayerDayService extends SingleProtoService<PlayerDay> {
 
 		private PlayerDayService playerDayService;
 		public PlayerDayJSONService(PlayerDayService playerDayService) {
-			super(PlayerDay.class, playerDayService,  false);
+			super(playerDayService,  false);
 			this.playerDayService = playerDayService;
 		}
 

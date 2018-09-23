@@ -39,6 +39,7 @@
 
     <endpoints.framework.version>2.1.2</endpoints.framework.version>
     <endpoints.management.version>1.0.4</endpoints.management.version>
+    <google.protobuf.version>3.6.1</google.protobuf.version>
 
     <endpoints.project.id>fantasy-predictor</endpoints.project.id>
   </properties>
@@ -57,33 +58,13 @@
     </dependency>
     <dependency>
       <groupId>com.google.endpoints</groupId>
-      <artifactId>endpoints-framework</artifactId>
-      <version>${endpoints.framework.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>com.google.endpoints</groupId>
-      <artifactId>endpoints-framework-guice</artifactId>
-      <version>${endpoints.framework.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>com.google.endpoints</groupId>
       <artifactId>endpoints-framework-auth</artifactId>
-      <version>1.0.10</version>
-    </dependency>
-    <dependency>
-      <groupId>com.google.endpoints</groupId>
-      <artifactId>endpoints-management-control</artifactId>
-      <version>1.0.10</version>
-    </dependency>
-    <dependency>
-      <groupId>com.google.endpoints</groupId>
-      <artifactId>endpoints-management-control-appengine</artifactId>
       <version>1.0.10</version>
     </dependency>
     <dependency>
       <groupId>com.google.protobuf</groupId>
       <artifactId>protobuf-java</artifactId>
-      <version>3.3.0</version>
+      <version>${google.protobuf.version}</version>
     </dependency>
     <dependency>
       <groupId>javax.inject</groupId>
@@ -150,7 +131,7 @@
               <goal>run</goal>
             </goals>
             <configuration>
-              <protocArtifact>com.google.protobuf:protoc:3.3.0</protocArtifact>
+              <protocArtifact>com.google.protobuf:protoc:${google.protobuf.version}</protocArtifact>
               <includeStdTypes>true</includeStdTypes>
               <outputTargets>
                 <outputTarget>

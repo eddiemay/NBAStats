@@ -18,7 +18,7 @@ import org.joda.time.DateTime;
 import org.json.JSONObject;
 
 @Api(
-		name = "lineup",
+		name = "lineups",
 		version = "v1",
 		namespace = @ApiNamespace(
 				ownerDomain = "nbastats.digitald4.com",
@@ -42,7 +42,7 @@ public class LineUpService extends SingleProtoService<LineUp> {
 		this.statsProcessor = statsProcessor;
 	}
 
-	@ApiMethod(name = "updateActuals", httpMethod = ApiMethod.HttpMethod.GET)
+	@ApiMethod(httpMethod = ApiMethod.HttpMethod.GET, path = "updateActuals/{date}")
 	public Empty updateActuals(@Named("date") String date) {
 		new Thread(() -> statsProcessor.updateActuals(DateTime.parse(date, Constaints.COMPUTER_DATE))).start();
 		return Empty.getDefaultInstance();
@@ -52,7 +52,7 @@ public class LineUpService extends SingleProtoService<LineUp> {
 
 		private LineUpService lineUpService;
 		LineUpJSONService(LineUpService lineUpService) {
-			super(LineUp.class, lineUpService, false);
+			super(lineUpService, false);
 			this.lineUpService = lineUpService;
 		}
 

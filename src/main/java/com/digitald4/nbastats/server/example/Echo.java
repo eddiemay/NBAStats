@@ -41,7 +41,7 @@ public class Echo {
 	 * Note that httpMethod is not specified. This will default to a reasonable HTTP method
 	 * depending on the API method name. In this case, the HTTP method will default to POST.
 	 */
-	@ApiMethod(name = "echo")
+	@ApiMethod(path = "/echo/v1")
 	public Message echo(Message message, @Named("n") @Nullable Integer n) {
 		return doEcho(message, n);
 	}
@@ -57,7 +57,7 @@ public class Echo {
 	 * Note that httpMethod is not specified. This will default to a reasonable HTTP method
 	 * depending on the API method name. In this case, the HTTP method will default to POST.
 	 */
-	@ApiMethod(name = "echo_path_parameter", path = "echo/{n}")
+	@ApiMethod(name = "echo_path_parameter", path = "{n}")
 	public Message echoPathParameter(Message message, @Named("n") int n) {
 		return doEcho(message, n);
 	}
