@@ -1,6 +1,6 @@
 package com.digitald4.nbastats.server;
 
-import com.digitald4.common.server.SingleProtoService;
+import com.digitald4.common.server.service.SingleProtoService;
 import com.digitald4.nbastats.proto.NBAStatsProtos.Player;
 import com.digitald4.nbastats.storage.PlayerStore;
 import com.google.api.server.spi.config.Api;

@@ -178,12 +178,6 @@
         <configuration>
           <!-- plugin configuration -->
           <hostname>${endpoints.project.id}.appspot.com</hostname>
-          <serviceClasses>
-            <serviceClass>com.digitald4.nbastats.server.example.Echo</serviceClass>
-            <serviceClass>com.digitald4.nbastats.server.LineUpService</serviceClass>
-            <serviceClass>com.digitald4.nbastats.server.PlayerDayService</serviceClass>
-            <serviceClass>com.digitald4.nbastats.server.PlayerService</serviceClass>
-          </serviceClasses>
         </configuration>
       </plugin>
       <plugin>
