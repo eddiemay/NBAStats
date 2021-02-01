@@ -1,55 +1,53 @@
 package com.digitald4.nbastats.storage;
 
-import com.digitald4.common.proto.DD4Protos.Query;
-import com.digitald4.common.proto.DD4Protos.Query.Filter;
-import com.digitald4.common.storage.DAO;
-import com.digitald4.common.storage.GenericStore;
-import com.digitald4.common.storage.QueryResult;
-import com.digitald4.nbastats.proto.NBAStatsProtos.Player;
-import java.util.List;
-import java.util.Map;
+import static com.google.common.collect.ImmutableList.toImmutableList;
+import static com.google.common.collect.ImmutableMap.toImmutableMap;
+
+import com.digitald4.common.exception.DD4StorageException;
+import com.digitald4.common.model.HasProto;
+import com.digitald4.common.storage.*;
+import com.digitald4.common.storage.Query.Filter;
+import com.digitald4.nbastats.model.Player;
+import com.google.common.collect.ImmutableMap;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
 
-public class PlayerStore extends GenericStore<Player> {
+public class PlayerStore extends ModelStore<Player> {
 	private final APIDAO apiDAO;
 
 	@Inject
-	public PlayerStore(Provider<DAO> daoProvider, @Nullable APIDAO apiDAO) {
+	public PlayerStore(Provider<DAO<HasProto>> daoProvider, @Nullable APIDAO apiDAO) {
 		super(Player.class, daoProvider);
 		this.apiDAO = apiDAO;
 	}
 
 	public QueryResult<Player> list(String season) {
-		return list(Query.newBuilder()
-				.addFilter(Filter.newBuilder().setColumn("season").setValue(season))
-				.build());
-	}
-
-	@Override
-	public QueryResult<Player> list(Query query) {
-		QueryResult<Player> queryResult = super.list(query);
-		if (queryResult.getTotalSize() == 0 && apiDAO != null && query.getFilterCount() == 1
-				&& query.getFilter(0).getColumn().equals("season")) {
-			List<Player> players = refreshPlayerList(query.getFilter(0).getValue());
-			return new QueryResult<>(players, players.size());
+		QueryResult<Player> queryResult =
+				list(new Query().setFilters(new Filter().setColumn("season").setOperator("=").setValue(season)));
+		if (queryResult.getTotalSize() == 0 && apiDAO != null) {
+			queryResult = refreshPlayerList(season);
 		}
+
 		return queryResult;
 	}
 
-	private List<Player> refreshPlayerList(String season) {
-		Map<Integer, Player> playerMap =
-				super.list(Query.newBuilder().addFilter(Filter.newBuilder().setColumn("season").setValue(season)).build())
-						.getResults()
-						.stream()
-						.collect(Collectors.toMap(Player::getPlayerId, Function.identity()));
-		return apiDAO.listAllPlayers(season)
+	public QueryResult<Player> refreshPlayerList(String season) {
+		if (apiDAO == null) {
+			throw new DD4StorageException("ApiDAO required to refresh player list");
+		}
+
+		ImmutableMap<Integer, Player> playerMap =
+				list(new Query().setFilters(new Filter().setColumn("season").setOperator("=").setValue(season)))
+				.getResults()
+				.stream()
+				.collect(toImmutableMap(Player::getPlayerId, Function.identity()));
+
+		return new QueryResult<>(apiDAO.listAllPlayers(season)
 				.stream()
 				.parallel()
-				.map(player -> playerMap.computeIfAbsent(player.getPlayerId(), playerId -> create(player)))
-				.collect(Collectors.toList());
+				.map(player -> playerMap.getOrDefault(player.getPlayerId(), create(Player.fromProto(player))))
+				.collect(toImmutableList()));
 	}
 }

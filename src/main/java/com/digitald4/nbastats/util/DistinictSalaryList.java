@@ -1,6 +1,6 @@
 package com.digitald4.nbastats.util;
 
-import com.digitald4.nbastats.proto.NBAStatsProtos.PlayerDay;
+import com.digitald4.nbastats.model.PlayerDay;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -19,7 +19,7 @@ public class DistinictSalaryList extends ArrayList<PlayerDay> {
 		@Override
 		public boolean add(PlayerDay player) {
 			AtomicInteger byCost = byCostCount
-					.computeIfAbsent(player.getFantasySiteInfoOrThrow(league).getCost(), cost -> new AtomicInteger());
+					.computeIfAbsent(player.getFantasySiteInfos().get(league).getCost(), cost -> new AtomicInteger());
 			if (byCost.get() < limit) {
 				byCost.incrementAndGet();
 				return super.add(player);

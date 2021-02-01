@@ -33,12 +33,8 @@
     <maven.compiler.source>1.8</maven.compiler.source>
     <maven.compiler.target>1.8</maven.compiler.target>
 
-    <appengine.app.version>1</appengine.app.version>
-    <appengine.target.version>1.9.64</appengine.target.version>
     <appengine-maven-plugin-version>1.3.1</appengine-maven-plugin-version>
-
-    <endpoints.framework.version>2.1.2</endpoints.framework.version>
-    <endpoints.management.version>1.0.4</endpoints.management.version>
+    <endpoints-framework-maven-plugin>1.0.2</endpoints-framework-maven-plugin>
     <google.protobuf.version>3.6.1</google.protobuf.version>
 
     <endpoints.project.id>fantasy-predictor</endpoints.project.id>
@@ -52,26 +48,6 @@
       <version>1.0</version>
     </dependency>
     <dependency>
-      <groupId>com.google.appengine</groupId>
-      <artifactId>appengine-api-1.0-sdk</artifactId>
-      <version>${appengine.target.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>com.google.endpoints</groupId>
-      <artifactId>endpoints-framework-auth</artifactId>
-      <version>1.0.10</version>
-    </dependency>
-    <dependency>
-      <groupId>com.google.protobuf</groupId>
-      <artifactId>protobuf-java</artifactId>
-      <version>${google.protobuf.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>javax.inject</groupId>
-      <artifactId>javax.inject</artifactId>
-      <version>1</version>
-    </dependency>
-    <dependency>
       <groupId>org.apache.spark</groupId>
       <artifactId>spark-sql_2.11</artifactId>
       <version>2.2.1</version>
@@ -80,7 +56,7 @@
     <dependency>
       <groupId>org.tensorflow</groupId>
       <artifactId>tensorflow</artifactId>
-      <version>1.6.0</version>
+      <version>1.15.0</version>
       <scope>provided</scope>
     </dependency>
 
@@ -92,21 +68,15 @@
       <scope>test</scope>
     </dependency>
     <dependency>
+      <groupId>com.google.truth</groupId>
+      <artifactId>truth</artifactId>
+      <version>1.1.2</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
       <groupId>org.mockito</groupId>
       <artifactId>mockito-all</artifactId>
       <version>1.10.19</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>com.google.appengine</groupId>
-      <artifactId>appengine-testing</artifactId>
-      <version>${appengine.target.version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>com.google.appengine</groupId>
-      <artifactId>appengine-api-stubs</artifactId>
-      <version>${appengine.target.version}</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
@@ -160,7 +130,7 @@
             <manifest>
               <addClasspath>true</addClasspath>
               <mainClass>
-                com.digitald4.nbastats.compute.FanDuelIO
+                com.digitald4.nbastats.machinelearning.HelloTF
               </mainClass>
             </manifest>
           </archive>
@@ -174,7 +144,7 @@
       <plugin>
         <groupId>com.google.cloud.tools</groupId>
         <artifactId>endpoints-framework-maven-plugin</artifactId>
-        <version>1.0.2</version>
+        <version>${endpoints-framework-maven-plugin}</version>
         <configuration>
           <!-- plugin configuration -->
           <hostname>${endpoints.project.id}.appspot.com</hostname>

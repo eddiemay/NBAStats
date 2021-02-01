@@ -1,27 +1,28 @@
 package com.digitald4.nbastats.compute;
 
-import com.digitald4.common.jdbc.DBConnectorThreadPoolImpl;
-import com.digitald4.common.proto.DD4Protos.Query;
-import com.digitald4.common.proto.DD4Protos.Query.Filter;
+import com.digitald4.common.model.HasProto;
 import com.digitald4.common.server.APIConnector;
 import com.digitald4.common.storage.DAO;
 import com.digitald4.common.storage.DAOAPIImpl;
-import com.digitald4.common.storage.DAOSQLImpl;
+import com.digitald4.common.storage.DAOModelWrapper;
+import com.digitald4.common.storage.Query;
+import com.digitald4.common.storage.Query.Filter;
 import com.digitald4.common.util.Calculate;
 import com.digitald4.common.util.FormatText;
 import com.digitald4.common.util.Pair;
 import com.digitald4.nbastats.distributed.FantasyProcessor;
-import com.digitald4.nbastats.proto.NBAStatsProtos.LineUp;
-import com.digitald4.nbastats.proto.NBAStatsProtos.PlayerDay;
-import com.digitald4.nbastats.proto.NBAStatsProtos.PlayerDay.FantasySiteInfo;
+import com.digitald4.nbastats.model.LineUp;
+import com.digitald4.nbastats.model.PlayerDay;
+import com.digitald4.nbastats.model.PlayerDay.FantasySiteInfo;
 import com.digitald4.nbastats.storage.APIDAO;
-import com.digitald4.nbastats.storage.GameLogStore;
+import com.digitald4.nbastats.storage.PlayerGameLogStore;
 import com.digitald4.nbastats.storage.LineUpStore;
 import com.digitald4.nbastats.storage.PlayerDayStore;
 import com.digitald4.nbastats.storage.PlayerStore;
 import com.digitald4.nbastats.util.Constaints;
 import com.digitald4.nbastats.util.Constaints.FantasyLeague;
 import com.digitald4.nbastats.util.DistinictSalaryList;
+import com.google.protobuf.Message;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.FileWriter;
@@ -35,7 +36,6 @@ import javax.inject.Provider;
 import org.joda.time.DateTime;
 
 public class FanDuelIO {
-	private static final boolean runLocal = false;
 	private static final int PAIR_LIMIT = 6;
 	private static final int SINGLE_LIMIT = 6;
 	private static final String league = FantasyLeague.FAN_DUEL.name;
@@ -59,12 +59,12 @@ public class FanDuelIO {
 		List<PlayerDay> selected = statsProcessor.processStats(date)
 				.stream()
 				.filter(playerDay -> playerDay
-						.getFantasySiteInfoOrDefault(league, FantasySiteInfo.getDefaultInstance()).getProjectionCount() > 4)
+						.getFantasySiteInfos().computeIfAbsent(league, l -> new FantasySiteInfo()).getProjections().size() > 4)
 				.sorted((p1, p2) -> Double.compare(
-						p2.getFantasySiteInfoOrThrow(league).getProjectionOrDefault("RotoG Proj", 0),
-						p1.getFantasySiteInfoOrThrow(league).getProjectionOrDefault("RotoG Proj", 0)))
+						p2.getFantasySiteInfos().get(league).getProjections().getOrDefault("RotoG Proj", 0.0),
+						p1.getFantasySiteInfos().get(league).getProjections().getOrDefault("RotoG Proj", 0.0)))
 				.peek(player -> {
-					switch (player.getFantasySiteInfoOrThrow(league).getPosition(0)) {
+					switch (player.getFantasySiteInfos().get(league).getPositions().get(0)) {
 						case PG: pgs.add(player); break;
 						case SG: sgs.add(player); break;
 						case SF: sfs.add(player); break;
@@ -89,12 +89,12 @@ public class FanDuelIO {
 		List<PlayerDay> selected = statsProcessor.updateActuals(date)
 				.stream()
 				.filter(playerDay -> playerDay
-						.getFantasySiteInfoOrDefault(league, FantasySiteInfo.getDefaultInstance()).getActual() > 0)
+						.getFantasySiteInfos().computeIfAbsent(league, l -> new FantasySiteInfo()).getActual() > 0)
 				.sorted((p1, p2) -> Double.compare(
-						p2.getFantasySiteInfoOrThrow(league).getActual(),
-						p1.getFantasySiteInfoOrThrow(league).getActual()))
+						p2.getFantasySiteInfos().get(league).getActual(),
+						p1.getFantasySiteInfos().get(league).getActual()))
 				.peek(player -> {
-					switch (player.getFantasySiteInfoOrThrow(league).getPosition(0)) {
+					switch (player.getFantasySiteInfos().get(league).getPositions().get(0)) {
 						case PG: pgs.add(player); break;
 						case SG: sgs.add(player); break;
 						case SF: sfs.add(player); break;
@@ -136,11 +136,11 @@ public class FanDuelIO {
 		for (Pair<PlayerDay, PlayerDay> pgPair : pgPs) {
 			PlayerDay pg1 = pgPair.getLeft();
 			PlayerDay pg2 = pgPair.getRight();
-			int pgCost = pg1.getFantasySiteInfoOrThrow(league).getCost() + pg2.getFantasySiteInfoOrThrow(league).getCost();
+			int pgCost = pg1.getFantasySiteInfos().get(league).getCost() + pg2.getFantasySiteInfos().get(league).getCost();
 			for (Pair<PlayerDay, PlayerDay> sgPair : sgPs) {
 				PlayerDay sg1 = sgPair.getLeft();
 				PlayerDay sg2 = sgPair.getRight();
-				int sgCost = sg1.getFantasySiteInfoOrThrow(league).getCost() + sg2.getFantasySiteInfoOrThrow(league).getCost();
+				int sgCost = sg1.getFantasySiteInfos().get(league).getCost() + sg2.getFantasySiteInfos().get(league).getCost();
 				if (pgCost + sgCost < FOUR_PLAYER_SALARY_LIMIT) {
 					backCourtCount++;
 					fw.write(pg1.getPlayerId() + "," + pg2.getPlayerId() + "," + sg1.getPlayerId() + "," + sg2.getPlayerId()
@@ -156,13 +156,13 @@ public class FanDuelIO {
 		for (Pair<PlayerDay, PlayerDay> sfPair : sfPs) {
 			PlayerDay sf1 = sfPair.getLeft();
 			PlayerDay sf2 = sfPair.getRight();
-			int sfCost = sf1.getFantasySiteInfoOrThrow(league).getCost() + sf2.getFantasySiteInfoOrThrow(league).getCost();
+			int sfCost = sf1.getFantasySiteInfos().get(league).getCost() + sf2.getFantasySiteInfos().get(league).getCost();
 			for (Pair<PlayerDay, PlayerDay> pfPair : pfPs) {
 				PlayerDay pf1 = pfPair.getLeft();
 				PlayerDay pf2 = pfPair.getRight();
-				int pfCost = pf1.getFantasySiteInfoOrThrow(league).getCost() + pf2.getFantasySiteInfoOrThrow(league).getCost();
+				int pfCost = pf1.getFantasySiteInfos().get(league).getCost() + pf2.getFantasySiteInfos().get(league).getCost();
 				for (PlayerDay c : cs) {
-					if (sfCost + pfCost + c.getFantasySiteInfoOrThrow(league).getCost() < FIVE_PLAYER_SALARY_LIMIT) {
+					if (sfCost + pfCost + c.getFantasySiteInfos().get(league).getCost() < FIVE_PLAYER_SALARY_LIMIT) {
 						frontCourtCount++;
 						fw.write(sf1.getPlayerId() + "," + sf2.getPlayerId() + "," + pf1.getPlayerId() + "," + pf2.getPlayerId()
 								+ "," + c.getPlayerId() + "\n");
@@ -179,7 +179,7 @@ public class FanDuelIO {
 
 	private static void write(List<PlayerDay> players, DateTime date) throws IOException {
 		FileWriter fw = new FileWriter(String.format(FantasyProcessor.PLAYERS_PATH, date.toString(Constaints.COMPUTER_DATE)));
-		for (String method : players.get(0).getFantasySiteInfoOrThrow(league).getProjectionMap().keySet()) {
+		for (String method : players.get(0).getFantasySiteInfos().get(league).getProjections().keySet()) {
 			fw.write(method + ",");
 		}
 		for (PlayerDay playerDay : players) {
@@ -189,8 +189,8 @@ public class FanDuelIO {
 	}
 
 	private static String write(PlayerDay player) {
-		FantasySiteInfo fantasySiteInfo = player.getFantasySiteInfoOrThrow(league);
-		return player.getPlayerId() + "," + fantasySiteInfo.getCost() + "," + fantasySiteInfo.getProjectionMap().values()
+		FantasySiteInfo fantasySiteInfo = player.getFantasySiteInfos().get(league);
+		return player.getPlayerId() + "," + fantasySiteInfo.getCost() + "," + fantasySiteInfo.getProjections().values()
 				.stream()
 				.map(proj -> String.valueOf(Calculate.round(proj, 1)))
 				.collect(Collectors.joining(","));
@@ -200,7 +200,7 @@ public class FanDuelIO {
 		FileWriter fw = new FileWriter(String.format(FantasyProcessor.PLAYERS_PATH, date.toString(Constaints.COMPUTER_DATE)));
 		fw.write("Actual");
 		for (PlayerDay player : players) {
-			FantasySiteInfo fantasySiteInfo = player.getFantasySiteInfoOrThrow(league);
+			FantasySiteInfo fantasySiteInfo = player.getFantasySiteInfos().get(league);
 			fw.write("\n" + player.getPlayerId() + "," + fantasySiteInfo.getCost() + "," + fantasySiteInfo.getActual());
 		}
 		fw.close();
@@ -219,36 +219,34 @@ public class FanDuelIO {
 
 	private void insertData(DateTime date) {
 		playerDayStore
-				.list(Query.newBuilder()
-						.addFilter(Filter.newBuilder().setColumn("date").setValue(date.toString(Constaints.COMPUTER_DATE)))
-						.setLimit(1)
-						.build())
+				.list(new Query()
+						.setFilters(new Filter().setColumn("date").setValue(date.toString(Constaints.COMPUTER_DATE)))
+						.setLimit(1))
 				.getResults()
 				.get(0)
-				.getFantasySiteInfoOrThrow(league)
-				.getProjectionMap()
+				.getFantasySiteInfos().get(league)
+				.getProjections()
 				.keySet()
 				.parallelStream()
 				.forEach(method -> {
-					lineUpStore.delete(Query.newBuilder()
-							.addFilter(Filter.newBuilder().setColumn("fantasy_site").setValue(league))
-							.addFilter(Filter.newBuilder().setColumn("date").setValue(date.toString(Constaints.COMPUTER_DATE)))
-							.addFilter(Filter.newBuilder().setColumn("projection_method").setValue(method))
-							.build());
+					lineUpStore.delete(
+							new Query().setFilters(
+									new Filter().setColumn("fantasy_site").setValue(league),
+									new Filter().setColumn("date").setValue(date.toString(Constaints.COMPUTER_DATE)),
+									new Filter().setColumn("projection_method").setValue(method)));
 					String fileName = String.format(FantasyProcessor.OUTPUT_PATH, date.toString(Constaints.COMPUTER_DATE), method);
 					try (BufferedReader reader = new BufferedReader(new FileReader(fileName))) {
 						String line;
 						while ((line = reader.readLine()) != null) {
 							String[] parts = line.split(",");
-							lineUpStore.create(LineUp.newBuilder()
+							lineUpStore.create(new LineUp()
 									.setDate(date.toString(Constaints.COMPUTER_DATE))
 									.setFantasySite(league)
 									.setProjected(Double.parseDouble(parts[0].trim()))
 									.setProjectionMethod(parts[1])
 									.setTotalSalary(Integer.parseInt(parts[2]))
-									.addAllPlayerId(Arrays.asList(parts).subList(3, parts.length).stream()
-											.map(Integer::parseInt).collect(Collectors.toList()))
-									.build());
+									.setPlayerIds(Arrays.asList(parts).subList(3, parts.length).stream()
+											.map(Integer::parseInt).collect(Collectors.toList())));
 						}
 					} catch (IOException e) {
 						System.out.println("Error opening file: " + fileName);
@@ -257,25 +255,24 @@ public class FanDuelIO {
 	}
 
 	private void insertActuals(DateTime date) {
-		lineUpStore.delete(Query.newBuilder()
-				.addFilter(Filter.newBuilder().setColumn("fantasy_site").setValue(league))
-				.addFilter(Filter.newBuilder().setColumn("date").setValue(date.toString(Constaints.COMPUTER_DATE)))
-				.addFilter(Filter.newBuilder().setColumn("projection_method").setValue("Actual"))
-				.build());
+		lineUpStore.delete(
+				new Query().setFilters(
+						new Filter().setColumn("fantasy_site").setValue(league),
+						new Filter().setColumn("date").setValue(date.toString(Constaints.COMPUTER_DATE)),
+						new Filter().setColumn("projection_method").setValue("Actual")));
 		String fileName = String.format(FantasyProcessor.OUTPUT_PATH, date.toString(Constaints.COMPUTER_DATE), "Actual");
 		try (BufferedReader reader = new BufferedReader(new FileReader(fileName))) {
 			String line;
 			while ((line = reader.readLine()) != null) {
 				String[] parts = line.split(",");
-				lineUpStore.create(LineUp.newBuilder()
+				lineUpStore.create(new LineUp()
 						.setDate(date.toString(Constaints.COMPUTER_DATE))
 						.setFantasySite(league)
 						.setActual(Double.parseDouble(parts[0].trim()))
 						.setProjectionMethod("Actual")
 						.setTotalSalary(Integer.parseInt(parts[2]))
-						.addAllPlayerId(Arrays.asList(parts).subList(3, parts.length).stream()
-								.map(Integer::parseInt).collect(Collectors.toList()))
-						.build());
+						.setPlayerIds(Arrays.asList(parts).subList(3, parts.length).stream()
+								.map(Integer::parseInt).collect(Collectors.toList())));
 			}
 		} catch (IOException e) {
 			System.out.println("Error opening file: " + fileName);
@@ -296,17 +293,16 @@ public class FanDuelIO {
 			}
 		}
 
-		DAO dao = !runLocal ? new DAOAPIImpl(new APIConnector("https://fantasy-predictor.appspot.com/api"))
-				: new DAOSQLImpl(new DBConnectorThreadPoolImpl("org.gjt.mm.mysql.Driver",
-				"jdbc:mysql://localhost/NBAStats?autoReconnect=true",
-				"dd4_user", "getSchooled85"));
-		Provider<DAO> daoProvider = () -> dao;
-		APIDAO apiDAO = new APIDAO(new APIConnector(null));
-		PlayerStore playerStore = new PlayerStore(daoProvider, apiDAO);
-		GameLogStore gameLogStore = new GameLogStore(daoProvider, apiDAO);
-		PlayerDayStore playerDayStore = new PlayerDayStore(daoProvider, apiDAO);
-		LineUpStore lineUpStore = new LineUpStore(daoProvider);
-		StatsProcessor statsProcessor = new StatsProcessor(playerStore, gameLogStore, playerDayStore, lineUpStore);
+		DAO<Message> dao = new DAOAPIImpl(new APIConnector("https://fantasy-predictor.appspot.com/_ah/api", "v1"));
+		Provider<DAO<Message>> daoProvider = () -> dao;
+		DAO<HasProto> modelDao = new DAOModelWrapper(daoProvider);
+		Provider<DAO<HasProto>> modelDaoProvider = () -> modelDao;
+		APIDAO apiDAO = new APIDAO(new APIConnector(null, null, 500));
+		PlayerStore playerStore = new PlayerStore(modelDaoProvider, apiDAO);
+		PlayerGameLogStore playerGameLogStore = new PlayerGameLogStore(modelDaoProvider, apiDAO);
+		PlayerDayStore playerDayStore = new PlayerDayStore(modelDaoProvider, apiDAO);
+		LineUpStore lineUpStore = new LineUpStore(modelDaoProvider);
+		StatsProcessor statsProcessor = new StatsProcessor(playerStore, playerGameLogStore, playerDayStore, lineUpStore);
 		FanDuelIO fanDuelIO = new FanDuelIO(statsProcessor, lineUpStore, playerDayStore);
 		if ("output".equals(action)) {
 			fanDuelIO.output(processDate != null ? processDate : DateTime.now().minusHours(8));

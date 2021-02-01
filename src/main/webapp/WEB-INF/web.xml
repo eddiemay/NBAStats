@@ -14,15 +14,6 @@
 		Design, Develop, Deploy, D4
 	</description>
 
-  <servlet>
-    <servlet-name>API Service Servlet</servlet-name>
-    <servlet-class>com.digitald4.nbastats.server.ApiServiceServlet</servlet-class>
-  </servlet>
-  <servlet-mapping>
-    <servlet-name>API Service Servlet</servlet-name>
-    <url-pattern>/api/*</url-pattern>
-  </servlet-mapping>
-
   <!-- Wrap the backend with Endpoints Frameworks v2. -->
   <!-- Route API method requests to the backend using Guice. -->
   <!-- [START guice_configuration] -->

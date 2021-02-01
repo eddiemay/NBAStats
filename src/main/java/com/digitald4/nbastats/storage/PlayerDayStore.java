@@ -1,45 +1,44 @@
 package com.digitald4.nbastats.storage;
 
-import com.digitald4.common.proto.DD4Protos.Query;
-import com.digitald4.common.proto.DD4Protos.Query.Filter;
-import com.digitald4.common.storage.DAO;
-import com.digitald4.common.storage.GenericStore;
-import com.digitald4.common.storage.QueryResult;
-import com.digitald4.nbastats.proto.NBAStatsProtos.PlayerDay;
+import static com.google.common.collect.ImmutableList.toImmutableList;
+
+import com.digitald4.common.model.HasProto;
+import com.digitald4.common.storage.*;
+import com.digitald4.common.storage.Query.Filter;
+import com.digitald4.nbastats.model.PlayerDay;
 import com.digitald4.nbastats.util.Constaints;
-import java.util.List;
-import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import org.joda.time.DateTime;
 
-public class PlayerDayStore extends GenericStore<PlayerDay> {
+public class PlayerDayStore extends ModelStore<PlayerDay> {
 	private final APIDAO apiDAO;
 
 	@Inject
-	public PlayerDayStore(Provider<DAO> daoProvider, @Nullable APIDAO apiDAO) {
+	public PlayerDayStore(Provider<DAO<HasProto>> daoProvider, @Nullable APIDAO apiDAO) {
 		super(PlayerDay.class, daoProvider);
 		this.apiDAO = apiDAO;
 	}
 
 	public QueryResult<PlayerDay> list(DateTime date) {
-		return list(Query.newBuilder()
-				.addFilter(Filter.newBuilder().setColumn("date").setValue(date.toString(Constaints.COMPUTER_DATE)))
-				.build());
+		return list(
+				new Query().setFilters(new Filter().setColumn("date").setValue(date.toString(Constaints.COMPUTER_DATE))));
 	}
 
 	@Override
 	public QueryResult<PlayerDay> list(Query query) {
 		QueryResult<PlayerDay> queryResult = super.list(query);
-		if (queryResult.getTotalSize() == 0 && apiDAO != null && query.getFilterCount() == 1
-				&& query.getFilter(0).getColumn().equals("date")) {
-			DateTime date = DateTime.parse(query.getFilter(0).getValue(), Constaints.COMPUTER_DATE);
-			List<PlayerDay> playerDays = apiDAO.getGameDay(date).stream().parallel()
+		if (queryResult.getTotalSize() == 0 && apiDAO != null && query.getFilters().size() == 1
+				&& query.getFilters().get(0).getColumn().equals("date")) {
+			DateTime date = DateTime.parse(query.getFilters().get(0).getValue(), Constaints.COMPUTER_DATE);
+			return new QueryResult<>(apiDAO.getGameDay(date).stream()
+					.parallel()
+					.map(PlayerDay::fromProto)
 					.map(this::create)
-					.collect(Collectors.toList());
-			queryResult = new QueryResult<>(playerDays, playerDays.size());
+					.collect(toImmutableList()));
 		}
+
 		return queryResult;
 	}
 }

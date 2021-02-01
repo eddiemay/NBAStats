@@ -1,5 +1,7 @@
 package com.digitald4.nbastats.storage;
 
+import static com.google.common.collect.ImmutableList.toImmutableList;
+import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static java.lang.String.format;
 
 import com.digitald4.common.exception.DD4StorageException;
@@ -11,6 +13,13 @@ import com.digitald4.nbastats.proto.NBAStatsProtos.Player;
 import com.digitald4.nbastats.proto.NBAStatsProtos.Position;
 import com.digitald4.nbastats.util.Constaints;
 import com.digitald4.nbastats.util.Constaints.FantasyLeague;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import org.joda.time.DateTime;
+import org.joda.time.format.DateTimeFormat;
+import org.joda.time.format.DateTimeFormatter;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -21,22 +30,41 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import javax.inject.Inject;
-import org.joda.time.DateTime;
-import org.joda.time.format.DateTimeFormat;
-import org.joda.time.format.DateTimeFormatter;
-import org.json.JSONArray;
-import org.json.JSONObject;
 
 public class APIDAO {
 	private static final String ROTO_GRINDER =
 			"https://rotogrinders.com/projected-stats/nba-player.csv?site=%s&date=%s";
-	private static final String COMMON_ALL_PLAYERS =
-			"http://stats.nba.com/stats/commonallplayers?LeagueID=00&Season=%s&IsOnlyCurrentSeason=1";
+	// private static final String COMMON_ALL_PLAYERS =
+			// "http://stats.nba.com/stats/commonallplayers?LeagueID=00&Season=%s&IsOnlyCurrentSeason=1";
 	private static final String PLAYER_GAMELOGS =
-			"http://stats.nba.com/stats/playergamelogs?LeagueID=00&Season=%s&SeasonType=Regular Season&PlayerID=%d&DateFrom=%s&DateTo=%s";
+			"http://stats.nba.com/stats/playergamelogs?LeagueID=00&Season=%s&SeasonType=Regular+Season&PlayerID=%d&DateFrom=%s&DateTo=%s";
+	static final String COMMON_TEAM_YEARS = "https://stats.nba.com/stats/commonteamyears?LeagueID=00";
+	static final String TEAM_ROSTER = "https://stats.nba.com/stats/commonteamroster?LeagueID=00&Season=%s&TeamID=%d";
+	private static final String GAME_FINDER = "https://stats.nba.com/stats/leaguegamefinder?Conference=&DateFrom=&DateTo=&Division=&DraftNumber=&DraftRound=&DraftYear=&GB=N&LeagueID=00&Location=&Outcome=&PlayerOrTeam=T&Season=&SeasonType=&StatCategory=PTS&TeamID=&VsConference=&VsDivision=&VsTeamID=&gtPTS=150";
+	//                                         https://stats.nba.com/stats/leaguegamefinder?Conference=&DateFrom=&DateTo=&Division=&DraftNumber=&DraftRound=&DraftYear=&GB=N&LeagueID=00&Location=&Outcome=&PlayerOrTeam=P&Season=&SeasonType=&StatCategory=PTS&TeamID=&VsConference=&VsDivision=&VsTeamID=&gtPTS=50
+	//                                         https://stats.nba.com/stats/leaguegamefinder?Conference=&DateFrom=&DateTo=&Division=&DraftNumber=&DraftRound=&DraftYear=&GB=N&LeagueID=00&Location=&Outcome=&PlayerID=2544&PlayerOrTeam=P&Season=2020-21&SeasonType=Regular+Season&StatCategory=PTS&TeamID=&VsConference=&VsDivision=&VsTeamID=
 	//http://stats.nba.com/stats/playergamelogs?DateFrom=&DateTo=&GameSegment=&LastNGames=0&Location=&MeasureType=Base&Month=0&OpponentTeamID=0&Outcome=&PORound=0&PaceAdjust=N&PerMode=Totals&Period=0&PlayerID=203584&PlusMinus=N&Rank=N&Season=2017-18&SeasonSegment=&SeasonType=Regular+Season&ShotClockRange=&VsConference=&VsDivision=
+
+	/*
+	Accept: * /*
+	Accept-Encoding: gzip, deflate, br
+	Accept-Language: en-US,en;q=0.9
+	Access-Control-Request-Headers: x-nba-stats-origin,x-nba-stats-token
+	Access-Control-Request-Method: GET
+	Connection: keep-alive
+	Host: stats.nba.com
+	Origin: https://www.nba.com
+	Referer: https://www.nba.com/
+	Sec-Fetch-Dest: empty
+	Sec-Fetch-Mode: cors
+	Sec-Fetch-Site: same-site
+	User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.141 Safari/537.36
+	 */
 
 	private static final DateTimeFormatter API_DATE = DateTimeFormat.forPattern("MM/dd/yyyy");
 
@@ -53,8 +81,10 @@ public class APIDAO {
 		List<GameLog> games = new ArrayList<>();
 		if (fetchFromNBAApiEnabled) {
 			try {
-				JSONObject json = new JSONObject(apiConnector.sendGet(format(PLAYER_GAMELOGS, season, playerId,
-						dateFrom == null ? "" : dateFrom.toString(API_DATE), DateTime.now().minusDays(1).toString(API_DATE))));
+				JSONObject json = new JSONObject(
+						apiConnector.sendGet(
+								format(PLAYER_GAMELOGS, season, playerId, dateFrom == null ? "" : dateFrom.toString(API_DATE),
+										DateTime.now().minusDays(1).toString(API_DATE))));
 				JSONArray resultSets = json.getJSONArray("resultSets");
 				for (int x = 0; x < resultSets.length(); x++) {
 					JSONObject resultSet = resultSets.getJSONObject(x);
@@ -112,31 +142,43 @@ public class APIDAO {
 				.build();
 	}
 
-	public List<Player> listAllPlayers(String season) {
+	public ImmutableList<Long> getActiveTeamIds() {
 		try {
-			List<Player> players = new ArrayList<>();
-			if (fetchFromNBAApiEnabled) {
-				JSONObject json = new JSONObject(apiConnector.sendGet(format(COMMON_ALL_PLAYERS, season)));
-				JSONArray resultSets = json.getJSONArray("resultSets");
-				for (int x = 0; x < resultSets.length(); x++) {
-					JSONObject resultSet = resultSets.getJSONObject(x);
-					if (resultSet.get("name").equals("CommonAllPlayers")) {
-						JSONArray rowSets = resultSet.getJSONArray("rowSet");
-						for (int i = 0; i < rowSets.length(); i++) {
-							JSONArray rowSet = rowSets.getJSONArray(i);
-							players.add(Player.newBuilder()
-									.setSeason(season)
-									.setPlayerId(rowSet.getInt(0))
-									.setName(rowSet.getString(2))
-									.build());
-						}
-					}
-				}
-			}
-			return players;
+			NBADataResult result = new NBADataResult(apiConnector.sendGet(COMMON_TEAM_YEARS));
+
+			return IntStream.range(0, result.getResultCount())
+					.filter(i -> Integer.parseInt(result.getString("MAX_YEAR", i)) >= 2020)
+					.mapToObj(i -> result.getLong("TEAM_ID", i))
+					.collect(toImmutableList());
 		} catch (IOException ioe) {
-			throw new DD4StorageException("Error reading players", ioe, 500);
+			throw new DD4StorageException("Error reading active teams", ioe, 500);
 		}
+	}
+
+	public ImmutableList<Player> getTeamRoster(String season, long teamId) {
+		try {
+			NBADataResult result = new NBADataResult(apiConnector.sendGet(format(TEAM_ROSTER, season, teamId)));
+
+			return IntStream.range(0, result.getResultCount())
+					.mapToObj(i -> Player.newBuilder()
+							.setSeason(season)
+							.setPlayerId(result.getInt("PLAYER_ID", i))
+							.setName(result.getString("PLAYER", i))
+							.build())
+					.collect(toImmutableList());
+		} catch (IOException ioe) {
+			throw new DD4StorageException("Error reading team roster", ioe, 500);
+		}
+	}
+
+	public ImmutableList<Player> listAllPlayers(String season) {
+		if (!fetchFromNBAApiEnabled) {
+			return ImmutableList.of();
+		}
+
+		return getActiveTeamIds().stream()
+				.flatMap(teamId -> getTeamRoster(season, teamId).stream())
+				.collect(toImmutableList());
 	}
 
 	public List<PlayerDay> getGameDay(DateTime date) {
@@ -151,12 +193,13 @@ public class APIDAO {
 
 	private void getFantasyData(String site, Map<String, PlayerDay.Builder> playerDayMap, DateTime date) {
 		try {
-			HttpURLConnection con = (HttpURLConnection)
-					new URL(String.format(ROTO_GRINDER, site, date.toString(Constaints.COMPUTER_DATE))).openConnection();
+			String request = String.format(ROTO_GRINDER, site, date.toString(Constaints.COMPUTER_DATE));
+			HttpURLConnection con = (HttpURLConnection) new URL(request).openConnection();
 			con.setRequestMethod("GET");
 			con.setRequestProperty("User-Agent", "Mozilla/5.0");
 			con.setRequestProperty("Accept-Language", "en-US,en;q=0.5");
 
+			System.out.println("\nSending request: " + request);
 			int responseCode = con.getResponseCode();
 			System.out.println("Response Code: " + responseCode);
 
@@ -185,6 +228,44 @@ public class APIDAO {
 			in.close();
 		} catch (IOException ioe) {
 			throw new DD4StorageException("Error reading player options", ioe);
+		}
+	}
+
+	static class NBADataResult {
+		private final ImmutableMap<String, Integer> headers;
+		private final JSONArray rowSet;
+
+		public NBADataResult(String json) {
+			this(new JSONObject(json));
+		}
+
+		public NBADataResult(JSONObject json) {
+			JSONArray headerArray = json.optJSONArray("resultSets").getJSONObject(0).getJSONArray("headers");
+			AtomicInteger col = new AtomicInteger();
+			this.headers = IntStream.range(0, headerArray.length())
+					.mapToObj(headerArray::getString)
+					.collect(toImmutableMap(Function.identity(), s -> col.getAndIncrement()));
+			this.rowSet = json.getJSONArray("resultSets").getJSONObject(0).getJSONArray("rowSet");
+		}
+
+		public ImmutableList<String> getHeaders() {
+			return headers.keySet().asList();
+		}
+
+		public int getInt(String property, int i) {
+			return rowSet.getJSONArray(i).getInt(headers.get(property));
+		}
+
+		public long getLong(String property, int i) {
+			return rowSet.getJSONArray(i).getLong(headers.get(property));
+		}
+
+		public String getString(String property, int i) {
+			return rowSet.getJSONArray(i).getString(headers.get(property));
+		}
+
+		public int getResultCount() {
+			return rowSet.length();
 		}
 	}
 }
