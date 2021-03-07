@@ -4,7 +4,6 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
 
 import com.digitald4.common.exception.DD4StorageException;
-import com.digitald4.common.model.HasProto;
 import com.digitald4.common.storage.*;
 import com.digitald4.common.storage.Query.Filter;
 import com.digitald4.nbastats.model.Player;
@@ -14,11 +13,11 @@ import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
 
-public class PlayerStore extends ModelStore<Player> {
-	private final APIDAO apiDAO;
+public class PlayerStore extends GenericStore<Player> {
+	private final NBAApiDAO apiDAO;
 
 	@Inject
-	public PlayerStore(Provider<DAO<HasProto>> daoProvider, @Nullable APIDAO apiDAO) {
+	public PlayerStore(Provider<DAO> daoProvider, @Nullable NBAApiDAO apiDAO) {
 		super(Player.class, daoProvider);
 		this.apiDAO = apiDAO;
 	}
@@ -47,7 +46,7 @@ public class PlayerStore extends ModelStore<Player> {
 		return new QueryResult<>(apiDAO.listAllPlayers(season)
 				.stream()
 				.parallel()
-				.map(player -> playerMap.getOrDefault(player.getPlayerId(), create(Player.fromProto(player))))
+				.map(player -> playerMap.getOrDefault(player.getPlayerId(), create(Player.from(player))))
 				.collect(toImmutableList()));
 	}
 }

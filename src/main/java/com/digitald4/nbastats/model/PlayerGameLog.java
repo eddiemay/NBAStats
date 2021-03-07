@@ -8,10 +8,10 @@ import java.util.Map;
 public class PlayerGameLog implements HasProto<NBAStatsProtos.GameLog> {
   private long id;
   private int playerId;
-  private String season;
-  private String date;
-  private String matchUp;
-  private String result;
+  private String season = "";
+  private String date = "";
+  private String matchUp = "";
+  private String result = "";
   private double minutes;
   private int points;
   private int rebounds;
@@ -23,8 +23,8 @@ public class PlayerGameLog implements HasProto<NBAStatsProtos.GameLog> {
   private boolean doubleDouble;
   private boolean tripleDouble;
   private int plusMinus;
-  private double NBAFantasyPoints;
-  private ImmutableMap<String, Double> fantasySitePoints;
+  private double nBAFantasyPoints;
+  private ImmutableMap<String, Double> fantasySitePoints = ImmutableMap.of();
 
   public long getId() {
     return id;
@@ -180,11 +180,11 @@ public class PlayerGameLog implements HasProto<NBAStatsProtos.GameLog> {
   }
 
   public double getNBAFantasyPoints() {
-    return NBAFantasyPoints;
+    return nBAFantasyPoints;
   }
 
-  public PlayerGameLog setNBAFantasyPoints(double NBAFantasyPoints) {
-    this.NBAFantasyPoints = NBAFantasyPoints;
+  public PlayerGameLog setNBAFantasyPoints(double nBAFantasyPoints) {
+    this.nBAFantasyPoints = nBAFantasyPoints;
     return this;
   }
 
@@ -227,7 +227,7 @@ public class PlayerGameLog implements HasProto<NBAStatsProtos.GameLog> {
   }
 
   @Override
-  public PlayerGameLog update(NBAStatsProtos.GameLog proto) {
+  public PlayerGameLog fromProto(NBAStatsProtos.GameLog proto) {
     return setId(proto.getId())
         .setPlayerId(proto.getPlayerId())
         .setSeason(proto.getSeason())
@@ -249,7 +249,7 @@ public class PlayerGameLog implements HasProto<NBAStatsProtos.GameLog> {
         .setFantasySitePoints(proto.getFantasySitePointsMap());
   }
 
-  public static PlayerGameLog fromProto(NBAStatsProtos.GameLog proto) {
-    return new PlayerGameLog().update(proto);
+  public static PlayerGameLog from(NBAStatsProtos.GameLog proto) {
+    return new PlayerGameLog().fromProto(proto);
   }
 }

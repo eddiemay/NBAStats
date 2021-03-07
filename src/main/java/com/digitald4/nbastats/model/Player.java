@@ -5,12 +5,10 @@ import com.digitald4.nbastats.proto.NBAStatsProtos;
 
 public class Player implements HasProto<NBAStatsProtos.Player> {
   private long id;
-  private String season;
+  private String season = "";
   private int playerId;
-  private String name;
+  private String name = "";
   private String aka = "";
-
-  public Player() {}
 
   public long getId() {
     return id;
@@ -69,7 +67,7 @@ public class Player implements HasProto<NBAStatsProtos.Player> {
   }
 
   @Override
-  public Player update(NBAStatsProtos.Player proto) {
+  public Player fromProto(NBAStatsProtos.Player proto) {
     return setId(proto.getId())
         .setSeason(proto.getSeason())
         .setPlayerId(proto.getPlayerId())
@@ -77,7 +75,7 @@ public class Player implements HasProto<NBAStatsProtos.Player> {
         .setAka(proto.getAka());
   }
 
-  public static Player fromProto(NBAStatsProtos.Player proto) {
-    return new Player().update(proto);
+  public static Player from(NBAStatsProtos.Player proto) {
+    return new Player().fromProto(proto);
   }
 }

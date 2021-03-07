@@ -1,6 +1,6 @@
 package com.digitald4.nbastats.server;
 
-import com.digitald4.common.server.service.SingleProtoService;
+import com.digitald4.common.server.service.EntityServiceImpl;
 import com.digitald4.common.storage.QueryResult;
 import com.digitald4.nbastats.model.Player;
 import com.digitald4.nbastats.storage.PlayerStore;
@@ -23,7 +23,7 @@ import javax.inject.Inject;
 		}
 		// [END_EXCLUDE]
 )
-public class PlayerService extends SingleProtoService<Player> {
+public class PlayerService extends EntityServiceImpl<Player> {
 	private final PlayerStore playerStore;
 
 	@Inject
@@ -35,5 +35,10 @@ public class PlayerService extends SingleProtoService<Player> {
 	@ApiMethod(httpMethod = ApiMethod.HttpMethod.GET, path = "season/{season}")
 	public QueryResult<Player> bySeason(@Named("season") String season) {
 		return playerStore.list(season);
+	}
+
+	@ApiMethod(httpMethod = ApiMethod.HttpMethod.POST, path = "echo")
+	public Player echo(Player player) {
+		return player;
 	}
 }

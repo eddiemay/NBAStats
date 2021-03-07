@@ -1,6 +1,6 @@
 package com.digitald4.nbastats.server;
 
-import com.digitald4.common.server.service.SingleProtoService;
+import com.digitald4.common.server.service.EntityServiceImpl;
 import com.digitald4.nbastats.compute.StatsProcessor;
 import com.digitald4.nbastats.model.LineUp;
 import com.digitald4.nbastats.storage.LineUpStore;
@@ -30,7 +30,7 @@ import org.joda.time.DateTime;
 		}
 		// [END_EXCLUDE]
 )
-public class LineUpService extends SingleProtoService<LineUp> {
+public class LineUpService extends EntityServiceImpl<LineUp> {
 	private final StatsProcessor statsProcessor;
 
 	@Inject
@@ -40,7 +40,7 @@ public class LineUpService extends SingleProtoService<LineUp> {
 	}
 
 	@ApiMethod(httpMethod = ApiMethod.HttpMethod.GET, path = "updateActuals/{date}")
-	public Empty updateActuals(@Named("date") String date) {
+	Empty updateActuals(@Named("date") String date) {
 		new Thread(() -> statsProcessor.updateActuals(DateTime.parse(date, Constaints.COMPUTER_DATE))).start();
 		return Empty.getDefaultInstance();
 	}

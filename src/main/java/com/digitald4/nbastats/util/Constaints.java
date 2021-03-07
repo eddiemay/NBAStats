@@ -5,7 +5,6 @@ import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
 
 public class Constaints {
-	public static final int LINEUP_LIMIT = 100;
 	public static final DateTimeFormatter COMPUTER_DATE = DateTimeFormat.forPattern("yyyy-MM-dd");
 
 	public enum FantasyLeague {

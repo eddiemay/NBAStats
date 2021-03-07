@@ -7,9 +7,9 @@ com.digitald4.nbastats.PlayersCtrl = function(globalData, playerService) {
 };
 
 com.digitald4.nbastats.PlayersCtrl.prototype.refresh = function() {
-	this.playerService.list(this.globalData.getSeason(), function(response) {
-	  this.players = response.result;
-	}.bind(this), notify);
+  this.playerService.list(this.globalData.getSeason(), function(response) {
+    this.players = response.results;
+  }.bind(this), notify);
 };
 
 com.digitald4.nbastats.PlayersCtrl.prototype.update = function(player, prop) {

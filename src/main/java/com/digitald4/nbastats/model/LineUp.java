@@ -112,7 +112,7 @@ public class LineUp implements HasProto<NBAStatsProtos.LineUp> {
   }
 
   @Override
-  public HasProto<NBAStatsProtos.LineUp> update(NBAStatsProtos.LineUp proto) {
+  public HasProto<NBAStatsProtos.LineUp> fromProto(NBAStatsProtos.LineUp proto) {
     return new LineUp()
         .setId(proto.getId())
         .setDate(proto.getDate())

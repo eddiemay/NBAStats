@@ -36,7 +36,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import javax.inject.Inject;
 
-public class APIDAO {
+public class NBAApiDAO {
 	private static final String ROTO_GRINDER =
 			"https://rotogrinders.com/projected-stats/nba-player.csv?site=%s&date=%s";
 	// private static final String COMMON_ALL_PLAYERS =
@@ -45,7 +45,7 @@ public class APIDAO {
 			"http://stats.nba.com/stats/playergamelogs?LeagueID=00&Season=%s&SeasonType=Regular+Season&PlayerID=%d&DateFrom=%s&DateTo=%s";
 	static final String COMMON_TEAM_YEARS = "https://stats.nba.com/stats/commonteamyears?LeagueID=00";
 	static final String TEAM_ROSTER = "https://stats.nba.com/stats/commonteamroster?LeagueID=00&Season=%s&TeamID=%d";
-	private static final String GAME_FINDER = "https://stats.nba.com/stats/leaguegamefinder?Conference=&DateFrom=&DateTo=&Division=&DraftNumber=&DraftRound=&DraftYear=&GB=N&LeagueID=00&Location=&Outcome=&PlayerOrTeam=T&Season=&SeasonType=&StatCategory=PTS&TeamID=&VsConference=&VsDivision=&VsTeamID=&gtPTS=150";
+	// private static final String GAME_FINDER = "https://stats.nba.com/stats/leaguegamefinder?Conference=&DateFrom=&DateTo=&Division=&DraftNumber=&DraftRound=&DraftYear=&GB=N&LeagueID=00&Location=&Outcome=&PlayerOrTeam=T&Season=&SeasonType=&StatCategory=PTS&TeamID=&VsConference=&VsDivision=&VsTeamID=&gtPTS=150";
 	//                                         https://stats.nba.com/stats/leaguegamefinder?Conference=&DateFrom=&DateTo=&Division=&DraftNumber=&DraftRound=&DraftYear=&GB=N&LeagueID=00&Location=&Outcome=&PlayerOrTeam=P&Season=&SeasonType=&StatCategory=PTS&TeamID=&VsConference=&VsDivision=&VsTeamID=&gtPTS=50
 	//                                         https://stats.nba.com/stats/leaguegamefinder?Conference=&DateFrom=&DateTo=&Division=&DraftNumber=&DraftRound=&DraftYear=&GB=N&LeagueID=00&Location=&Outcome=&PlayerID=2544&PlayerOrTeam=P&Season=2020-21&SeasonType=Regular+Season&StatCategory=PTS&TeamID=&VsConference=&VsDivision=&VsTeamID=
 	//http://stats.nba.com/stats/playergamelogs?DateFrom=&DateTo=&GameSegment=&LastNGames=0&Location=&MeasureType=Base&Month=0&OpponentTeamID=0&Outcome=&PORound=0&PaceAdjust=N&PerMode=Totals&Period=0&PlayerID=203584&PlusMinus=N&Rank=N&Season=2017-18&SeasonSegment=&SeasonType=Regular+Season&ShotClockRange=&VsConference=&VsDivision=
@@ -73,7 +73,7 @@ public class APIDAO {
 	private final APIConnector apiConnector;
 
 	@Inject
-	public APIDAO(APIConnector apiConnector) {
+	public NBAApiDAO(APIConnector apiConnector) {
 		this.apiConnector = apiConnector;
 	}
 
@@ -143,32 +143,24 @@ public class APIDAO {
 	}
 
 	public ImmutableList<Long> getActiveTeamIds() {
-		try {
-			NBADataResult result = new NBADataResult(apiConnector.sendGet(COMMON_TEAM_YEARS));
+		NBADataResult result = new NBADataResult(apiConnector.sendGet(COMMON_TEAM_YEARS));
 
-			return IntStream.range(0, result.getResultCount())
-					.filter(i -> Integer.parseInt(result.getString("MAX_YEAR", i)) >= 2020)
-					.mapToObj(i -> result.getLong("TEAM_ID", i))
-					.collect(toImmutableList());
-		} catch (IOException ioe) {
-			throw new DD4StorageException("Error reading active teams", ioe, 500);
-		}
+		return IntStream.range(0, result.getResultCount())
+				.filter(i -> Integer.parseInt(result.getString("MAX_YEAR", i)) >= 2020)
+				.mapToObj(i -> result.getLong("TEAM_ID", i))
+				.collect(toImmutableList());
 	}
 
 	public ImmutableList<Player> getTeamRoster(String season, long teamId) {
-		try {
-			NBADataResult result = new NBADataResult(apiConnector.sendGet(format(TEAM_ROSTER, season, teamId)));
+		NBADataResult result = new NBADataResult(apiConnector.sendGet(format(TEAM_ROSTER, season, teamId)));
 
-			return IntStream.range(0, result.getResultCount())
-					.mapToObj(i -> Player.newBuilder()
-							.setSeason(season)
-							.setPlayerId(result.getInt("PLAYER_ID", i))
-							.setName(result.getString("PLAYER", i))
-							.build())
-					.collect(toImmutableList());
-		} catch (IOException ioe) {
-			throw new DD4StorageException("Error reading team roster", ioe, 500);
-		}
+		return IntStream.range(0, result.getResultCount())
+				.mapToObj(i -> Player.newBuilder()
+						.setSeason(season)
+						.setPlayerId(result.getInt("PLAYER_ID", i))
+						.setName(result.getString("PLAYER", i))
+						.build())
+				.collect(toImmutableList());
 	}
 
 	public ImmutableList<Player> listAllPlayers(String season) {

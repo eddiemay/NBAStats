@@ -13,11 +13,11 @@ com.digitald4.nbastats.PlayerOptionsCtrl.prototype.refresh = function() {
   this.projectionMethods = [];
   var fantasyLeague = this.globalData.fantasyLeague;
 	this.playerDayService.list(this.globalData.getApiDate(), function(response) {
-	  for (var method in response.result[0].fantasySiteInfo[fantasyLeague].projection) {
+	  for (var method in response.results[0].fantasySiteInfo[fantasyLeague].projection) {
 	    this.projectionMethods.push(method);
 	  }
-	  for (var i = 0; i < response.result.length; i++) {
-	    var player = response.result[i];
+	  for (var i = 0; i < response.results.length; i++) {
+	    var player = response.results[i];
 	    this.players.push({
 	      playerId: player.playerId,
 	      name: player.name,

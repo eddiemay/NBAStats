@@ -2,7 +2,6 @@ package com.digitald4.nbastats.storage;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
 
-import com.digitald4.common.model.HasProto;
 import com.digitald4.common.storage.*;
 import com.digitald4.common.storage.Query.Filter;
 import com.digitald4.nbastats.model.PlayerDay;
@@ -12,11 +11,11 @@ import javax.inject.Inject;
 import javax.inject.Provider;
 import org.joda.time.DateTime;
 
-public class PlayerDayStore extends ModelStore<PlayerDay> {
-	private final APIDAO apiDAO;
+public class PlayerDayStore extends GenericStore<PlayerDay> {
+	private final NBAApiDAO apiDAO;
 
 	@Inject
-	public PlayerDayStore(Provider<DAO<HasProto>> daoProvider, @Nullable APIDAO apiDAO) {
+	public PlayerDayStore(Provider<DAO> daoProvider, @Nullable NBAApiDAO apiDAO) {
 		super(PlayerDay.class, daoProvider);
 		this.apiDAO = apiDAO;
 	}
@@ -34,7 +33,7 @@ public class PlayerDayStore extends ModelStore<PlayerDay> {
 			DateTime date = DateTime.parse(query.getFilters().get(0).getValue(), Constaints.COMPUTER_DATE);
 			return new QueryResult<>(apiDAO.getGameDay(date).stream()
 					.parallel()
-					.map(PlayerDay::fromProto)
+					.map(PlayerDay::from)
 					.map(this::create)
 					.collect(toImmutableList()));
 		}

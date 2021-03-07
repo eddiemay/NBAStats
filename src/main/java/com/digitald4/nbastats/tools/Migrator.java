@@ -1,14 +1,12 @@
 package com.digitald4.nbastats.tools;
 
 import com.digitald4.common.jdbc.DBConnectorThreadPoolImpl;
-import com.digitald4.common.model.HasProto;
-import com.digitald4.common.storage.DAO;
-import com.digitald4.common.storage.DAOModelWrapper;
+import com.digitald4.common.storage.DAOCloudDS;
+import com.digitald4.common.storage.DAORouterImpl;
 import com.digitald4.common.storage.DAOSQLImpl;
+import com.digitald4.common.storage.HasProtoDAO;
 import com.digitald4.nbastats.storage.LineUpStore;
-import com.google.protobuf.Message;
-
-import javax.inject.Provider;
+import com.google.appengine.api.datastore.DatastoreServiceFactory;
 
 public class Migrator {
 	private final LineUpStore lineUpStore;
@@ -17,16 +15,19 @@ public class Migrator {
 	}
 
 	public void execute() {
+		if (lineUpStore == null) {
+			throw new RuntimeException("LineUpStore must not be null.");
+		}
 	}
 
 	public static void main(String[] args) {
 		long startTime = System.currentTimeMillis();
-		DAOSQLImpl dao = new DAOSQLImpl(new DBConnectorThreadPoolImpl("org.gjt.mm.mysql.Driver",
+		DAOSQLImpl messageDAO = new DAOSQLImpl(new DBConnectorThreadPoolImpl("org.gjt.mm.mysql.Driver",
 				"jdbc:mysql://localhost/NBAStats?autoReconnect=true",
 				"dd4_user", "getSchooled85"));
-		Provider<DAO<Message>> daoProvider = () -> dao;
-		DAO<HasProto> modelDao = new DAOModelWrapper(daoProvider);
-		LineUpStore lineUpStore = new LineUpStore(() -> modelDao);
+		DAOCloudDS modelDao = new DAOCloudDS(DatastoreServiceFactory.getDatastoreService());
+		DAORouterImpl dao = new DAORouterImpl(messageDAO, new HasProtoDAO(messageDAO), modelDao);
+		LineUpStore lineUpStore = new LineUpStore(() -> dao);
 		Migrator migrator = new Migrator(lineUpStore);
 		migrator.execute();
 		System.out.println("Total Time: " + ((System.currentTimeMillis() - startTime) / 1000) + " secs");

@@ -43,14 +43,14 @@ com.digitald4.nbastats.module = angular.module('nbastats', ['DD4Common', 'ngRout
     .service('playerService', function(apiConnector) {
       var service = new com.digitald4.common.JSONService('player', apiConnector);
       service.list = function(season, onSuccess, onError) {
-        service.list_(undefined, {season: season}, onSuccess, onError);
+        service.list_(undefined, {filter: "season=" + season}, onSuccess, onError);
       };
       return service;
     })
     .service('playerDayService', function(apiConnector) {
       var service = new com.digitald4.common.JSONService('playerDay', apiConnector);
       service.list = function(date, onSuccess, onError) {
-        service.list_(undefined, {date: date}, onSuccess, onError);
+        service.list_(undefined, {filter: "date=" + date}, onSuccess, onError);
       };
       service.processStats = function(date, onSuccess, onError) {
         this.performRequest(['processStats', 'POST'], undefined, {date: date}, onSuccess, onError);

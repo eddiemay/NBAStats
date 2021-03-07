@@ -1,6 +1,6 @@
 package com.digitald4.nbastats.server;
 
-import com.digitald4.common.server.service.SingleProtoService;
+import com.digitald4.common.server.service.EntityServiceImpl;
 import com.digitald4.nbastats.model.PlayerGameLog;
 import com.digitald4.nbastats.storage.PlayerGameLogStore;
 import com.google.api.server.spi.config.Api;
@@ -24,7 +24,7 @@ import javax.inject.Inject;
     }
     // [END_EXCLUDE]
 )
-public class PlayerGameLogService extends SingleProtoService<PlayerGameLog> {
+public class PlayerGameLogService extends EntityServiceImpl<PlayerGameLog> {
   @Inject
   PlayerGameLogService(PlayerGameLogStore playerGameLogStore) {
     super(playerGameLogStore);

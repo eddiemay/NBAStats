@@ -12,11 +12,11 @@ import java.util.Map;
 public class PlayerDay implements HasProto<NBAStatsProtos.PlayerDay> {
   private long id;
   private int playerId;
-  private String date;
-  private String name;
+  private String date = "";
+  private String name = "";
   private NBAStatsProtos.PlayerDay.Status status;
-  private String team;
-  private String opponent;
+  private String team = "";
+  private String opponent = "";
   private Map<String, FantasySiteInfo> fantasySiteInfos = new HashMap<>();
   private boolean lowDataWarn;
 
@@ -92,9 +92,8 @@ public class PlayerDay implements HasProto<NBAStatsProtos.PlayerDay> {
     return fantasySiteInfos;
   }
 
-  public PlayerDay setFantasySiteInfo(String league, FantasySiteInfo fantasySiteInfo) {
-    fantasySiteInfos.put(league, fantasySiteInfo);
-    return this;
+  public FantasySiteInfo getFantasySiteInfo(String fantasySite) {
+    return fantasySiteInfos.computeIfAbsent(fantasySite, site -> new FantasySiteInfo());
   }
 
   public PlayerDay setFantasySiteInfos(Map<String, FantasySiteInfo> fantasySiteInfos) {
@@ -128,7 +127,7 @@ public class PlayerDay implements HasProto<NBAStatsProtos.PlayerDay> {
   }
 
   @Override
-  public PlayerDay update(NBAStatsProtos.PlayerDay proto) {
+  public PlayerDay fromProto(NBAStatsProtos.PlayerDay proto) {
     return setId(proto.getId())
         .setPlayerId(proto.getPlayerId())
         .setDate(proto.getDate())
@@ -141,25 +140,15 @@ public class PlayerDay implements HasProto<NBAStatsProtos.PlayerDay> {
         .setLowDataWarn(proto.getLowDataWarn());
   }
 
-  public static PlayerDay fromProto(NBAStatsProtos.PlayerDay proto) {
-    return new PlayerDay().update(proto);
+  public static PlayerDay from(NBAStatsProtos.PlayerDay proto) {
+    return new PlayerDay().fromProto(proto);
   }
 
   public static class FantasySiteInfo {
-    private String league;
     private ImmutableList<NBAStatsProtos.Position> positions;
     private int cost;
     private ImmutableMap<String, Double> projections;
     private double actual;
-
-    public String getLeague() {
-      return league;
-    }
-
-    public FantasySiteInfo setLeague(String league) {
-      this.league = league;
-      return this;
-    }
 
     public ImmutableList<NBAStatsProtos.Position> getPositions() {
       return positions;
@@ -181,6 +170,10 @@ public class PlayerDay implements HasProto<NBAStatsProtos.PlayerDay> {
 
     public ImmutableMap<String, Double> getProjections() {
       return projections;
+    }
+
+    public double getProjection(String source) {
+      return projections.getOrDefault(source, 0.0);
     }
 
     public FantasySiteInfo setProjections(Map<String, Double> projections) {

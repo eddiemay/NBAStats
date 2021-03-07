@@ -1,25 +1,21 @@
 package com.digitald4.nbastats.storage;
 
-import com.digitald4.common.model.HasProto;
 import com.digitald4.common.storage.*;
 import com.digitald4.common.storage.Query.Filter;
 import com.digitald4.common.storage.Query.OrderBy;
 import com.digitald4.nbastats.model.PlayerGameLog;
-import com.digitald4.nbastats.proto.NBAStatsProtos.GameLog;
 import com.digitald4.nbastats.util.Constaints;
 import java.util.List;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
-
-import com.google.protobuf.Message;
 import org.joda.time.DateTime;
 
-public class PlayerGameLogStore extends ModelStore<PlayerGameLog> {
-	private final APIDAO apiDAO;
+public class PlayerGameLogStore extends GenericStore<PlayerGameLog> {
+	private final NBAApiDAO apiDAO;
 
 	@Inject
-	public PlayerGameLogStore(Provider<DAO<HasProto>> daoProvider, @Nullable APIDAO apiDAO) {
+	public PlayerGameLogStore(Provider<DAO> daoProvider, @Nullable NBAApiDAO apiDAO) {
 		super(PlayerGameLog.class, daoProvider);
 		this.apiDAO = apiDAO;
 	}
@@ -40,7 +36,7 @@ public class PlayerGameLogStore extends ModelStore<PlayerGameLog> {
 			if (playerId != 0 && season != null && apiDAO != null) {
 				apiDAO.getGames(playerId, season, null)
 						.parallelStream()
-						.map(PlayerGameLog::fromProto)
+						.map(PlayerGameLog::from)
 						.forEach(this::create);
 				queryResult = super.list(query);
 			}
@@ -80,7 +76,7 @@ public class PlayerGameLogStore extends ModelStore<PlayerGameLog> {
 		if ((dateFrom == null || dateFrom.isBefore(date)) && apiDAO != null) {
 			apiDAO.getGames(playerId, season, dateFrom)
 					.parallelStream()
-					.map(PlayerGameLog::fromProto)
+					.map(PlayerGameLog::from)
 					.forEach(game -> {
 						create(game);
 						if (dateStr.equals(game.getDate())) {

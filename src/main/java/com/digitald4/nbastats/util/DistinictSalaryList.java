@@ -7,7 +7,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class DistinictSalaryList extends ArrayList<PlayerDay> {
-		private Map<Integer, AtomicInteger> byCostCount = new HashMap<>();
+		private final Map<Integer, AtomicInteger> byCostCount = new HashMap<>();
 
 		private final int limit;
 		private final String league;
@@ -17,13 +17,14 @@ public class DistinictSalaryList extends ArrayList<PlayerDay> {
 		}
 
 		@Override
-		public boolean add(PlayerDay player) {
-			AtomicInteger byCost = byCostCount
-					.computeIfAbsent(player.getFantasySiteInfos().get(league).getCost(), cost -> new AtomicInteger());
+		public boolean add(PlayerDay playerDay) {
+			AtomicInteger byCost =
+					byCostCount.computeIfAbsent(playerDay.getFantasySiteInfo(league).getCost(), cost -> new AtomicInteger());
 			if (byCost.get() < limit) {
 				byCost.incrementAndGet();
-				return super.add(player);
+				return super.add(playerDay);
 			}
+
 			return false;
 		}
 	}

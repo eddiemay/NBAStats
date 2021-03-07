@@ -47,9 +47,8 @@ public class Model {
 			return projectionMethod;
 		}
 
-		public PlayerGroup setProjectionMethod(int projectionMethod) {
+		public void setProjectionMethod(int projectionMethod) {
 			this.projectionMethod = projectionMethod;
-			return this;
 		}
 
 		public int getProjection() {

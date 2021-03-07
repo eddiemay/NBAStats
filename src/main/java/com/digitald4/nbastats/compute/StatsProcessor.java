@@ -9,7 +9,6 @@ import com.digitald4.common.util.Calculate;
 import com.digitald4.nbastats.model.LineUp;
 import com.digitald4.nbastats.model.Player;
 import com.digitald4.nbastats.model.PlayerDay;
-import com.digitald4.nbastats.model.PlayerDay.FantasySiteInfo;
 import com.digitald4.nbastats.model.PlayerGameLog;
 import com.digitald4.nbastats.storage.LineUpStore;
 import com.digitald4.nbastats.storage.PlayerGameLogStore;
@@ -60,7 +59,7 @@ public class StatsProcessor {
 		return playerDayStore.list(date).getResults().stream()
 				.parallel()
 				.map(playerDay -> {
-					if (playerDay.getFantasySiteInfos().get(FantasyLeague.FAN_DUEL.name).getProjections().size() < 5 || OVER_WRITE) {
+					if (playerDay.getFantasySiteInfo(FantasyLeague.FAN_DUEL.name).getProjections().size() < 5 || OVER_WRITE) {
 						Player player = playerMap.get(playerDay.getName());
 						if (player != null) {
 							PlayerDay statsFilled = fillStats(playerDay.setPlayerId(player.getPlayerId()));
@@ -111,11 +110,10 @@ public class StatsProcessor {
 
 			for (FantasyLeague fantasyLeague : FantasyLeague.values()) {
 				double average = totals[fantasyLeague.ordinal()] / sampleSize;
-				playerDay.getFantasySiteInfos().computeIfAbsent(fantasyLeague.name, league -> new FantasySiteInfo())
-						.setProjections(
-								ImmutableMap.of(
-										"30 Game Average", average,
-										"30 Game 75th Pct", round(standardDeviation(matrix[fantasyLeague.ordinal()]) * Z_SCORE_25P + average)));
+				playerDay.getFantasySiteInfo(fantasyLeague.name).setProjections(
+						ImmutableMap.of(
+								"30 Game Average", average,
+								"30 Game 75th Pct", round(standardDeviation(matrix[fantasyLeague.ordinal()]) * Z_SCORE_25P + average)));
 			}
 
 			if (sampleSize < SAMPLE_SIZE) {
@@ -144,10 +142,8 @@ public class StatsProcessor {
 					PlayerGameLog gameLog = playerGameLogStore.get(playerDay.getPlayerId(), date);
 					if (gameLog != null) {
 						for (String site : playerDay.getFantasySiteInfos().keySet()) {
-							playerDay.getFantasySiteInfos().get(site)
-									.setActual(gameLog.getFantasySitePoints(site));
-							if (playerDay.getFantasySiteInfos().get(site).getActual()
-									!= playerDay.getFantasySiteInfos().get(site).getActual()) {
+							playerDay.getFantasySiteInfo(site).setActual(gameLog.getFantasySitePoints(site));
+							if (playerDay.getFantasySiteInfo(site).getActual() != playerDay.getFantasySiteInfo(site).getActual()) {
 								changeDetected = true;
 							}
 						}
@@ -167,7 +163,8 @@ public class StatsProcessor {
 					LineUp modified = new LineUp()
 							.setActual(lineUp.getPlayerIds()
 									.stream()
-									.mapToDouble(playerId -> playerDaysMap.get(playerId).getFantasySiteInfos().get(lineUp.getFantasySite()).getActual())
+									.mapToDouble(
+											playerId -> playerDaysMap.get(playerId).getFantasySiteInfo(lineUp.getFantasySite()).getActual())
 									.sum());
 					if (lineUp.getActual() != modified.getActual()) {
 						lineUpStore.update(lineUp.getId(), lineUp1 -> lineUp1.setActual(modified.getActual()));

@@ -35,8 +35,8 @@ com.digitald4.nbastats.LineUpsCtrl.prototype.refresh = function() {
   var league = this.globalData.fantasyLeague;
   this.playerDayService.list(date, function(response) {
     var playerDayMap = {};
-    for (var i = 0; i < response.result.length; i++) {
-      var playerDay = response.result[i];
+    for (var i = 0; i < response.results.length; i++) {
+      var playerDay = response.results[i];
       playerDayMap[playerDay.playerId] = playerDay;
       if (i == 0) {
         this.projectionMethods = [];
@@ -59,7 +59,7 @@ com.digitald4.nbastats.LineUpsCtrl.prototype.refreshLineUps = function() {
   var date = this.globalData.getApiDate();
   var league = this.globalData.fantasyLeague;
 	this.lineUpService.list(date, league, this.globalData.projectionMethod, function(response) {
-	  this.lineUps = response.result;
+	  this.lineUps = response.results;
     if (this.playerDayMap) {
       this.assemble();
     }
