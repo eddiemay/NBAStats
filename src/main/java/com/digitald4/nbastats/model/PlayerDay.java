@@ -2,19 +2,26 @@ package com.digitald4.nbastats.model;
 
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
 
-import com.digitald4.common.model.HasProto;
-import com.digitald4.nbastats.proto.NBAStatsProtos;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import java.util.HashMap;
 import java.util.Map;
 
-public class PlayerDay implements HasProto<NBAStatsProtos.PlayerDay> {
+public class PlayerDay {
   private long id;
   private int playerId;
-  private String date = "";
-  private String name = "";
-  private NBAStatsProtos.PlayerDay.Status status;
+  private String date;
+  private String name;
+
+  public enum Status {
+    STATUS_UNKNOWN,
+    ACTIVE,
+    IN_ACTIVE,
+    INJURIED,
+    QUESTIONABLE
+  }
+  private Status status;
+
   private String team = "";
   private String opponent = "";
   private Map<String, FantasySiteInfo> fantasySiteInfos = new HashMap<>();
@@ -56,16 +63,11 @@ public class PlayerDay implements HasProto<NBAStatsProtos.PlayerDay> {
     return this;
   }
 
-  public NBAStatsProtos.PlayerDay.Status getStatus() {
+  public Status getStatus() {
     return status;
   }
 
-  public PlayerDay setStatus(NBAStatsProtos.PlayerDay.Status status)  {
-    this.status = status;
-    return this;
-  }
-
-  public PlayerDay setDate(NBAStatsProtos.PlayerDay.Status status) {
+  public PlayerDay setStatus(Status status)  {
     this.status = status;
     return this;
   }
@@ -110,51 +112,18 @@ public class PlayerDay implements HasProto<NBAStatsProtos.PlayerDay> {
     return this;
   }
 
-  @Override
-  public NBAStatsProtos.PlayerDay toProto() {
-    return NBAStatsProtos.PlayerDay.newBuilder()
-        .setId(getId())
-        .setPlayerId(getPlayerId())
-        .setDate(getDate())
-        .setName(getName())
-        .setStatus(getStatus())
-        .setTeam(getTeam())
-        .setOpponent(getOpponent())
-        .putAllFantasySiteInfo(getFantasySiteInfos()
-            .entrySet().stream().collect(toImmutableMap(Map.Entry::getKey, e -> e.getValue().toProto())))
-        .setLowDataWarn(getLowDataWarn())
-        .build();
-  }
-
-  @Override
-  public PlayerDay fromProto(NBAStatsProtos.PlayerDay proto) {
-    return setId(proto.getId())
-        .setPlayerId(proto.getPlayerId())
-        .setDate(proto.getDate())
-        .setName(proto.getName())
-        .setStatus(proto.getStatus())
-        .setTeam(proto.getTeam())
-        .setOpponent(proto.getOpponent())
-        .setFantasySiteInfos(proto.getFantasySiteInfoMap().entrySet().stream()
-            .collect(toImmutableMap(Map.Entry::getKey, e -> FantasySiteInfo.fromProto(e.getValue()))))
-        .setLowDataWarn(proto.getLowDataWarn());
-  }
-
-  public static PlayerDay from(NBAStatsProtos.PlayerDay proto) {
-    return new PlayerDay().fromProto(proto);
-  }
-
   public static class FantasySiteInfo {
-    private ImmutableList<NBAStatsProtos.Position> positions;
+    public enum Position { POS_UNKNOWN, PG, SG, SF, PF, C }
+    private ImmutableList<Position> positions;
     private int cost;
     private ImmutableMap<String, Double> projections;
     private double actual;
 
-    public ImmutableList<NBAStatsProtos.Position> getPositions() {
+    public ImmutableList<Position> getPositions() {
       return positions;
     }
 
-    public FantasySiteInfo setPositions(Iterable<NBAStatsProtos.Position> positions) {
+    public FantasySiteInfo setPositions(Iterable<Position> positions) {
       this.positions = ImmutableList.copyOf(positions);
       return this;
     }
@@ -188,23 +157,6 @@ public class PlayerDay implements HasProto<NBAStatsProtos.PlayerDay> {
     public FantasySiteInfo setActual(double actual) {
       this.actual = actual;
       return this;
-    }
-
-    public NBAStatsProtos.PlayerDay.FantasySiteInfo toProto() {
-      return NBAStatsProtos.PlayerDay.FantasySiteInfo.newBuilder()
-          .addAllPosition(getPositions())
-          .setCost(getCost())
-          .putAllProjection(getProjections())
-          .setActual(getActual())
-          .build();
-    }
-
-    public static FantasySiteInfo fromProto(NBAStatsProtos.PlayerDay.FantasySiteInfo proto) {
-      return new FantasySiteInfo()
-          .setPositions(proto.getPositionList())
-          .setCost(proto.getCost())
-          .setProjections(proto.getProjectionMap())
-          .setActual(proto.getActual());
     }
   }
 }

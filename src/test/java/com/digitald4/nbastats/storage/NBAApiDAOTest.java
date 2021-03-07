@@ -7,9 +7,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.digitald4.common.server.APIConnector;
-import com.digitald4.nbastats.proto.NBAStatsProtos;
+import com.digitald4.nbastats.model.Player;
 import com.google.common.collect.ImmutableList;
-import java.io.IOException;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -37,7 +36,7 @@ public class NBAApiDAOTest {
   private final NBAApiDAO apiDao = new NBAApiDAO(apiConnector);
 
   @Before
-  public void setup() throws IOException {
+  public void setup() {
     when(apiConnector.sendGet(NBAApiDAO.COMMON_TEAM_YEARS)).thenReturn(TEAM_YEARS_RESULT);
     when(apiConnector.sendGet(TEAM_ROSTER_QUERY)).thenReturn(TEAM_ROSTER_RESULT);
   }
@@ -51,7 +50,7 @@ public class NBAApiDAOTest {
   @Test
   public void getTeamRoster() {
     ImmutableList<String> playerNames = apiDao.getTeamRoster("2020-21", 1610612750).stream()
-        .map(NBAStatsProtos.Player::getName)
+        .map(Player::getName)
         .collect(toImmutableList());
     assertThat(playerNames).containsExactly(
         "D'Angelo Russell", "Anthony Edwards", "Jaden McDaniels", "Jaylen Nowell", "Malik Beasley");

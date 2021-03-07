@@ -33,7 +33,6 @@ public class PlayerDayStore extends GenericStore<PlayerDay> {
 			DateTime date = DateTime.parse(query.getFilters().get(0).getValue(), Constaints.COMPUTER_DATE);
 			return new QueryResult<>(apiDAO.getGameDay(date).stream()
 					.parallel()
-					.map(PlayerDay::from)
 					.map(this::create)
 					.collect(toImmutableList()));
 		}

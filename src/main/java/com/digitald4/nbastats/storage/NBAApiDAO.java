@@ -6,11 +6,11 @@ import static java.lang.String.format;
 
 import com.digitald4.common.exception.DD4StorageException;
 import com.digitald4.common.server.APIConnector;
-import com.digitald4.nbastats.proto.NBAStatsProtos.GameLog;
-import com.digitald4.nbastats.proto.NBAStatsProtos.PlayerDay;
-import com.digitald4.nbastats.proto.NBAStatsProtos.PlayerDay.FantasySiteInfo;
-import com.digitald4.nbastats.proto.NBAStatsProtos.Player;
-import com.digitald4.nbastats.proto.NBAStatsProtos.Position;
+import com.digitald4.nbastats.model.Player;
+import com.digitald4.nbastats.model.PlayerDay;
+import com.digitald4.nbastats.model.PlayerDay.FantasySiteInfo;
+import com.digitald4.nbastats.model.PlayerDay.FantasySiteInfo.Position;
+import com.digitald4.nbastats.model.PlayerGameLog;
 import com.digitald4.nbastats.util.Constaints;
 import com.digitald4.nbastats.util.Constaints.FantasyLeague;
 import com.google.common.collect.ImmutableList;
@@ -77,8 +77,8 @@ public class NBAApiDAO {
 		this.apiConnector = apiConnector;
 	}
 
-	public List<GameLog> getGames(int playerId, String season, DateTime dateFrom) {
-		List<GameLog> games = new ArrayList<>();
+	public List<PlayerGameLog> getGames(int playerId, String season, DateTime dateFrom) {
+		List<PlayerGameLog> games = new ArrayList<>();
 		if (fetchFromNBAApiEnabled) {
 			try {
 				JSONObject json = new JSONObject(
@@ -92,14 +92,14 @@ public class NBAApiDAO {
 						JSONArray rowSets = resultSet.getJSONArray("rowSet");
 						for (int i = 0; i < rowSets.length(); i++) {
 							JSONArray rowSet = rowSets.getJSONArray(i);
-							GameLog game = fillFantasy(GameLog.newBuilder()
+							PlayerGameLog game = fillFantasy(new PlayerGameLog()
 									.setPlayerId(playerId)
 									.setSeason(season)
 									.setDate(DateTime.parse(rowSet.getString(7)).toString(Constaints.COMPUTER_DATE))
 									.setMatchUp(rowSet.getString(8))
 									.setResult(rowSet.getString(9))
 									.setMinutes(rowSet.getDouble(10))
-									.setMade3S(rowSet.getInt(14))
+									.setMade3s(rowSet.getInt(14))
 									.setRebounds(rowSet.getInt(22))
 									.setAssists(rowSet.getInt(23))
 									.setTurnovers(rowSet.getInt(24))
@@ -122,24 +122,23 @@ public class NBAApiDAO {
 		return games;
 	}
 
-	private static GameLog fillFantasy(GameLog.Builder stats) {
+	private static PlayerGameLog fillFantasy(PlayerGameLog stats) {
 		return stats
-				.putFantasySitePoints("draftkings", stats.getPoints()
-						+ stats.getMade3S() * .5
+				.setFantasySitePoints("draftkings", stats.getPoints()
+						+ stats.getMade3s() * .5
 						+ stats.getRebounds() * 1.25
 						+ stats.getAssists() * 1.5
 						+ stats.getSteals() * 2
 						+ stats.getBlocks() * 2
 						+ stats.getTurnovers() * -.5
-						+ (stats.getDoubleDouble() ? 1.5 : 0)
-						+ (stats.getTripleDouble() ? 3 : 0))
-				.putFantasySitePoints("fanduel", stats.getPoints()
+						+ (stats.isDoubleDouble() ? 1.5 : 0)
+						+ (stats.isTripleDouble() ? 3 : 0))
+				.setFantasySitePoints("fanduel", stats.getPoints()
 						+ stats.getRebounds() * 1.2
 						+ stats.getAssists() * 1.5
 						+ stats.getBlocks() * 3
 						+ stats.getSteals() * 3
-						- stats.getTurnovers())
-				.build();
+						- stats.getTurnovers());
 	}
 
 	public ImmutableList<Long> getActiveTeamIds() {
@@ -155,11 +154,10 @@ public class NBAApiDAO {
 		NBADataResult result = new NBADataResult(apiConnector.sendGet(format(TEAM_ROSTER, season, teamId)));
 
 		return IntStream.range(0, result.getResultCount())
-				.mapToObj(i -> Player.newBuilder()
+				.mapToObj(i -> new Player()
 						.setSeason(season)
 						.setPlayerId(result.getInt("PLAYER_ID", i))
-						.setName(result.getString("PLAYER", i))
-						.build())
+						.setName(result.getString("PLAYER", i)))
 				.collect(toImmutableList());
 	}
 
@@ -173,17 +171,15 @@ public class NBAApiDAO {
 				.collect(toImmutableList());
 	}
 
-	public List<PlayerDay> getGameDay(DateTime date) {
-		Map<String, PlayerDay.Builder> playerDayMap = new HashMap<>();
+	public ImmutableList<PlayerDay> getGameDay(DateTime date) {
+		Map<String, PlayerDay> playerDayMap = new HashMap<>();
 		for (FantasyLeague league : FantasyLeague.values()) {
 			getFantasyData(league.name, playerDayMap, date);
 		}
-		return playerDayMap.values().stream()
-				.map(PlayerDay.Builder::build)
-				.collect(Collectors.toList());
+		return playerDayMap.values().stream().collect(toImmutableList());
 	}
 
-	private void getFantasyData(String site, Map<String, PlayerDay.Builder> playerDayMap, DateTime date) {
+	private void getFantasyData(String site, Map<String, PlayerDay> playerDayMap, DateTime date) {
 		try {
 			String request = String.format(ROTO_GRINDER, site, date.toString(Constaints.COMPUTER_DATE));
 			HttpURLConnection con = (HttpURLConnection) new URL(request).openConnection();
@@ -202,20 +198,21 @@ public class NBAApiDAO {
 				String[] values = line.split(",");
 				String name = values[0].substring(1, values[0].length() - 1).trim();
 				playerDayMap
-						.computeIfAbsent(name, name_ -> PlayerDay.newBuilder()
+						.computeIfAbsent(name, name_ -> new PlayerDay()
 								.setDate(date.toString(Constaints.COMPUTER_DATE))
 								.setName(name)
 								.setTeam(values[2])
 								.setOpponent(values[4]))
-						.putFantasySiteInfo(site, FantasySiteInfo.newBuilder()
+						.getFantasySiteInfo(site)
 								.setCost(Integer.parseInt(values[1]))
-								.addAllPosition(Arrays.stream(values[3].split("/"))
+								.setPositions(Arrays.stream(values[3].split("/"))
 										.map(Position::valueOf)
-										.collect(Collectors.toList()))
-								.putProjection("RotoG Ceil", Double.parseDouble(!values[5].isEmpty() ? values[5] : "0"))
-								.putProjection("RotoG Floor", Double.parseDouble(!values[6].isEmpty() ? values[6] : "0" ))
-								.putProjection("RotoG Proj", Double.parseDouble(!values[7].isEmpty() ? values[7] : "0"))
-								.build());
+										.collect(toImmutableList()))
+								.setProjections(
+										ImmutableMap.of(
+												"RotoG Ceil", Double.parseDouble(!values[5].isEmpty() ? values[5] : "0"),
+												"RotoG Floor", Double.parseDouble(!values[6].isEmpty() ? values[6] : "0"),
+												"RotoG Proj", Double.parseDouble(!values[7].isEmpty() ? values[7] : "0")));
 			}
 			in.close();
 		} catch (IOException ioe) {

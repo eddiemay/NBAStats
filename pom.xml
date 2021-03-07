@@ -35,8 +35,6 @@
 
     <appengine-maven-plugin-version>1.3.1</appengine-maven-plugin-version>
     <endpoints-framework-maven-plugin>1.0.2</endpoints-framework-maven-plugin>
-    <google.protobuf.version>3.6.1</google.protobuf.version>
-
     <endpoints.project.id>fantasy-predictor</endpoints.project.id>
   </properties>
 
@@ -90,28 +88,6 @@
       </resource>
     </resources>
     <plugins>
-      <plugin>
-        <groupId>com.github.os72</groupId>
-        <artifactId>protoc-jar-maven-plugin</artifactId>
-        <version>3.3.0.1</version>
-        <executions>
-          <execution>
-            <phase>generate-sources</phase>
-            <goals>
-              <goal>run</goal>
-            </goals>
-            <configuration>
-              <protocArtifact>com.google.protobuf:protoc:${google.protobuf.version}</protocArtifact>
-              <includeStdTypes>true</includeStdTypes>
-              <outputTargets>
-                <outputTarget>
-                  <type>java</type>
-                </outputTarget>
-              </outputTargets>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-war-plugin</artifactId>

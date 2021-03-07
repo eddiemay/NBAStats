@@ -46,7 +46,7 @@ public class PlayerStore extends GenericStore<Player> {
 		return new QueryResult<>(apiDAO.listAllPlayers(season)
 				.stream()
 				.parallel()
-				.map(player -> playerMap.getOrDefault(player.getPlayerId(), create(Player.from(player))))
+				.map(player -> playerMap.getOrDefault(player.getPlayerId(), create(player)))
 				.collect(toImmutableList()));
 	}
 }

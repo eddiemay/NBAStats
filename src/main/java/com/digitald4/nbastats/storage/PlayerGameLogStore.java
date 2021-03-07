@@ -36,7 +36,6 @@ public class PlayerGameLogStore extends GenericStore<PlayerGameLog> {
 			if (playerId != 0 && season != null && apiDAO != null) {
 				apiDAO.getGames(playerId, season, null)
 						.parallelStream()
-						.map(PlayerGameLog::from)
 						.forEach(this::create);
 				queryResult = super.list(query);
 			}
@@ -76,7 +75,6 @@ public class PlayerGameLogStore extends GenericStore<PlayerGameLog> {
 		if ((dateFrom == null || dateFrom.isBefore(date)) && apiDAO != null) {
 			apiDAO.getGames(playerId, season, dateFrom)
 					.parallelStream()
-					.map(PlayerGameLog::from)
 					.forEach(game -> {
 						create(game);
 						if (dateStr.equals(game.getDate())) {

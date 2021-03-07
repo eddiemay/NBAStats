@@ -1,17 +1,15 @@
 package com.digitald4.nbastats.model;
 
-import com.digitald4.common.model.HasProto;
-import com.digitald4.nbastats.proto.NBAStatsProtos;
-import com.google.common.collect.ImmutableMap;
+import java.util.HashMap;
 import java.util.Map;
 
-public class PlayerGameLog implements HasProto<NBAStatsProtos.GameLog> {
+public class PlayerGameLog {
   private long id;
   private int playerId;
-  private String season = "";
-  private String date = "";
-  private String matchUp = "";
-  private String result = "";
+  private String season;
+  private String date;
+  private String matchUp;
+  private String result;
   private double minutes;
   private int points;
   private int rebounds;
@@ -24,7 +22,7 @@ public class PlayerGameLog implements HasProto<NBAStatsProtos.GameLog> {
   private boolean tripleDouble;
   private int plusMinus;
   private double nBAFantasyPoints;
-  private ImmutableMap<String, Double> fantasySitePoints = ImmutableMap.of();
+  private Map<String, Double> fantasySitePoints = new HashMap<>();
 
   public long getId() {
     return id;
@@ -188,7 +186,7 @@ public class PlayerGameLog implements HasProto<NBAStatsProtos.GameLog> {
     return this;
   }
 
-  public ImmutableMap<String, Double> getFantasySitePoints() {
+  public Map<String, Double> getFantasySitePoints() {
     return fantasySitePoints;
   }
 
@@ -197,59 +195,12 @@ public class PlayerGameLog implements HasProto<NBAStatsProtos.GameLog> {
   }
 
   public PlayerGameLog setFantasySitePoints(Map<String, Double> fantasySitePoints) {
-    this.fantasySitePoints = ImmutableMap.copyOf(fantasySitePoints);
+    this.fantasySitePoints = fantasySitePoints;
     return this;
   }
 
-  @Override
-  public NBAStatsProtos.GameLog toProto() {
-    return NBAStatsProtos.GameLog.newBuilder()
-        .setId(getId())
-        .setPlayerId(getPlayerId())
-        .setSeason(getSeason())
-        .setDate(getDate())
-        .setMatchUp(getMatchUp())
-        .setResult(getResult())
-        .setMinutes(getMinutes())
-        .setPoints(getPoints())
-        .setRebounds(getRebounds())
-        .setAssists(getAssists())
-        .setBlocks(getBlocks())
-        .setSteals(getSteals())
-        .setMade3S(getMade3s())
-        .setTurnovers(getTurnovers())
-        .setDoubleDouble(isDoubleDouble())
-        .setTripleDouble(isTripleDouble())
-        .setPlusMinus(getPlusMinus())
-        .setNBAFantasyPoints(getNBAFantasyPoints())
-        .putAllFantasySitePoints(getFantasySitePoints())
-        .build();
-  }
-
-  @Override
-  public PlayerGameLog fromProto(NBAStatsProtos.GameLog proto) {
-    return setId(proto.getId())
-        .setPlayerId(proto.getPlayerId())
-        .setSeason(proto.getSeason())
-        .setDate(proto.getDate())
-        .setMatchUp(proto.getMatchUp())
-        .setResult(proto.getResult())
-        .setMinutes(proto.getMinutes())
-        .setPoints(proto.getPoints())
-        .setRebounds(proto.getRebounds())
-        .setAssists(proto.getAssists())
-        .setBlocks(proto.getBlocks())
-        .setSteals(proto.getSteals())
-        .setMade3s(proto.getMade3S())
-        .setTurnovers(proto.getTurnovers())
-        .setDoubleDouble(proto.getDoubleDouble())
-        .setTripleDouble(proto.getTripleDouble())
-        .setPlusMinus(proto.getPlusMinus())
-        .setNBAFantasyPoints(proto.getNBAFantasyPoints())
-        .setFantasySitePoints(proto.getFantasySitePointsMap());
-  }
-
-  public static PlayerGameLog from(NBAStatsProtos.GameLog proto) {
-    return new PlayerGameLog().fromProto(proto);
+  public PlayerGameLog setFantasySitePoints(String fantasySite, double points) {
+    fantasySitePoints.put(fantasySite, points);
+    return this;
   }
 }

@@ -1,10 +1,8 @@
 package com.digitald4.nbastats.model;
 
-import com.digitald4.common.model.HasProto;
-import com.digitald4.nbastats.proto.NBAStatsProtos;
 import com.google.common.collect.ImmutableList;
 
-public class LineUp implements HasProto<NBAStatsProtos.LineUp> {
+public class LineUp {
   private long id;
   private String date;
   private String fantasySite;
@@ -94,34 +92,5 @@ public class LineUp implements HasProto<NBAStatsProtos.LineUp> {
   public LineUp setSelected(boolean selected) {
     this.selected = selected;
     return this;
-  }
-
-  @Override
-  public NBAStatsProtos.LineUp toProto() {
-    return NBAStatsProtos.LineUp.newBuilder()
-        .setId(getId())
-        .setDate(getDate())
-        .setFantasySite(getFantasySite())
-        .setProjectionMethod(getProjectionMethod())
-        .addAllPlayerId(getPlayerIds())
-        .setTotalSalary(getTotalSalary())
-        .setProjected(getProjected())
-        .setActual(getActual())
-        .setSelected(getSelected())
-        .build();
-  }
-
-  @Override
-  public HasProto<NBAStatsProtos.LineUp> fromProto(NBAStatsProtos.LineUp proto) {
-    return new LineUp()
-        .setId(proto.getId())
-        .setDate(proto.getDate())
-        .setFantasySite(proto.getFantasySite())
-        .setProjectionMethod(proto.getProjectionMethod())
-        .setPlayerIds(proto.getPlayerIdList())
-        .setTotalSalary(proto.getTotalSalary())
-        .setProjected(proto.getProjected())
-        .setActual(proto.getActual())
-        .setSelected(proto.getSelected());
   }
 }
