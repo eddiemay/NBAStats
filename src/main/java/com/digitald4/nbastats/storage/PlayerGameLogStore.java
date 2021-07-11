@@ -28,9 +28,9 @@ public class PlayerGameLogStore extends GenericStore<PlayerGameLog> {
 			String season = null;
 			for (Filter filter : query.getFilters()) {
 				if ("player_id".equals(filter.getColumn())) {
-					playerId = Integer.parseInt(filter.getValue());
+					playerId = filter.getVal();
 				} else if ("season".equals(filter.getColumn())) {
-					season = filter.getValue();
+					season = filter.getVal();
 				}
 			}
 			if (playerId != 0 && season != null && apiDAO != null) {

@@ -105,8 +105,9 @@ public class FanDuelIO {
 		output(date, pgs, sgs, sfs, pfs, cs);
 	}
 
-	private void output(DateTime date, List<PlayerDay> pgs, List<PlayerDay> sgs, List<PlayerDay> sfs, List<PlayerDay> pfs,
-										 List<PlayerDay> cs) throws IOException {
+	private void output(
+			DateTime date, List<PlayerDay> pgs, List<PlayerDay> sgs, List<PlayerDay> sfs, List<PlayerDay> pfs,
+			List<PlayerDay> cs) throws IOException {
 		List<Pair<PlayerDay, PlayerDay>> pgPs = toPairList(pgs);
 		List<Pair<PlayerDay, PlayerDay>> sgPs = toPairList(sgs);
 		List<Pair<PlayerDay, PlayerDay>> sfPs = toPairList(sfs);
@@ -215,9 +216,10 @@ public class FanDuelIO {
 
 	private void insertData(DateTime date) {
 		playerDayStore
-				.list(new Query()
-						.setFilters(new Filter().setColumn("date").setValue(date.toString(Constaints.COMPUTER_DATE)))
-						.setLimit(1))
+				.list(
+						new Query()
+								.setFilters(new Filter().setColumn("date").setValue(date.toString(Constaints.COMPUTER_DATE)))
+								.setLimit(1))
 				.getResults()
 				.get(0)
 				.getFantasySiteInfo(league)
@@ -226,10 +228,16 @@ public class FanDuelIO {
 				.parallelStream()
 				.forEach(method -> {
 					lineUpStore.delete(
-							new Query().setFilters(
-									new Filter().setColumn("fantasy_site").setValue(league),
-									new Filter().setColumn("date").setValue(date.toString(Constaints.COMPUTER_DATE)),
-									new Filter().setColumn("projection_method").setValue(method)));
+							lineUpStore
+									.list(
+											new Query().setFilters(
+													new Filter().setColumn("fantasy_site").setValue(league),
+													new Filter().setColumn("date").setValue(date.toString(Constaints.COMPUTER_DATE)),
+													new Filter().setColumn("projection_method").setValue(method)))
+									.getResults()
+									.stream()
+									.map(LineUp::getId)
+									.collect(toImmutableList()));
 					String fileName = String.format(FantasyProcessor.OUTPUT_PATH, date.toString(Constaints.COMPUTER_DATE), method);
 					try (BufferedReader reader = new BufferedReader(new FileReader(fileName))) {
 						String line;
@@ -241,8 +249,10 @@ public class FanDuelIO {
 									.setProjected(Double.parseDouble(parts[0].trim()))
 									.setProjectionMethod(parts[1])
 									.setTotalSalary(Integer.parseInt(parts[2]))
-									.setPlayerIds(Arrays.asList(parts).subList(3, parts.length).stream()
-											.map(Integer::parseInt).collect(Collectors.toList())));
+									.setPlayerIds(
+											Arrays.asList(parts).subList(3, parts.length).stream()
+													.map(Integer::parseInt)
+													.collect(Collectors.toList())));
 						}
 					} catch (IOException e) {
 						System.out.println("Error opening file: " + fileName);
@@ -252,10 +262,17 @@ public class FanDuelIO {
 
 	private void insertActuals(DateTime date) {
 		lineUpStore.delete(
-				new Query().setFilters(
-						new Filter().setColumn("fantasy_site").setValue(league),
-						new Filter().setColumn("date").setValue(date.toString(Constaints.COMPUTER_DATE)),
-						new Filter().setColumn("projection_method").setValue("Actual")));
+				lineUpStore
+						.list(
+								new Query().setFilters(
+										new Filter().setColumn("fantasy_site").setValue(league),
+										new Filter().setColumn("date").setValue(date.toString(Constaints.COMPUTER_DATE)),
+										new Filter().setColumn("projection_method").setValue("Actual")))
+						.getResults()
+						.stream()
+						.map(LineUp::getId)
+						.collect(toImmutableList()));
+
 		String fileName = String.format(FantasyProcessor.OUTPUT_PATH, date.toString(Constaints.COMPUTER_DATE), "Actual");
 		try (BufferedReader reader = new BufferedReader(new FileReader(fileName))) {
 			String line;

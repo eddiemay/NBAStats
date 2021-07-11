@@ -30,7 +30,7 @@ public class PlayerDayStore extends GenericStore<PlayerDay> {
 		QueryResult<PlayerDay> queryResult = super.list(query);
 		if (queryResult.getTotalSize() == 0 && apiDAO != null && query.getFilters().size() == 1
 				&& query.getFilters().get(0).getColumn().equals("date")) {
-			DateTime date = DateTime.parse(query.getFilters().get(0).getValue(), Constaints.COMPUTER_DATE);
+			DateTime date = DateTime.parse(query.getFilters().get(0).getVal(), Constaints.COMPUTER_DATE);
 			return new QueryResult<>(apiDAO.getGameDay(date).stream()
 					.parallel()
 					.map(this::create)
