@@ -1,6 +1,9 @@
 package com.digitald4.nbastats.compute;
 
 import static com.digitald4.common.util.Calculate.standardDeviation;
+import static com.google.common.collect.ImmutableList.toImmutableList;
+import static com.google.common.collect.ImmutableMap.toImmutableMap;
+import static java.util.function.Function.identity;
 
 import com.digitald4.common.storage.Query;
 import com.digitald4.common.storage.Query.Filter;
@@ -9,6 +12,8 @@ import com.digitald4.common.util.Calculate;
 import com.digitald4.nbastats.model.LineUp;
 import com.digitald4.nbastats.model.Player;
 import com.digitald4.nbastats.model.PlayerDay;
+import com.digitald4.nbastats.model.PlayerDay.FantasySiteInfo;
+import com.digitald4.nbastats.model.PlayerDay.FantasySiteInfo.Projection;
 import com.digitald4.nbastats.model.PlayerGameLog;
 import com.digitald4.nbastats.storage.LineUpStore;
 import com.digitald4.nbastats.storage.PlayerGameLogStore;
@@ -19,11 +24,6 @@ import com.digitald4.nbastats.util.Constaints.FantasyLeague;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import org.joda.time.DateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 import javax.inject.Inject;
 
 public class StatsProcessor {
@@ -46,15 +46,15 @@ public class StatsProcessor {
 		this.lineUpStore = lineUpStore;
 	}
 
-	public List<PlayerDay> processStats(DateTime date) {
+	public ImmutableList<PlayerDay> processStats(DateTime date) {
 		ImmutableList<Player> playerList = playerStore.list(Constaints.getSeason(date)).getResults();
-		Map<String, Player> playerMap = playerList.stream()
-				.parallel()
-				.collect(Collectors.toMap(Player::getName, Function.identity()));
-		playerMap.putAll(playerList.stream()
-				.parallel()
-				.filter(player -> !player.getAka().isEmpty())
-				.collect(Collectors.toMap(Player::getAka, Function.identity())));
+		ImmutableMap<String, Player> playerMap = ImmutableMap.<String, Player>builder()
+				.putAll(playerList.stream().collect(toImmutableMap(Player::getName, identity())))
+				.putAll(
+						playerList.stream()
+								.filter(player -> player.getAka() != null && !player.getAka().isEmpty())
+								.collect(toImmutableMap(Player::getAka, identity())))
+				.build();
 
 		return playerDayStore.list(date).getResults().stream()
 				.parallel()
@@ -71,29 +71,35 @@ public class StatsProcessor {
 					}
 					return playerDay;
 				})
-				.collect(Collectors.toList());
+				.collect(toImmutableList());
 	}
 
 	private PlayerDay fillStats(PlayerDay playerDay) {
 		String strDate = playerDay.getDate();
 		DateTime date = DateTime.parse(strDate, Constaints.COMPUTER_DATE);
 		playerGameLogStore.refreshGames(playerDay.getPlayerId(), date);
-		List<PlayerGameLog> games = playerGameLogStore.list(
-				new Query().setFilters(
-						new Filter().setColumn("player_id").setValue(String.valueOf(playerDay.getPlayerId())),
-						new Filter().setColumn("season").setValue(Constaints.getSeason(date)),
-						new Filter().setColumn("date").setOperator("<").setValue(strDate))
-				.setOrderBys(new OrderBy().setColumn("date").setDesc(true))
-				.setLimit(SAMPLE_SIZE))
+		ImmutableList<PlayerGameLog> games = playerGameLogStore
+				.list(
+						new Query()
+								.setFilters(
+										new Filter().setColumn("playerId").setValue(playerDay.getPlayerId()),
+										new Filter().setColumn("season").setValue(Constaints.getSeason(date)),
+										new Filter().setColumn("date").setOperator("<").setValue(strDate))
+								.setOrderBys(new OrderBy().setColumn("date").setDesc(true))
+								.setLimit(SAMPLE_SIZE))
 				.getResults();
 		if (games.size() < SAMPLE_SIZE) {
-			games.addAll(
-					playerGameLogStore.list(new Query()
-							.setFilters(
-									new Filter().setColumn("player_id").setValue(String.valueOf(playerDay.getPlayerId())),
-									new Filter().setColumn("season").setValue(Constaints.getPrevSeason(date)))
-							.setOrderBys(new OrderBy().setColumn("date").setDesc(true))
-							.setLimit(SAMPLE_SIZE - games.size())).getResults());
+			games = ImmutableList.<PlayerGameLog>builder()
+					.addAll(games)
+					.addAll(
+							playerGameLogStore.list(
+									new Query()
+											.setFilters(
+													new Filter().setColumn("playerId").setValue(playerDay.getPlayerId()),
+													new Filter().setColumn("season").setValue(Constaints.getPrevSeason(date)))
+											.setOrderBys(new OrderBy().setColumn("date").setDesc(true))
+											.setLimit(SAMPLE_SIZE - games.size())).getResults())
+					.build();
 		}
 		if (games.size() > 0) {
 			int sampleSize = games.size();
@@ -110,29 +116,30 @@ public class StatsProcessor {
 
 			for (FantasyLeague fantasyLeague : FantasyLeague.values()) {
 				double average = totals[fantasyLeague.ordinal()] / sampleSize;
-				playerDay.getFantasySiteInfo(fantasyLeague.name).setProjections(
-						ImmutableMap.of(
-								"30 Game Average", average,
-								"30 Game 75th Pct", round(standardDeviation(matrix[fantasyLeague.ordinal()]) * Z_SCORE_25P + average)));
+				playerDay.getFantasySiteInfo(fantasyLeague.name).addProjections(
+						ImmutableList.of(
+								Projection.forValues("30 Game Average", average),
+								Projection.forValues(
+										"30 Game 75th Pct",
+										round(standardDeviation(matrix[fantasyLeague.ordinal()]) * Z_SCORE_25P + average))));
 			}
 
 			if (sampleSize < SAMPLE_SIZE) {
 				playerDay.setLowDataWarn(true);
-				System.err.println(
-						String.format(
-								"Not enough data for: %d - %s (%d)", playerDay.getPlayerId(), playerDay.getName(), games.size()));
+				System.err.printf(
+						"Not enough data for: %d - %s (%d)%n", playerDay.getPlayerId(), playerDay.getName(), games.size());
 			}
 		}
 		return playerDay;
 	}
 
-	public List<PlayerDay> updateActuals(DateTime date) {
+	public ImmutableList<PlayerDay> updateActuals(DateTime date) {
 		/*gameLogStore.delete(Query.newBuilder()
 				.addFilter(Filter.newBuilder().setColumn("date").setValue(date.toString(Constaints.COMPUTER_DATE)))
 				.build());*/
 		String strDate = date.toString(Constaints.COMPUTER_DATE);
 		// playerStore.refreshPlayerList(Constaints.getSeason(date));
-		Map<Integer, PlayerDay> playerDaysMap = playerDayStore.list(date)
+		ImmutableMap<Integer, PlayerDay> playerDaysMap = playerDayStore.list(date)
 				.getResults()
 				.stream()
 				.parallel()
@@ -141,9 +148,10 @@ public class StatsProcessor {
 					boolean changeDetected  = false;
 					PlayerGameLog gameLog = playerGameLogStore.get(playerDay.getPlayerId(), date);
 					if (gameLog != null) {
-						for (String site : playerDay.getFantasySiteInfos().keySet()) {
-							playerDay.getFantasySiteInfo(site).setActual(gameLog.getFantasySitePoints(site));
-							if (playerDay.getFantasySiteInfo(site).getActual() != playerDay.getFantasySiteInfo(site).getActual()) {
+						for (FantasySiteInfo fantasySiteInfo : playerDay.getFantasySiteInfos()) {
+							double actual = gameLog.getFantasySitePoints(fantasySiteInfo.getFantasySite());
+							if (fantasySiteInfo.getActual() != actual) {
+								fantasySiteInfo.setActual(actual);
 								changeDetected = true;
 							}
 						}
@@ -154,7 +162,7 @@ public class StatsProcessor {
 					}
 					return playerDay;
 				})
-				.collect(Collectors.toMap(PlayerDay::getPlayerId, Function.identity()));
+				.collect(toImmutableMap(PlayerDay::getPlayerId, identity()));
 
 		lineUpStore.list(new Query().setFilters(new Filter().setColumn("date").setValue(strDate)))
 				.getResults()
@@ -171,7 +179,7 @@ public class StatsProcessor {
 					}
 				});
 
-		return new ArrayList<>(playerDaysMap.values());
+		return ImmutableList.copyOf(playerDaysMap.values());
 	}
 
 	private double round(double n) {

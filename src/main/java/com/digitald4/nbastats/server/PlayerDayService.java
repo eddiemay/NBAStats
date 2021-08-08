@@ -1,17 +1,17 @@
 package com.digitald4.nbastats.server;
 
+import com.digitald4.common.server.service.Empty;
 import com.digitald4.common.server.service.EntityServiceImpl;
 import com.digitald4.nbastats.compute.StatsProcessor;
 import com.digitald4.nbastats.model.PlayerDay;
 import com.digitald4.nbastats.storage.PlayerDayStore;
 import com.digitald4.nbastats.util.Constaints;
 import com.google.api.server.spi.config.*;
-import com.google.protobuf.Empty;
 import javax.inject.Inject;
 import org.joda.time.DateTime;
 
 @Api(
-		name = "playerdays",
+		name = "playerDays",
 		version = "v1",
 		namespace = @ApiNamespace(
 				ownerDomain = "nbastats.digitald4.com",
@@ -38,6 +38,11 @@ public class PlayerDayService extends EntityServiceImpl<PlayerDay> {
 	@ApiMethod(httpMethod = ApiMethod.HttpMethod.GET, path = "processStats/{date}")
 	public Empty processStats(@Named("date") String date) {
 		new Thread(() -> statsProcessor.processStats(DateTime.parse(date, Constaints.COMPUTER_DATE))).start();
-		return Empty.getDefaultInstance();
+		return Empty.getInstance();
+	}
+
+	@ApiMethod(httpMethod = ApiMethod.HttpMethod.POST, path = "echo")
+	public PlayerDay echo(PlayerDay playerDay) {
+		return playerDay;
 	}
 }

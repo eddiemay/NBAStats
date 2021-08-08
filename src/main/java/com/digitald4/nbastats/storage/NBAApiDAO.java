@@ -8,8 +8,8 @@ import com.digitald4.common.exception.DD4StorageException;
 import com.digitald4.common.server.APIConnector;
 import com.digitald4.nbastats.model.Player;
 import com.digitald4.nbastats.model.PlayerDay;
-import com.digitald4.nbastats.model.PlayerDay.FantasySiteInfo;
 import com.digitald4.nbastats.model.PlayerDay.FantasySiteInfo.Position;
+import com.digitald4.nbastats.model.PlayerDay.FantasySiteInfo.Projection;
 import com.digitald4.nbastats.model.PlayerGameLog;
 import com.digitald4.nbastats.util.Constaints;
 import com.digitald4.nbastats.util.Constaints.FantasyLeague;
@@ -32,7 +32,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import javax.inject.Inject;
 
@@ -176,6 +175,7 @@ public class NBAApiDAO {
 		for (FantasyLeague league : FantasyLeague.values()) {
 			getFantasyData(league.name, playerDayMap, date);
 		}
+
 		return playerDayMap.values().stream().collect(toImmutableList());
 	}
 
@@ -189,35 +189,53 @@ public class NBAApiDAO {
 
 			System.out.println("\nSending request: " + request);
 			int responseCode = con.getResponseCode();
-			System.out.println("Response Code: " + responseCode);
+			if (responseCode != 200) {
+				throw new DD4StorageException("Error reading from Roto Grinder, bad response code: " + responseCode);
+			}
+			JSONArray rotoPlayers = getJson(con);
+			System.out.println("Roto Grinder player count: " + rotoPlayers.length());
+			// System.out.println("First player: " + rotoPlayers.get(0));
 
-			BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
-			String line;
-			while ((line = in.readLine()) != null) {
-				System.out.println(line);
-				String[] values = line.split(",");
-				String name = values[0].substring(1, values[0].length() - 1).trim();
+			for (int p = 0; p < rotoPlayers.length(); p++) {
+				JSONObject rotoPlayer = rotoPlayers.getJSONObject(p);
+				String name = rotoPlayer.getString("player_name");
+				System.out.println(name + " " + rotoPlayer.getString("position") + " " + Arrays.toString(rotoPlayer.getString("position").split("/")));
 				playerDayMap
 						.computeIfAbsent(name, name_ -> new PlayerDay()
 								.setDate(date.toString(Constaints.COMPUTER_DATE))
 								.setName(name)
-								.setTeam(values[2])
-								.setOpponent(values[4]))
+								.setTeam(rotoPlayer.getString("team"))
+								.setOpponent(rotoPlayer.getString("opp")))
 						.getFantasySiteInfo(site)
-								.setCost(Integer.parseInt(values[1]))
-								.setPositions(Arrays.stream(values[3].split("/"))
-										.map(Position::valueOf)
-										.collect(toImmutableList()))
-								.setProjections(
-										ImmutableMap.of(
-												"RotoG Ceil", Double.parseDouble(!values[5].isEmpty() ? values[5] : "0"),
-												"RotoG Floor", Double.parseDouble(!values[6].isEmpty() ? values[6] : "0"),
-												"RotoG Proj", Double.parseDouble(!values[7].isEmpty() ? values[7] : "0")));
+								.setCost((int) rotoPlayer.getDouble("salary"))
+								.setPositions(
+										Arrays.stream(rotoPlayer.getString("position").split("/"))
+												.map(String::trim)
+												// .map(Position::valueOf)
+												.collect(toImmutableList()))
+								.addProjections(
+										ImmutableList.of(
+												Projection.forValues("RotoG Ceil", rotoPlayer.getDouble("ceil")),
+												Projection.forValues("RotoG Floor", rotoPlayer.getDouble("floor")),
+												Projection.forValues("RotoG Proj", rotoPlayer.getDouble("dvp"))));
 			}
-			in.close();
 		} catch (IOException ioe) {
 			throw new DD4StorageException("Error reading player options", ioe);
 		}
+	}
+
+	private static JSONArray getJson(HttpURLConnection con) throws IOException {
+		try (BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()))) {
+			String line;
+			while ((line = in.readLine()) != null) {
+				line = line.trim();
+				if (line.startsWith("data = ")) {
+					return new JSONArray(line.substring("data = ".length()));
+				}
+			}
+		}
+
+		return null;
 	}
 
 	static class NBADataResult {

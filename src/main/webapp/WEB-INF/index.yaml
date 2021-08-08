@@ -10,3 +10,9 @@ indexes:
   - name: player_id
   - name: date
     direction: desc
+- kind: PlayerGameLog
+  properties:
+  - name: player_id
+  - name: season
+  - name: date
+    direction: desc

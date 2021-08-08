@@ -58,15 +58,15 @@ public class FanDuelIO {
 				.stream()
 				.filter(playerDay -> playerDay.getFantasySiteInfo(league).getProjections().size() > 4)
 				.sorted((p1, p2) -> Double.compare(
-						p2.getFantasySiteInfo(league).getProjection("RotoG Proj"),
-						p1.getFantasySiteInfo(league).getProjection("RotoG Proj")))
+						p2.getFantasySiteInfo(league).getProjection("RotoG Proj").getProjected(),
+						p1.getFantasySiteInfo(league).getProjection("RotoG Proj").getProjected()))
 				.peek(player -> {
 					switch (player.getFantasySiteInfo(league).getPositions().get(0)) {
-						case PG: pgs.add(player); break;
-						case SG: sgs.add(player); break;
-						case SF: sfs.add(player); break;
-						case PF: pfs.add(player); break;
-						case C: cs.add(player); break;
+						case "PG": pgs.add(player); break;
+						case "SG": sgs.add(player); break;
+						case "SF": sfs.add(player); break;
+						case "PF": pfs.add(player); break;
+						case "C": cs.add(player); break;
 					}
 				})
 				.collect(toImmutableList());
@@ -91,11 +91,11 @@ public class FanDuelIO {
 						p1.getFantasySiteInfo(league).getActual()))
 				.peek(player -> {
 					switch (player.getFantasySiteInfo(league).getPositions().get(0)) {
-						case PG: pgs.add(player); break;
-						case SG: sgs.add(player); break;
-						case SF: sfs.add(player); break;
-						case PF: pfs.add(player); break;
-						case C: cs.add(player); break;
+						case "PG": pgs.add(player); break;
+						case "SG": sgs.add(player); break;
+						case "SF": sfs.add(player); break;
+						case "PF": pfs.add(player); break;
+						case "C": cs.add(player); break;
 					}
 				})
 				.collect(toImmutableList());
@@ -121,8 +121,8 @@ public class FanDuelIO {
 		System.out.println("SG Pairs: " + sgPs.size());
 		System.out.println("SF Pairs: " + sfPs.size());
 		System.out.println("PF Pairs: " + pfPs.size());
-		long bcI = pgPs.size() * sgPs.size();
-		long fcI = sfPs.size() * pfPs.size() * cs.size();
+		long bcI = (long) pgPs.size() * sgPs.size();
+		long fcI = (long) sfPs.size() * pfPs.size() * cs.size();
 		System.out.println("BackCourt Iterations: " + bcI);
 		System.out.println("FrontCourt Iterations: " + fcI);
 		System.out.println("Iterations: " + NumberFormat.getInstance().format(bcI * fcI));
@@ -176,8 +176,8 @@ public class FanDuelIO {
 
 	private static void write(List<PlayerDay> players, DateTime date) throws IOException {
 		FileWriter fw = new FileWriter(String.format(FantasyProcessor.PLAYERS_PATH, date.toString(Constaints.COMPUTER_DATE)));
-		for (String method : players.get(0).getFantasySiteInfo(league).getProjections().keySet()) {
-			fw.write(method + ",");
+		for (FantasySiteInfo.Projection projection : players.get(0).getFantasySiteInfo(league).getProjections()) {
+			fw.write(projection.getBasis() + ",");
 		}
 		for (PlayerDay playerDay : players) {
 			fw.write("\n" + write(playerDay));
@@ -187,9 +187,9 @@ public class FanDuelIO {
 
 	private static String write(PlayerDay player) {
 		FantasySiteInfo fantasySiteInfo = player.getFantasySiteInfo(league);
-		return player.getPlayerId() + "," + fantasySiteInfo.getCost() + "," + fantasySiteInfo.getProjections().values()
+		return player.getPlayerId() + "," + fantasySiteInfo.getCost() + "," + fantasySiteInfo.getProjections()
 				.stream()
-				.map(proj -> String.valueOf(Calculate.round(proj, 1)))
+				.map(proj -> String.valueOf(Calculate.round(proj.getProjected(), 1)))
 				.collect(Collectors.joining(","));
 	}
 
@@ -224,21 +224,21 @@ public class FanDuelIO {
 				.get(0)
 				.getFantasySiteInfo(league)
 				.getProjections()
-				.keySet()
 				.parallelStream()
-				.forEach(method -> {
+				.map(FantasySiteInfo.Projection::getBasis)
+				.forEach(basis -> {
 					lineUpStore.delete(
 							lineUpStore
 									.list(
 											new Query().setFilters(
 													new Filter().setColumn("fantasy_site").setValue(league),
 													new Filter().setColumn("date").setValue(date.toString(Constaints.COMPUTER_DATE)),
-													new Filter().setColumn("projection_method").setValue(method)))
+													new Filter().setColumn("projection_method").setValue(basis)))
 									.getResults()
 									.stream()
 									.map(LineUp::getId)
 									.collect(toImmutableList()));
-					String fileName = String.format(FantasyProcessor.OUTPUT_PATH, date.toString(Constaints.COMPUTER_DATE), method);
+					String fileName = String.format(FantasyProcessor.OUTPUT_PATH, date.toString(Constaints.COMPUTER_DATE), basis);
 					try (BufferedReader reader = new BufferedReader(new FileReader(fileName))) {
 						String line;
 						while ((line = reader.readLine()) != null) {
@@ -278,14 +278,17 @@ public class FanDuelIO {
 			String line;
 			while ((line = reader.readLine()) != null) {
 				String[] parts = line.split(",");
-				lineUpStore.create(new LineUp()
-						.setDate(date.toString(Constaints.COMPUTER_DATE))
-						.setFantasySite(league)
-						.setActual(Double.parseDouble(parts[0].trim()))
-						.setProjectionMethod("Actual")
-						.setTotalSalary(Integer.parseInt(parts[2]))
-						.setPlayerIds(Arrays.asList(parts).subList(3, parts.length).stream()
-								.map(Integer::parseInt).collect(Collectors.toList())));
+				lineUpStore.create(
+						new LineUp()
+								.setDate(date.toString(Constaints.COMPUTER_DATE))
+								.setFantasySite(league)
+								.setActual(Double.parseDouble(parts[0].trim()))
+								.setProjectionMethod("Actual")
+								.setTotalSalary(Integer.parseInt(parts[2]))
+								.setPlayerIds(
+										Arrays.asList(parts).subList(3, parts.length).stream()
+												.map(Integer::parseInt)
+												.collect(Collectors.toList())));
 			}
 		} catch (IOException e) {
 			System.out.println("Error opening file: " + fileName);

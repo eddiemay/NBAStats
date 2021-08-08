@@ -15,7 +15,7 @@ import javax.inject.Inject;
 import org.joda.time.DateTime;
 
 @Api(
-		name = "lineups",
+		name = "lineUps",
 		version = "v1",
 		namespace = @ApiNamespace(
 				ownerDomain = "nbastats.digitald4.com",

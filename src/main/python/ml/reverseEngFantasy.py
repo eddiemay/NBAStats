@@ -63,7 +63,7 @@ def build_model_columns():
   age_buckets = tf.feature_column.bucketized_column(
       age, boundaries=[18, 25, 30, 35, 40, 45, 50, 55, 60, 65])
 
-  return [ags, pts, mins, fga, fgm, tpa, tpm, fta, ftm, rebs, ast, stl, to, blk, team_num]
+  return [age, pts, mins, fga, fgm, tpa, tpm, fta, ftm, rebs, ast, stl, to, blk, team_num]
 
 
 def build_estimator(model_dir, model_type):

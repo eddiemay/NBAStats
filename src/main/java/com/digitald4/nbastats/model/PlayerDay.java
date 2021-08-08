@@ -1,9 +1,10 @@
 package com.digitald4.nbastats.model;
 
-import static com.google.common.collect.ImmutableMap.toImmutableMap;
+import static com.google.common.collect.Streams.stream;
+import static java.util.function.Function.identity;
+import static java.util.stream.Collectors.toMap;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -90,17 +91,17 @@ public class PlayerDay {
     return this;
   }
 
-  public Map<String, FantasySiteInfo> getFantasySiteInfos() {
-    return fantasySiteInfos;
+  public ImmutableList<FantasySiteInfo> getFantasySiteInfos() {
+    return ImmutableList.copyOf(fantasySiteInfos.values());
+  }
+
+  public PlayerDay setFantasySiteInfos(Iterable<FantasySiteInfo> fantasySiteInfos) {
+    this.fantasySiteInfos = stream(fantasySiteInfos).collect(toMap(FantasySiteInfo::getFantasySite, identity()));
+    return this;
   }
 
   public FantasySiteInfo getFantasySiteInfo(String fantasySite) {
-    return fantasySiteInfos.computeIfAbsent(fantasySite, site -> new FantasySiteInfo());
-  }
-
-  public PlayerDay setFantasySiteInfos(Map<String, FantasySiteInfo> fantasySiteInfos) {
-    this.fantasySiteInfos = fantasySiteInfos;
-    return this;
+    return fantasySiteInfos.computeIfAbsent(fantasySite, site -> new FantasySiteInfo().setFantasySite(fantasySite));
   }
 
   public boolean getLowDataWarn() {
@@ -114,16 +115,27 @@ public class PlayerDay {
 
   public static class FantasySiteInfo {
     public enum Position { POS_UNKNOWN, PG, SG, SF, PF, C }
-    private ImmutableList<Position> positions;
+
+    private String fantasySite;
+    private ImmutableList<String> positions;
     private int cost;
-    private ImmutableMap<String, Double> projections;
+    private Map<String, Projection> projections = new HashMap<>();
     private double actual;
 
-    public ImmutableList<Position> getPositions() {
+    public String getFantasySite() {
+      return fantasySite;
+    }
+
+    public FantasySiteInfo setFantasySite(String fantasySite) {
+      this.fantasySite = fantasySite;
+      return this;
+    }
+
+    public ImmutableList<String> getPositions() {
       return positions;
     }
 
-    public FantasySiteInfo setPositions(Iterable<Position> positions) {
+    public FantasySiteInfo setPositions(Iterable<String> positions) {
       this.positions = ImmutableList.copyOf(positions);
       return this;
     }
@@ -137,16 +149,21 @@ public class PlayerDay {
       return this;
     }
 
-    public ImmutableMap<String, Double> getProjections() {
-      return projections;
+    public ImmutableList<Projection> getProjections() {
+      return ImmutableList.copyOf(projections.values());
     }
 
-    public double getProjection(String source) {
-      return projections.getOrDefault(source, 0.0);
+    public FantasySiteInfo setProjections(Iterable<Projection> projections) {
+      this.projections = stream(projections).collect(toMap(Projection::getBasis, identity()));
+      return this;
     }
 
-    public FantasySiteInfo setProjections(Map<String, Double> projections) {
-      this.projections = ImmutableMap.copyOf(projections);
+    public Projection getProjection(String basis) {
+      return projections.computeIfAbsent(basis, b -> new Projection().setBasis(basis));
+    }
+
+    public FantasySiteInfo addProjections(Iterable<Projection> projections) {
+      this.projections.putAll(stream(projections).collect(toMap(Projection::getBasis, identity())));
       return this;
     }
 
@@ -157,6 +174,33 @@ public class PlayerDay {
     public FantasySiteInfo setActual(double actual) {
       this.actual = actual;
       return this;
+    }
+
+    public static class Projection {
+      private String basis;
+      private double projected;
+
+      public String getBasis() {
+        return basis;
+      }
+
+      public Projection setBasis(String basis) {
+        this.basis = basis;
+        return this;
+      }
+
+      public double getProjected() {
+        return projected;
+      }
+
+      public Projection setProjected(double projected) {
+        this.projected = projected;
+        return this;
+      }
+
+      public static Projection forValues(String basis, double projected) {
+        return new Projection().setBasis(basis).setProjected(projected);
+      }
     }
   }
 }

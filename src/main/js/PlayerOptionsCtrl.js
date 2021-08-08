@@ -13,6 +13,9 @@ com.digitald4.nbastats.PlayerOptionsCtrl.prototype.refresh = function() {
   this.projectionMethods = [];
   var fantasyLeague = this.globalData.fantasyLeague;
 	this.playerDayService.list(this.globalData.getApiDate(), function(response) {
+	  if (response.results.length == 0) {
+	    return;
+	  }
 	  for (var method in response.results[0].fantasySiteInfo[fantasyLeague].projection) {
 	    this.projectionMethods.push(method);
 	  }

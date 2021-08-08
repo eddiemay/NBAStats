@@ -27,16 +27,14 @@ public class PlayerGameLogStore extends GenericStore<PlayerGameLog> {
 			int playerId = 0;
 			String season = null;
 			for (Filter filter : query.getFilters()) {
-				if ("player_id".equals(filter.getColumn())) {
+				if ("playerId".equals(filter.getColumn())) {
 					playerId = filter.getVal();
 				} else if ("season".equals(filter.getColumn())) {
 					season = filter.getVal();
 				}
 			}
 			if (playerId != 0 && season != null && apiDAO != null) {
-				apiDAO.getGames(playerId, season, null)
-						.parallelStream()
-						.forEach(this::create);
+				apiDAO.getGames(playerId, season, null).parallelStream().forEach(this::create);
 				queryResult = super.list(query);
 			}
 		}
@@ -46,7 +44,7 @@ public class PlayerGameLogStore extends GenericStore<PlayerGameLog> {
 	public PlayerGameLog get(int playerId, DateTime date) {
 		String season = Constaints.getSeason(date);
 		Query query = new Query().setFilters(
-				new Filter().setColumn("player_id").setValue(String.valueOf(playerId)),
+				new Filter().setColumn("playerId").setValue(playerId),
 				new Filter().setColumn("season").setValue(season),
 				new Filter().setColumn("date").setValue(date.toString(Constaints.COMPUTER_DATE)));
 		List<PlayerGameLog> gameLog = super.list(query).getResults();
@@ -62,7 +60,7 @@ public class PlayerGameLogStore extends GenericStore<PlayerGameLog> {
 		String dateStr = date.toString(Constaints.COMPUTER_DATE);
 		List<PlayerGameLog> gameLog = super.list(new Query()
 				.setFilters(
-						new Filter().setColumn("player_id").setValue(String.valueOf(playerId)),
+						new Filter().setColumn("playerId").setValue(playerId),
 						new Filter().setColumn("season").setValue(season))
 				.setOrderBys(new OrderBy().setColumn("date").setDesc(true))
 				.setLimit(1)).getResults();

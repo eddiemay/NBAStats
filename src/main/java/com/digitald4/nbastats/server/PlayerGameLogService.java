@@ -9,7 +9,7 @@ import com.google.api.server.spi.config.ApiNamespace;
 import javax.inject.Inject;
 
 @Api(
-    name = "playergamelogs",
+    name = "playerGameLogs",
     version = "v1",
     namespace = @ApiNamespace(
         ownerDomain = "nbastats.digitald4.com",
