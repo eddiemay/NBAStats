@@ -7,6 +7,7 @@ import com.digitald4.common.exception.DD4StorageException;
 import com.digitald4.common.storage.*;
 import com.digitald4.common.storage.Query.Filter;
 import com.digitald4.nbastats.model.Player;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import java.util.function.Function;
 import javax.annotation.Nullable;
@@ -37,16 +38,19 @@ public class PlayerStore extends GenericStore<Player> {
 			throw new DD4StorageException("ApiDAO required to refresh player list");
 		}
 
+		Query query = new Query().setFilters(new Filter().setColumn("season").setOperator("=").setValue(season));
 		ImmutableMap<Integer, Player> playerMap =
-				list(new Query().setFilters(new Filter().setColumn("season").setOperator("=").setValue(season)))
+				list(query)
 				.getResults()
 				.stream()
 				.collect(toImmutableMap(Player::getPlayerId, Function.identity()));
 
-		return new QueryResult<>(apiDAO.listAllPlayers(season)
+		ImmutableList<Player> players = apiDAO.listAllPlayers(season)
 				.stream()
 				.parallel()
 				.map(player -> playerMap.getOrDefault(player.getPlayerId(), create(player)))
-				.collect(toImmutableList()));
+				.collect(toImmutableList());
+
+		return QueryResult.of(players, players.size(), query);
 	}
 }

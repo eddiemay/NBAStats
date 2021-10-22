@@ -10,36 +10,32 @@
          http://xmlns.jcp.org/xml/ns/javaee/web-app_3_1.xsd"
          version="3.1">
 	<display-name>Digital D4</display-name>
-	<description>
-		Design, Develop, Deploy, D4
-	</description>
+	<description>Design, Develop, Deploy, D4</description>
 
-  <!-- Wrap the backend with Endpoints Frameworks v2. -->
-  <!-- Route API method requests to the backend using Guice. -->
-  <!-- [START guice_configuration] -->
-  <filter>
-    <filter-name>guiceFilter</filter-name>
-    <filter-class>com.google.inject.servlet.GuiceFilter</filter-class>
-  </filter>
-  <filter-mapping>
-    <filter-name>guiceFilter</filter-name>
-    <url-pattern>/_ah/api/*</url-pattern>
-  </filter-mapping>
+	<!-- Wrap the backend with Endpoints Frameworks v2. -->
+	<!-- Route API method requests to the backend using Guice. -->
+	<!-- [START guice_configuration] -->
+	<filter>
+		<filter-name>guiceFilter</filter-name>
+    	<filter-class>com.google.inject.servlet.GuiceFilter</filter-class>
+  	</filter>
+  	<filter-mapping>
+    	<filter-name>guiceFilter</filter-name>
+    	<url-pattern>/_ah/api/*</url-pattern>
+  	</filter-mapping>
 
-  <listener>
-    <listener-class>com.digitald4.nbastats.server.GuiceListener</listener-class>
-  </listener>
-  <!-- [END guice_configuration] -->
+  	<listener>
+    	<listener-class>com.digitald4.nbastats.server.GuiceListener</listener-class>
+  	</listener>
+  	<!-- [END guice_configuration] -->
 	
 	<welcome-file-list>
 		<welcome-file>index.html</welcome-file>
 	</welcome-file-list>
 	
 	<session-config>
-		<session-timeout>
-			30
-    </session-timeout>
-  </session-config>
+		<session-timeout>30</session-timeout>
+	</session-config>
 	
 	<context-param>
 		<param-name>company</param-name>
@@ -79,11 +75,6 @@
 	<context-param>
 		<param-name>emailpass</param-name>
 		<param-value>getSchooled85</param-value>
-	</context-param>
-
-	<context-param>
-		<param-name>dburl</param-name>
-		<param-value>jdbc:mysql://localhost/NBAStats?autoReconnect=true</param-value>
 	</context-param>
 
 	<!-- context-param>

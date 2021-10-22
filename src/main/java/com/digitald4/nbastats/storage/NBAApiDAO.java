@@ -8,7 +8,6 @@ import com.digitald4.common.exception.DD4StorageException;
 import com.digitald4.common.server.APIConnector;
 import com.digitald4.nbastats.model.Player;
 import com.digitald4.nbastats.model.PlayerDay;
-import com.digitald4.nbastats.model.PlayerDay.FantasySiteInfo.Position;
 import com.digitald4.nbastats.model.PlayerDay.FantasySiteInfo.Projection;
 import com.digitald4.nbastats.model.PlayerGameLog;
 import com.digitald4.nbastats.util.Constaints;

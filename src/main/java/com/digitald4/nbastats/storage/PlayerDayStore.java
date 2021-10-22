@@ -4,11 +4,14 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 
 import com.digitald4.common.storage.*;
 import com.digitald4.common.storage.Query.Filter;
+import com.digitald4.nbastats.model.Player;
 import com.digitald4.nbastats.model.PlayerDay;
 import com.digitald4.nbastats.util.Constaints;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
+
+import com.google.common.collect.ImmutableList;
 import org.joda.time.DateTime;
 
 public class PlayerDayStore extends GenericStore<PlayerDay> {
@@ -31,10 +34,10 @@ public class PlayerDayStore extends GenericStore<PlayerDay> {
 		if (queryResult.getTotalSize() == 0 && apiDAO != null && query.getFilters().size() == 1
 				&& query.getFilters().get(0).getColumn().equals("date")) {
 			DateTime date = DateTime.parse(query.getFilters().get(0).getVal(), Constaints.COMPUTER_DATE);
-			return new QueryResult<>(
-					apiDAO.getGameDay(date).parallelStream()
-							.map(this::create)
-							.collect(toImmutableList()));
+			ImmutableList<PlayerDay> results =
+					apiDAO.getGameDay(date).parallelStream().map(this::create).collect(toImmutableList());
+
+			return QueryResult.of(results, results.size(), query);
 		}
 
 		return queryResult;

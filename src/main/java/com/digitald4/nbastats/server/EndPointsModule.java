@@ -6,20 +6,18 @@ import com.google.common.collect.ImmutableList;
 
 public class EndPointsModule extends com.digitald4.common.server.EndPointsModule {
 
+	public EndPointsModule() {
+		super("fantasy-predictor");
+	}
+
 	@Override
 	public void configureServlets() {
 		super.configureServlets();
 
 		bind(NBAApiDAO.class).toProvider(() -> null);
 
-		bind(Echo.class).toInstance(new Echo());
-		configureEndpoints(API_URL_PATTERN,
+		configureEndpoints(getApiUrlPattern(),
 				ImmutableList.of(
 						Echo.class, LineUpService.class, PlayerDayService.class, PlayerGameLogService.class, PlayerService.class));
-	}
-
-	@Override
-	protected String getEndPointsProjectId() {
-		return "fantasy-predictor";
 	}
 }
