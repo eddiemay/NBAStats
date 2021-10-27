@@ -24,7 +24,7 @@ import javax.inject.Inject;
     }
     // [END_EXCLUDE]
 )
-public class PlayerGameLogService extends EntityServiceImpl<PlayerGameLog> {
+public class PlayerGameLogService extends NBAStatsService<PlayerGameLog> {
   @Inject
   PlayerGameLogService(PlayerGameLogStore playerGameLogStore) {
     super(playerGameLogStore);

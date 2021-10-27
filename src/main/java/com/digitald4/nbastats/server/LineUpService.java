@@ -30,7 +30,7 @@ import org.joda.time.DateTime;
 		}
 		// [END_EXCLUDE]
 )
-public class LineUpService extends EntityServiceImpl<LineUp> {
+public class LineUpService extends NBAStatsService<LineUp> {
 	private final StatsProcessor statsProcessor;
 
 	@Inject

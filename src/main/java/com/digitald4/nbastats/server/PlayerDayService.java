@@ -2,6 +2,7 @@ package com.digitald4.nbastats.server;
 
 import com.digitald4.common.server.service.Empty;
 import com.digitald4.common.server.service.EntityServiceImpl;
+import com.digitald4.common.storage.LoginResolver;
 import com.digitald4.nbastats.compute.StatsProcessor;
 import com.digitald4.nbastats.model.PlayerDay;
 import com.digitald4.nbastats.storage.PlayerDayStore;
@@ -26,7 +27,7 @@ import org.joda.time.DateTime;
 		}
 		// [END_EXCLUDE]
 )
-public class PlayerDayService extends EntityServiceImpl<PlayerDay> {
+public class PlayerDayService extends NBAStatsService<PlayerDay> {
 	private final StatsProcessor statsProcessor;
 
 	@Inject
