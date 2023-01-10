@@ -47,7 +47,7 @@ public class StatsProcessor {
 	}
 
 	public ImmutableList<PlayerDay> processStats(DateTime date) {
-		ImmutableList<Player> playerList = playerStore.list(Constaints.getSeason(date)).getResults();
+		ImmutableList<Player> playerList = playerStore.list(Constaints.getSeason(date)).getItems();
 		ImmutableMap<String, Player> playerMap = ImmutableMap.<String, Player>builder()
 				.putAll(playerList.stream().collect(toImmutableMap(Player::getName, identity())))
 				.putAll(
@@ -56,7 +56,7 @@ public class StatsProcessor {
 								.collect(toImmutableMap(Player::getAka, identity())))
 				.build();
 
-		return playerDayStore.list(date).getResults().stream()
+		return playerDayStore.list(date).getItems().stream()
 				.parallel()
 				.map(playerDay -> {
 					if (playerDay.getFantasySiteInfo(FantasyLeague.FAN_DUEL.name).getProjections().size() < 5 || OVER_WRITE) {
@@ -64,9 +64,11 @@ public class StatsProcessor {
 						if (player != null) {
 							PlayerDay statsFilled = fillStats(playerDay.setPlayerId(player.getPlayerId()));
 							System.out.println("About to update: " + player.getName());
-							return playerDayStore.update(playerDay.getId(), current -> current
-									.setPlayerId(player.getPlayerId())
-									.setFantasySiteInfos(statsFilled.getFantasySiteInfos()));
+							return playerDayStore.update(
+									playerDay.getId(),
+									current -> current
+											.setPlayerId(player.getPlayerId())
+											.setFantasySiteInfos(statsFilled.getFantasySiteInfos()));
 						}
 					}
 					return playerDay;
@@ -80,25 +82,25 @@ public class StatsProcessor {
 		playerGameLogStore.refreshGames(playerDay.getPlayerId(), date);
 		ImmutableList<PlayerGameLog> games = playerGameLogStore
 				.list(
-						new Query()
+						Query.forList()
 								.setFilters(
-										new Filter().setColumn("playerId").setValue(playerDay.getPlayerId()),
-										new Filter().setColumn("season").setValue(Constaints.getSeason(date)),
-										new Filter().setColumn("date").setOperator("<").setValue(strDate))
-								.setOrderBys(new OrderBy().setColumn("date").setDesc(true))
+										Filter.of("playerId", playerDay.getPlayerId()),
+										Filter.of("season", Constaints.getSeason(date)),
+										Filter.of("date", "<", strDate))
+								.setOrderBys(OrderBy.of("date", true))
 								.setLimit(SAMPLE_SIZE))
-				.getResults();
+				.getItems();
 		if (games.size() < SAMPLE_SIZE) {
 			games = ImmutableList.<PlayerGameLog>builder()
 					.addAll(games)
 					.addAll(
 							playerGameLogStore.list(
-									new Query()
+									Query.forList()
 											.setFilters(
-													new Filter().setColumn("playerId").setValue(playerDay.getPlayerId()),
-													new Filter().setColumn("season").setValue(Constaints.getPrevSeason(date)))
-											.setOrderBys(new OrderBy().setColumn("date").setDesc(true))
-											.setLimit(SAMPLE_SIZE - games.size())).getResults())
+													Filter.of("playerId", playerDay.getPlayerId()),
+													Filter.of("season", Constaints.getPrevSeason(date)))
+											.setOrderBys(OrderBy.of("date", true))
+											.setLimit(SAMPLE_SIZE - games.size())).getItems())
 					.build();
 		}
 		if (games.size() > 0) {
@@ -140,7 +142,7 @@ public class StatsProcessor {
 		String strDate = date.toString(Constaints.COMPUTER_DATE);
 		// playerStore.refreshPlayerList(Constaints.getSeason(date));
 		ImmutableMap<Integer, PlayerDay> playerDaysMap = playerDayStore.list(date)
-				.getResults()
+				.getItems()
 				.stream()
 				.parallel()
 				.filter(playerDay -> playerDay.getPlayerId() != 0)
@@ -164,15 +166,18 @@ public class StatsProcessor {
 				})
 				.collect(toImmutableMap(PlayerDay::getPlayerId, identity()));
 
-		lineUpStore.list(new Query().setFilters(new Filter().setColumn("date").setValue(strDate)))
-				.getResults()
+		lineUpStore.list(Query.forList().setFilters(Filter.of("date", strDate)))
+				.getItems()
 				.parallelStream()
 				.forEach(lineUp -> {
 					LineUp modified = new LineUp()
-							.setActual(lineUp.getPlayerIds()
-									.stream()
-									.mapToDouble(
-											playerId -> playerDaysMap.get(playerId).getFantasySiteInfo(lineUp.getFantasySite()).getActual())
+							.setActual(
+									lineUp.getPlayerIds()
+											.stream()
+											.mapToDouble(
+													playerId ->
+															playerDaysMap.get(playerId)
+																	.getFantasySiteInfo(lineUp.getFantasySite()).getActual())
 									.sum());
 					if (lineUp.getActual() != modified.getActual()) {
 						lineUpStore.update(lineUp.getId(), lineUp1 -> lineUp1.setActual(modified.getActual()));

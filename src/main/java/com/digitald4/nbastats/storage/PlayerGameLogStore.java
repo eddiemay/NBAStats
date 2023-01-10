@@ -11,7 +11,7 @@ import javax.inject.Inject;
 import javax.inject.Provider;
 import org.joda.time.DateTime;
 
-public class PlayerGameLogStore extends GenericStore<PlayerGameLog> {
+public class PlayerGameLogStore extends GenericStore<PlayerGameLog, Long> {
 	private final NBAApiDAO apiDAO;
 
 	@Inject
@@ -21,7 +21,7 @@ public class PlayerGameLogStore extends GenericStore<PlayerGameLog> {
 	}
 
 	@Override
-	public QueryResult<PlayerGameLog> list(Query query) {
+	public QueryResult<PlayerGameLog> list(Query.List query) {
 		QueryResult<PlayerGameLog> queryResult = super.list(query);
 		if (queryResult.getTotalSize() == 0) {
 			int playerId = 0;
@@ -43,11 +43,11 @@ public class PlayerGameLogStore extends GenericStore<PlayerGameLog> {
 
 	public PlayerGameLog get(int playerId, DateTime date) {
 		String season = Constaints.getSeason(date);
-		Query query = new Query().setFilters(
-				new Filter().setColumn("playerId").setValue(playerId),
-				new Filter().setColumn("season").setValue(season),
-				new Filter().setColumn("date").setValue(date.toString(Constaints.COMPUTER_DATE)));
-		List<PlayerGameLog> gameLog = super.list(query).getResults();
+		List<PlayerGameLog> gameLog = list(
+				Query.forList().setFilters(
+						Filter.of("playerId", playerId),
+						Filter.of("season", season),
+						Filter.of("date", date.toString(Constaints.COMPUTER_DATE)))).getItems();
 		if (!gameLog.isEmpty()) {
 			return gameLog.get(0);
 		}
@@ -58,12 +58,11 @@ public class PlayerGameLogStore extends GenericStore<PlayerGameLog> {
 	public PlayerGameLog refreshGames(int playerId, DateTime date) {
 		String season = Constaints.getSeason(date);
 		String dateStr = date.toString(Constaints.COMPUTER_DATE);
-		List<PlayerGameLog> gameLog = super.list(new Query()
-				.setFilters(
-						new Filter().setColumn("playerId").setValue(playerId),
-						new Filter().setColumn("season").setValue(season))
-				.setOrderBys(new OrderBy().setColumn("date").setDesc(true))
-				.setLimit(1)).getResults();
+		List<PlayerGameLog> gameLog = list(
+				Query.forList()
+						.setFilters(Filter.of("playerId", playerId), Filter.of("season", season))
+						.setOrderBys(OrderBy.of("date", true))
+						.setLimit(1)).getItems();
 		DateTime dateFrom = null;
 		if (!gameLog.isEmpty()) {
 			dateFrom = DateTime.parse(gameLog.get(0).getDate(), Constaints.COMPUTER_DATE);

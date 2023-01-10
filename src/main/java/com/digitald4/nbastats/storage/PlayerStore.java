@@ -14,7 +14,7 @@ import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
 
-public class PlayerStore extends GenericStore<Player> {
+public class PlayerStore extends GenericStore<Player, Long> {
 	private final NBAApiDAO apiDAO;
 
 	@Inject
@@ -24,8 +24,7 @@ public class PlayerStore extends GenericStore<Player> {
 	}
 
 	public QueryResult<Player> list(String season) {
-		QueryResult<Player> queryResult =
-				list(new Query().setFilters(new Filter().setColumn("season").setOperator("=").setValue(season)));
+		QueryResult<Player> queryResult = list(Query.forList().setFilters(Filter.of("season", season)));
 		if (queryResult.getTotalSize() == 0 && apiDAO != null) {
 			queryResult = refreshPlayerList(season);
 		}
@@ -38,15 +37,11 @@ public class PlayerStore extends GenericStore<Player> {
 			throw new DD4StorageException("ApiDAO required to refresh player list");
 		}
 
-		Query query = new Query().setFilters(new Filter().setColumn("season").setOperator("=").setValue(season));
-		ImmutableMap<Integer, Player> playerMap =
-				list(query)
-				.getResults()
-				.stream()
-				.collect(toImmutableMap(Player::getPlayerId, Function.identity()));
+		Query.List query = Query.forList().setFilters(Filter.of("season", season));
+		ImmutableMap<Integer, Player> playerMap = list(query)
+				.getItems().stream().collect(toImmutableMap(Player::getPlayerId, Function.identity()));
 
-		ImmutableList<Player> players = apiDAO.listAllPlayers(season)
-				.stream()
+		ImmutableList<Player> players = apiDAO.listAllPlayers(season).stream()
 				.parallel()
 				.map(player -> playerMap.getOrDefault(player.getPlayerId(), create(player)))
 				.collect(toImmutableList());

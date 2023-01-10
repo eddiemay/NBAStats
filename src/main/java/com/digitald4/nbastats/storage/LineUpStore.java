@@ -6,7 +6,7 @@ import com.digitald4.nbastats.model.LineUp;
 import javax.inject.Inject;
 import javax.inject.Provider;
 
-public class LineUpStore extends GenericStore<LineUp> {
+public class LineUpStore extends GenericStore<LineUp, Long> {
   @Inject
   public LineUpStore(Provider<DAO> daoProvider) {
     super(LineUp.class, daoProvider);

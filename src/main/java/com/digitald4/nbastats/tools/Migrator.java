@@ -4,9 +4,10 @@ import com.digitald4.common.jdbc.DBConnectorThreadPoolImpl;
 import com.digitald4.common.storage.DAOCloudDS;
 import com.digitald4.common.storage.DAORouterImpl;
 import com.digitald4.common.storage.DAOSQLImpl;
-import com.digitald4.common.storage.HasProtoDAO;
+import com.digitald4.common.storage.DAOHasProto;
 import com.digitald4.nbastats.storage.LineUpStore;
 import com.google.appengine.api.datastore.DatastoreServiceFactory;
+import java.time.Clock;
 
 public class Migrator {
 	private final LineUpStore lineUpStore;
@@ -25,8 +26,9 @@ public class Migrator {
 		DAOSQLImpl messageDAO = new DAOSQLImpl(new DBConnectorThreadPoolImpl("org.gjt.mm.mysql.Driver",
 				"jdbc:mysql://localhost/NBAStats?autoReconnect=true",
 				"dd4_user", "getSchooled85"));
-		DAOCloudDS modelDao = new DAOCloudDS(DatastoreServiceFactory.getDatastoreService());
-		DAORouterImpl dao = new DAORouterImpl(messageDAO, new HasProtoDAO(messageDAO), modelDao);
+		DAOCloudDS modelDao =
+				new DAOCloudDS(DatastoreServiceFactory.getDatastoreService(), Clock.systemUTC());
+		DAORouterImpl dao = new DAORouterImpl(messageDAO, new DAOHasProto(messageDAO), modelDao);
 		LineUpStore lineUpStore = new LineUpStore(() -> dao);
 		Migrator migrator = new Migrator(lineUpStore);
 		migrator.execute();

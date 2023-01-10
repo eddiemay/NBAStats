@@ -26,6 +26,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.text.NumberFormat;
+import java.time.Clock;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -217,10 +218,10 @@ public class FanDuelIO {
 	private void insertData(DateTime date) {
 		playerDayStore
 				.list(
-						new Query()
-								.setFilters(new Filter().setColumn("date").setValue(date.toString(Constaints.COMPUTER_DATE)))
+						Query.forList()
+								.setFilters(Filter.of("date", date.toString(Constaints.COMPUTER_DATE)))
 								.setLimit(1))
-				.getResults()
+				.getItems()
 				.get(0)
 				.getFantasySiteInfo(league)
 				.getProjections()
@@ -230,11 +231,11 @@ public class FanDuelIO {
 					lineUpStore.delete(
 							lineUpStore
 									.list(
-											new Query().setFilters(
-													new Filter().setColumn("fantasy_site").setValue(league),
-													new Filter().setColumn("date").setValue(date.toString(Constaints.COMPUTER_DATE)),
-													new Filter().setColumn("projection_method").setValue(basis)))
-									.getResults()
+											Query.forList().setFilters(
+													Filter.of("fantasy_site", league),
+													Filter.of("date", date.toString(Constaints.COMPUTER_DATE)),
+													Filter.of("projection_method", basis)))
+									.getItems()
 									.stream()
 									.map(LineUp::getId)
 									.collect(toImmutableList()));
@@ -264,11 +265,11 @@ public class FanDuelIO {
 		lineUpStore.delete(
 				lineUpStore
 						.list(
-								new Query().setFilters(
-										new Filter().setColumn("fantasy_site").setValue(league),
-										new Filter().setColumn("date").setValue(date.toString(Constaints.COMPUTER_DATE)),
-										new Filter().setColumn("projection_method").setValue("Actual")))
-						.getResults()
+								Query.forList().setFilters(
+										Filter.of("fantasy_site", league),
+										Filter.of("date", date.toString(Constaints.COMPUTER_DATE)),
+										Filter.of("projection_method", "Actual")))
+						.getItems()
 						.stream()
 						.map(LineUp::getId)
 						.collect(toImmutableList()));
@@ -311,7 +312,8 @@ public class FanDuelIO {
 
 		APIConnector apiConnector = new APIConnector("https://fantasy-predictor.appspot.com/_ah/api", "v1");
 		DAOApiProtoImpl messageDAO = new DAOApiProtoImpl(apiConnector);
-		DAORouterImpl dao = new DAORouterImpl(messageDAO, new HasProtoDAO(messageDAO), new DAOApiImpl(apiConnector));
+		DAORouterImpl dao = new DAORouterImpl(
+				messageDAO, new DAOHasProto(messageDAO), new DAOApiImpl(apiConnector, Clock.systemUTC()));
 		Provider<DAO> daoProvider = () -> dao;
 		NBAApiDAO apiDAO = new NBAApiDAO(new APIConnector(null, null, 500));
 		PlayerStore playerStore = new PlayerStore(daoProvider, apiDAO);
