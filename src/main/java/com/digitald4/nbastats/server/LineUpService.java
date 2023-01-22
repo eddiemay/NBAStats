@@ -1,6 +1,5 @@
 package com.digitald4.nbastats.server;
 
-import com.digitald4.common.server.service.EntityServiceImpl;
 import com.digitald4.nbastats.compute.StatsProcessor;
 import com.digitald4.nbastats.model.LineUp;
 import com.digitald4.nbastats.storage.LineUpStore;
@@ -30,7 +29,7 @@ import org.joda.time.DateTime;
 		}
 		// [END_EXCLUDE]
 )
-public class LineUpService extends NBAStatsService<LineUp> {
+public class LineUpService extends NBAStatsService<LineUp, Long> {
 	private final StatsProcessor statsProcessor;
 
 	@Inject

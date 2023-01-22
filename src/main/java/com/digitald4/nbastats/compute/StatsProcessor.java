@@ -62,12 +62,12 @@ public class StatsProcessor {
 					if (playerDay.getFantasySiteInfo(FantasyLeague.FAN_DUEL.name).getProjections().size() < 5 || OVER_WRITE) {
 						Player player = playerMap.get(playerDay.getName());
 						if (player != null) {
-							PlayerDay statsFilled = fillStats(playerDay.setPlayerId(player.getPlayerId()));
+							PlayerDay statsFilled = fillStats(playerDay.setPlayerId(player.getId()));
 							System.out.println("About to update: " + player.getName());
 							return playerDayStore.update(
 									playerDay.getId(),
 									current -> current
-											.setPlayerId(player.getPlayerId())
+											.setPlayerId(player.getId())
 											.setFantasySiteInfos(statsFilled.getFantasySiteInfos()));
 						}
 					}
@@ -178,7 +178,7 @@ public class StatsProcessor {
 													playerId ->
 															playerDaysMap.get(playerId)
 																	.getFantasySiteInfo(lineUp.getFantasySite()).getActual())
-									.sum());
+											.sum());
 					if (lineUp.getActual() != modified.getActual()) {
 						lineUpStore.update(lineUp.getId(), lineUp1 -> lineUp1.setActual(modified.getActual()));
 					}

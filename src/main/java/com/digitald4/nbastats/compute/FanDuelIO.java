@@ -12,7 +12,7 @@ import com.digitald4.nbastats.distributed.FantasyProcessor;
 import com.digitald4.nbastats.model.LineUp;
 import com.digitald4.nbastats.model.PlayerDay;
 import com.digitald4.nbastats.model.PlayerDay.FantasySiteInfo;
-import com.digitald4.nbastats.storage.NBAApiDAO;
+import com.digitald4.nbastats.util.WebFetcherNBAApi;
 import com.digitald4.nbastats.storage.PlayerGameLogStore;
 import com.digitald4.nbastats.storage.LineUpStore;
 import com.digitald4.nbastats.storage.PlayerDayStore;
@@ -315,10 +315,10 @@ public class FanDuelIO {
 		DAORouterImpl dao = new DAORouterImpl(
 				messageDAO, new DAOHasProto(messageDAO), new DAOApiImpl(apiConnector, Clock.systemUTC()));
 		Provider<DAO> daoProvider = () -> dao;
-		NBAApiDAO apiDAO = new NBAApiDAO(new APIConnector(null, null, 500));
-		PlayerStore playerStore = new PlayerStore(daoProvider, apiDAO);
-		PlayerGameLogStore playerGameLogStore = new PlayerGameLogStore(daoProvider, apiDAO);
-		PlayerDayStore playerDayStore = new PlayerDayStore(daoProvider, apiDAO);
+		WebFetcherNBAApi webFetcher = new WebFetcherNBAApi(new APIConnector(null, null, 500));
+		PlayerStore playerStore = new PlayerStore(daoProvider, webFetcher);
+		PlayerGameLogStore playerGameLogStore = new PlayerGameLogStore(daoProvider, playerStore, webFetcher);
+		PlayerDayStore playerDayStore = new PlayerDayStore(daoProvider, webFetcher);
 		LineUpStore lineUpStore = new LineUpStore(daoProvider);
 		StatsProcessor statsProcessor = new StatsProcessor(playerStore, playerGameLogStore, playerDayStore, lineUpStore);
 		FanDuelIO fanDuelIO = new FanDuelIO(statsProcessor, lineUpStore, playerDayStore);

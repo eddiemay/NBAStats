@@ -1,6 +1,6 @@
 import tensorflow as tf
 graph = tf.Graph()
-builder = tf.saved_model.builder.SavedModelBuilder('./target')
+builder = tf.saved_model.builder.SavedModelBuilder('./target/compute')
 with graph.as_default():
     a = tf.constant(2, name='a')
     b = tf.constant(3, name='b')

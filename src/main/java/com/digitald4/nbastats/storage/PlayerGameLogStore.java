@@ -3,28 +3,31 @@ package com.digitald4.nbastats.storage;
 import com.digitald4.common.storage.*;
 import com.digitald4.common.storage.Query.Filter;
 import com.digitald4.common.storage.Query.OrderBy;
+import com.digitald4.nbastats.model.Player;
 import com.digitald4.nbastats.model.PlayerGameLog;
 import com.digitald4.nbastats.util.Constaints;
+import com.digitald4.nbastats.util.WebFetcher;
 import java.util.List;
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import org.joda.time.DateTime;
 
-public class PlayerGameLogStore extends GenericStore<PlayerGameLog, Long> {
-	private final NBAApiDAO apiDAO;
+public class PlayerGameLogStore extends GenericStore<PlayerGameLog, String> {
+	private final PlayerStore playerStore;
+	private final WebFetcher webFetcher;
 
 	@Inject
-	public PlayerGameLogStore(Provider<DAO> daoProvider, @Nullable NBAApiDAO apiDAO) {
+	public PlayerGameLogStore(Provider<DAO> daoProvider, PlayerStore playerStore, WebFetcher webFetcher) {
 		super(PlayerGameLog.class, daoProvider);
-		this.apiDAO = apiDAO;
+		this.webFetcher = webFetcher;
+		this.playerStore = playerStore;
 	}
 
 	@Override
 	public QueryResult<PlayerGameLog> list(Query.List query) {
 		QueryResult<PlayerGameLog> queryResult = super.list(query);
 		if (queryResult.getTotalSize() == 0) {
-			int playerId = 0;
+			Integer playerId = null;
 			String season = null;
 			for (Filter filter : query.getFilters()) {
 				if ("playerId".equals(filter.getColumn())) {
@@ -33,8 +36,10 @@ public class PlayerGameLogStore extends GenericStore<PlayerGameLog, Long> {
 					season = filter.getVal();
 				}
 			}
-			if (playerId != 0 && season != null && apiDAO != null) {
-				apiDAO.getGames(playerId, season, null).parallelStream().forEach(this::create);
+			if (playerId != null && season != null) {
+				webFetcher.getGames(playerStore.get(playerId), season, null)
+						.parallelStream()
+						.forEach(this::create);
 				queryResult = super.list(query);
 			}
 		}
@@ -69,8 +74,9 @@ public class PlayerGameLogStore extends GenericStore<PlayerGameLog, Long> {
 			dateFrom = dateFrom.plusDays(1);
 		}
 		PlayerGameLog[] ret = new PlayerGameLog[1];
-		if ((dateFrom == null || dateFrom.isBefore(date)) && apiDAO != null) {
-			apiDAO.getGames(playerId, season, dateFrom)
+		if ((dateFrom == null || dateFrom.isBefore(date)) && webFetcher != null) {
+			Player player = playerStore.get(playerId);
+			webFetcher.getGames(player, season, dateFrom)
 					.parallelStream()
 					.forEach(game -> {
 						create(game);

@@ -27,7 +27,7 @@ import org.joda.time.DateTime;
 		}
 		// [END_EXCLUDE]
 )
-public class PlayerDayService extends NBAStatsService<PlayerDay> {
+public class PlayerDayService extends NBAStatsService<PlayerDay, String> {
 	private final StatsProcessor statsProcessor;
 
 	@Inject

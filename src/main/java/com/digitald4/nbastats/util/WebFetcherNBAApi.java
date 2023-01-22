@@ -1,4 +1,4 @@
-package com.digitald4.nbastats.storage;
+package com.digitald4.nbastats.util;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
@@ -10,7 +10,7 @@ import com.digitald4.nbastats.model.Player;
 import com.digitald4.nbastats.model.PlayerDay;
 import com.digitald4.nbastats.model.PlayerDay.FantasySiteInfo.Projection;
 import com.digitald4.nbastats.model.PlayerGameLog;
-import com.digitald4.nbastats.util.Constaints;
+import com.digitald4.nbastats.model.PlayerGameLog.Result;
 import com.digitald4.nbastats.util.Constaints.FantasyLeague;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -24,17 +24,15 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.stream.IntStream;
 import javax.inject.Inject;
 
-public class NBAApiDAO {
+public class WebFetcherNBAApi implements WebFetcher {
 	private static final String ROTO_GRINDER =
 			"https://rotogrinders.com/projected-stats/nba-player.csv?site=%s&date=%s";
 	// private static final String COMMON_ALL_PLAYERS =
@@ -71,72 +69,57 @@ public class NBAApiDAO {
 	private final APIConnector apiConnector;
 
 	@Inject
-	public NBAApiDAO(APIConnector apiConnector) {
+	public WebFetcherNBAApi(APIConnector apiConnector) {
 		this.apiConnector = apiConnector;
 	}
 
-	public List<PlayerGameLog> getGames(int playerId, String season, DateTime dateFrom) {
-		List<PlayerGameLog> games = new ArrayList<>();
-		if (fetchFromNBAApiEnabled) {
-			try {
-				JSONObject json = new JSONObject(
-						apiConnector.sendGet(
-								format(PLAYER_GAMELOGS, season, playerId, dateFrom == null ? "" : dateFrom.toString(API_DATE),
-										DateTime.now().minusDays(1).toString(API_DATE))));
-				JSONArray resultSets = json.getJSONArray("resultSets");
-				for (int x = 0; x < resultSets.length(); x++) {
-					JSONObject resultSet = resultSets.getJSONObject(x);
-					if (resultSet.get("name").equals("PlayerGameLogs")) {
-						JSONArray rowSets = resultSet.getJSONArray("rowSet");
-						for (int i = 0; i < rowSets.length(); i++) {
-							JSONArray rowSet = rowSets.getJSONArray(i);
-							PlayerGameLog game = fillFantasy(new PlayerGameLog()
-									.setPlayerId(playerId)
-									.setSeason(season)
-									.setDate(DateTime.parse(rowSet.getString(7)).toString(Constaints.COMPUTER_DATE))
-									.setMatchUp(rowSet.getString(8))
-									.setResult(rowSet.getString(9))
-									.setMinutes(rowSet.getDouble(10))
-									.setMade3s(rowSet.getInt(14))
-									.setRebounds(rowSet.getInt(22))
-									.setAssists(rowSet.getInt(23))
-									.setTurnovers(rowSet.getInt(24))
-									.setSteals(rowSet.getInt(25))
-									.setBlocks(rowSet.getInt(26))
-									.setPoints(rowSet.getInt(30))
-									.setPlusMinus(rowSet.getInt(31))
-									.setNBAFantasyPoints(rowSet.getDouble(32))
-									.setDoubleDouble(rowSet.getInt(33) == 1)
-									.setTripleDouble(rowSet.getInt(34) == 1));
-							games.add(game);
-						}
+	public ImmutableList<PlayerGameLog> getGames(Player player, String season, DateTime dateFrom) {
+		if (!fetchFromNBAApiEnabled) {
+			return ImmutableList.of();
+		}
+
+		ImmutableList.Builder<PlayerGameLog> games = ImmutableList.builder();
+		try {
+			JSONObject json = new JSONObject(
+					apiConnector.sendGet(
+							format(PLAYER_GAMELOGS, season, player.getId(), dateFrom == null ? "" : dateFrom.toString(API_DATE),
+									DateTime.now().minusDays(1).toString(API_DATE))));
+			JSONArray resultSets = json.getJSONArray("resultSets");
+			for (int x = 0; x < resultSets.length(); x++) {
+				JSONObject resultSet = resultSets.getJSONObject(x);
+				if (resultSet.get("name").equals("PlayerGameLogs")) {
+					JSONArray rowSets = resultSet.getJSONArray("rowSet");
+					for (int i = 0; i < rowSets.length(); i++) {
+						JSONArray rowSet = rowSets.getJSONArray(i);
+						PlayerGameLog game = WebFetcher.fillFantasy(
+								new PlayerGameLog()
+										.setPlayerId(player.getId())
+										.setDate(DateTime.parse(rowSet.getString(7)).toString(Constaints.COMPUTER_DATE))
+										.setSeason(season)
+										.setMatchUp(rowSet.getString(8))
+										.setResult(rowSet.getString(9).equals("W") ? Result.W : Result.L)
+										.setMinutes(rowSet.getDouble(10))
+										.setThreePointersMade(rowSet.getInt(14))
+										.setRebounds(rowSet.getInt(22))
+										.setAssists(rowSet.getInt(23))
+										.setTurnovers(rowSet.getInt(24))
+										.setSteals(rowSet.getInt(25))
+										.setBlocks(rowSet.getInt(26))
+										.setPoints(rowSet.getInt(30))
+										.setPlusMinus(rowSet.getInt(31))
+										.setNBAFantasyPoints(rowSet.getDouble(32))
+										.setDoubleDouble(rowSet.getInt(33) == 1)
+										.setTripleDouble(rowSet.getInt(34) == 1));
+						games.add(game);
 					}
 				}
-				Thread.sleep(500); // Wait 1/2 a second to try and stop API from dectecting automated code.
-			} catch (Exception e) {
-				e.printStackTrace();
 			}
+			Thread.sleep(500); // Wait 1/2 a second to try and stop API from dectecting automated code.
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
-		return games;
-	}
 
-	private static PlayerGameLog fillFantasy(PlayerGameLog stats) {
-		return stats
-				.setFantasySitePoints("draftkings", stats.getPoints()
-						+ stats.getMade3s() * .5
-						+ stats.getRebounds() * 1.25
-						+ stats.getAssists() * 1.5
-						+ stats.getSteals() * 2
-						+ stats.getBlocks() * 2
-						+ stats.getTurnovers() * -.5
-						+ (stats.isDoubleDouble() ? 1.5 : 0)
-						+ (stats.isTripleDouble() ? 3 : 0))
-				.setFantasySitePoints("fanduel", stats.getPoints()
-						+ stats.getRebounds() * 1.2
-						+ stats.getAssists() * 1.5
-						+ stats.getBlocks() * 3
-						+ stats.getSteals() * 3
-						- stats.getTurnovers());
+		return games.build();
 	}
 
 	public ImmutableList<Long> getActiveTeamIds() {
@@ -153,8 +136,8 @@ public class NBAApiDAO {
 
 		return IntStream.range(0, result.getResultCount())
 				.mapToObj(i -> new Player()
+						.setId(result.getInt("PLAYER_ID", i))
 						.setSeason(season)
-						.setPlayerId(result.getInt("PLAYER_ID", i))
 						.setName(result.getString("PLAYER", i)))
 				.collect(toImmutableList());
 	}

@@ -1,4 +1,4 @@
-package com.digitald4.nbastats.storage;
+package com.digitald4.nbastats.util;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
@@ -13,7 +13,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
 
-public class NBAApiDAOTest {
+public class WebFetcherNBAApiTest {
   private static final String TEAM_YEARS_RESULT = "{\"resource\":\"commonteamyears\",\"parameters\":{\"LeagueID\":\"00\"},"
       + "\"resultSets\":[{\"name\":\"TeamYears\",\"headers\":[\"LEAGUE_ID\",\"TEAM_ID\",\"MIN_YEAR\",\"MAX_YEAR\",\"ABBREVIATION\"],"
       + "\"rowSet\":[[\"00\",1610612762,\"1974\",\"2020\",\"UTA\"],[\"00\",1610612737,\"1949\",\"2020\",\"ATL\"],"
@@ -33,11 +33,11 @@ public class NBAApiDAOTest {
       + "[1610612750,\"2020\",\"00\",\"Malik Beasley\",\"malik-beasley\",\"5\",\"G\",\"6-4\",\"187\",\"NOV 26, 1996\",24.0,\"4\",\"Florida State\",1627736]]}]}";
 
   private final @Mock APIConnector apiConnector = mock(APIConnector.class);
-  private final NBAApiDAO apiDao = new NBAApiDAO(apiConnector);
+  private final WebFetcherNBAApi apiDao = new WebFetcherNBAApi(apiConnector);
 
   @Before
   public void setup() {
-    when(apiConnector.sendGet(NBAApiDAO.COMMON_TEAM_YEARS)).thenReturn(TEAM_YEARS_RESULT);
+    when(apiConnector.sendGet(WebFetcherNBAApi.COMMON_TEAM_YEARS)).thenReturn(TEAM_YEARS_RESULT);
     when(apiConnector.sendGet(TEAM_ROSTER_QUERY)).thenReturn(TEAM_ROSTER_RESULT);
   }
 
@@ -58,7 +58,7 @@ public class NBAApiDAOTest {
 
   @Test
   public void testNBADataResult() {
-    NBAApiDAO.NBADataResult result = new NBAApiDAO.NBADataResult(TEAM_YEARS_RESULT);
+    WebFetcherNBAApi.NBADataResult result = new WebFetcherNBAApi.NBADataResult(TEAM_YEARS_RESULT);
 
     assertEquals("LEAGUE_ID", result.getHeaders().get(0));
     assertEquals("TEAM_ID", result.getHeaders().get(1));

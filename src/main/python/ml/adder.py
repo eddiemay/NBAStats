@@ -7,7 +7,9 @@ class Adder(tf.Module):
         return x + x + 1.
 
 m = Adder()
-tf.saved_model.save(m, './target/adder', signatures=m.add.get_concrete_function(
-    tf.TensorSpec(shape=[None, 3], dtype=tf.float32, name="inp")))
+tf.saved_model.save(
+    m, './target/adder',
+    signatures = m.add.get_concrete_function(
+        tf.TensorSpec(shape=[None, 3], dtype=tf.float32, name="add")))
 
-print(tf.__version__)
+print("TensorFlow version:", tf.__version__)

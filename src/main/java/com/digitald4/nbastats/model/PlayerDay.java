@@ -9,11 +9,11 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class PlayerDay {
-  private long id;
+  private static final String COMPOSITE_KEY = "%d-%s";
   private int playerId;
   private String date;
-  private String name;
 
+  private String name;
   public enum Status {
     STATUS_UNKNOWN,
     ACTIVE,
@@ -22,18 +22,20 @@ public class PlayerDay {
     QUESTIONABLE
   }
   private Status status;
-
   private String team = "";
   private String opponent = "";
   private Map<String, FantasySiteInfo> fantasySiteInfos = new HashMap<>();
-  private boolean lowDataWarn;
+  private boolean lowDataWarning;
 
-  public long getId() {
-    return id;
+  public String getId() {
+    return String.format(COMPOSITE_KEY, playerId, date);
+  }
+
+  public PlayerDay setId(String id) {
+    return this;
   }
 
   public PlayerDay setId(long id) {
-    this.id = id;
     return this;
   }
 
@@ -104,17 +106,17 @@ public class PlayerDay {
     return fantasySiteInfos.computeIfAbsent(fantasySite, site -> new FantasySiteInfo().setFantasySite(fantasySite));
   }
 
-  public boolean getLowDataWarn() {
-    return lowDataWarn;
+  public boolean getLowDataWarning() {
+    return lowDataWarning;
   }
 
-  public PlayerDay setLowDataWarn(boolean lowDataWarn) {
-    this.lowDataWarn = lowDataWarn;
+  public PlayerDay setLowDataWarn(boolean lowDataWarning) {
+    this.lowDataWarning = lowDataWarning;
     return this;
   }
 
   public static class FantasySiteInfo {
-    public enum Position { POS_UNKNOWN, PG, SG, SF, PF, C }
+    public enum Position {POS_UNKNOWN, PG, SG, SF, PF, C}
 
     private String fantasySite;
     private ImmutableList<String> positions;

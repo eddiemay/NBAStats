@@ -23,7 +23,7 @@ import javax.inject.Inject;
 		}
 		// [END_EXCLUDE]
 )
-public class PlayerService extends NBAStatsService<Player> {
+public class PlayerService extends NBAStatsService<Player, Integer> {
 	private final PlayerStore playerStore;
 
 	@Inject

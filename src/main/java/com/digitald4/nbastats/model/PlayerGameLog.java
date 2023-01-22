@@ -1,53 +1,67 @@
 package com.digitald4.nbastats.model;
 
+import com.digitald4.common.util.Calculate;
 import java.util.HashMap;
 import java.util.Map;
+import org.json.JSONObject;
 
 public class PlayerGameLog {
-  private long id;
-  private int playerId;
-  private String season;
+  private static final String COMPOSITE_KEY = "%d-%s";
+  private Integer playerId;
   private String date;
+  private String season;
+  private double age;
   private String matchUp;
-  private String result;
+  public enum Venue {HOME, ROAD, MUTUAL}
+  private Venue venue;
+  public enum Result {W, L, POSTPONED, CANCELLED}
+  private Result result;
+  private boolean started;
   private double minutes;
-  private int points;
-  private int rebounds;
-  private int assists;
-  private int blocks;
-  private int steals;
-  private int made3s;
-  private int turnovers;
+  private double fieldGoalsMade;
+  private double fieldGoalsAtts;
+  private double fieldGoalPercent;
+  private double threePointersMade;
+  private double threePointerAtts;
+  private double threePointerPercent;
+  private double freeThrowsMade;
+  private double freeThrowAtts;
+  private double freeThrowPercent;
+  private double offensiveRebounds;
+  private double defensiveRebounds;
+  private double rebounds;
+  private double assists;
+  private double steals;
+  private double blocks;
+  private double turnovers;
+  private double personalFouls;
+  private double points;
   private boolean doubleDouble;
   private boolean tripleDouble;
-  private int plusMinus;
+  private double plusMinus;
   private double nBAFantasyPoints;
   private Map<String, Double> fantasySitePoints = new HashMap<>();
 
-  public long getId() {
-    return id;
+  public String getId() {
+    return String.format(COMPOSITE_KEY, playerId, date);
   }
 
-  public PlayerGameLog setId(long id) {
-    this.id = id;
+  @Deprecated
+  public PlayerGameLog setId(String id) {
     return this;
   }
 
-  public int getPlayerId() {
+  @Deprecated
+  public PlayerGameLog setId(Long id) {
+    return this;
+  }
+
+  public Integer getPlayerId() {
     return playerId;
   }
 
-  public PlayerGameLog setPlayerId(int playerId) {
+  public PlayerGameLog setPlayerId(Integer playerId) {
     this.playerId = playerId;
-    return this;
-  }
-
-  public String getSeason() {
-    return season;
-  }
-
-  public PlayerGameLog setSeason(String season) {
-    this.season = season;
     return this;
   }
 
@@ -60,6 +74,24 @@ public class PlayerGameLog {
     return this;
   }
 
+  public String getSeason() {
+    return season;
+  }
+
+  public PlayerGameLog setSeason(String season) {
+    this.season = season;
+    return this;
+  }
+
+  public double getAge() {
+    return age;
+  }
+
+  public PlayerGameLog setAge(double age) {
+    this.age = Calculate.round(age, 3);
+    return this;
+  }
+
   public String getMatchUp() {
     return matchUp;
   }
@@ -69,12 +101,34 @@ public class PlayerGameLog {
     return this;
   }
 
-  public String getResult() {
+  public Venue getVenue() {
+    if (venue == null) {
+      return getMatchUp().contains("@") ? Venue.ROAD : Venue.HOME;
+    }
+
+    return venue;
+  }
+
+  public PlayerGameLog setVenue(Venue venue) {
+    this.venue = venue;
+    return this;
+  }
+
+  public Result getResult() {
     return result;
   }
 
-  public PlayerGameLog setResult(String result) {
+  public PlayerGameLog setResult(Result result) {
     this.result = result;
+    return this;
+  }
+
+  public boolean isStarted() {
+    return started;
+  }
+
+  public PlayerGameLog setStarted(boolean started) {
+    this.started = started;
     return this;
   }
 
@@ -87,65 +141,187 @@ public class PlayerGameLog {
     return this;
   }
 
-  public int getPoints() {
+  public double getFieldGoalsMade() {
+    return fieldGoalsMade;
+  }
+
+  public PlayerGameLog setFieldGoalsMade(double fieldGoalsMade) {
+    this.fieldGoalsMade = fieldGoalsMade;
+    return this;
+  }
+
+  public double getFieldGoalsAtts() {
+    return fieldGoalsAtts;
+  }
+
+  public PlayerGameLog setFieldGoalsAtts(double fieldGoalsAtts) {
+    this.fieldGoalsAtts = fieldGoalsAtts;
+    return this;
+  }
+
+  public double getFieldGoalPercent() {
+    if (fieldGoalPercent == 0.0 && fieldGoalsAtts > 0.0) {
+      return Calculate.round(fieldGoalsMade / fieldGoalsAtts, 3);
+    }
+
+    return fieldGoalPercent;
+  }
+
+  public PlayerGameLog setFieldGoalPercent(double fieldGoalPercent) {
+    this.fieldGoalPercent = fieldGoalPercent;
+    return this;
+  }
+
+  public double getThreePointersMade() {
+    return threePointersMade;
+  }
+
+  public PlayerGameLog setThreePointersMade(double threePointersMade) {
+    this.threePointersMade = threePointersMade;
+    return this;
+  }
+
+  public double getThreePointerAtts() {
+    return threePointerAtts;
+  }
+
+  public PlayerGameLog setThreePointerAtts(double threePointerAtts) {
+    this.threePointerAtts = threePointerAtts;
+    return this;
+  }
+
+  public double getThreePointerPercent() {
+    if (threePointerPercent == 0.0 && threePointerAtts > 0.0) {
+      return Calculate.round(threePointersMade / threePointerAtts, 3);
+    }
+
+    return threePointerPercent;
+  }
+
+  public PlayerGameLog setThreePointerPercent(double threePointerPercent) {
+    this.threePointerPercent = threePointerPercent;
+    return this;
+  }
+
+  public double getFreeThrowsMade() {
+    return freeThrowsMade;
+  }
+
+  public PlayerGameLog setFreeThrowsMade(double freeThrowsMade) {
+    this.freeThrowsMade = freeThrowsMade;
+    return this;
+  }
+
+  public double getFreeThrowAtts() {
+    return freeThrowAtts;
+  }
+
+  public PlayerGameLog setFreeThrowAtts(double freeThrowAtts) {
+    this.freeThrowAtts = freeThrowAtts;
+    return this;
+  }
+
+  public double getFreeThrowPercent() {
+    if (freeThrowPercent == 0.0 && freeThrowAtts > 0) {
+      return Calculate.round(freeThrowsMade / freeThrowAtts, 3);
+    }
+
+    return freeThrowPercent;
+  }
+
+  public PlayerGameLog setFreeThrowPercent(double freeThrowPercent) {
+    this.freeThrowPercent = freeThrowPercent;
+    return this;
+  }
+
+  public double getOffensiveRebounds() {
+    return offensiveRebounds;
+  }
+
+  public PlayerGameLog setOffensiveRebounds(double offensiveRebounds) {
+    this.offensiveRebounds = offensiveRebounds;
+    return this;
+  }
+
+  public double getDefensiveRebounds() {
+    return defensiveRebounds;
+  }
+
+  public PlayerGameLog setDefensiveRebounds(double defensiveRebounds) {
+    this.defensiveRebounds = defensiveRebounds;
+    return this;
+  }
+
+  public double getPersonalFouls() {
+    return personalFouls;
+  }
+
+  public PlayerGameLog setPersonalFouls(double personalFouls) {
+    this.personalFouls = personalFouls;
+    return this;
+  }
+
+  public double getPoints() {
     return points;
   }
 
-  public PlayerGameLog setPoints(int points) {
+  public PlayerGameLog setPoints(double points) {
     this.points = points;
     return this;
   }
 
-  public int getRebounds() {
+  public double getRebounds() {
     return rebounds;
   }
 
-  public PlayerGameLog setRebounds(int rebounds) {
+  public PlayerGameLog setRebounds(double rebounds) {
     this.rebounds = rebounds;
     return this;
   }
 
-  public int getAssists() {
+  public double getAssists() {
     return assists;
   }
 
-  public PlayerGameLog setAssists(int assists) {
+  public PlayerGameLog setAssists(double assists) {
     this.assists = assists;
     return this;
   }
 
-  public int getBlocks() {
+  public double getBlocks() {
     return blocks;
   }
 
-  public PlayerGameLog setBlocks(int blocks) {
+  public PlayerGameLog setBlocks(double blocks) {
     this.blocks = blocks;
     return this;
   }
 
-  public int getSteals() {
+  public double getSteals() {
     return steals;
   }
 
-  public PlayerGameLog setSteals(int steals) {
+  public PlayerGameLog setSteals(double steals) {
     this.steals = steals;
     return this;
   }
 
-  public int getMade3s() {
-    return made3s;
+  @Deprecated
+  public Integer getMade3s() {
+    return null;
   }
 
+  @Deprecated
   public PlayerGameLog setMade3s(int made3s) {
-    this.made3s = made3s;
+    this.threePointersMade = made3s;
     return this;
   }
 
-  public int getTurnovers() {
+  public double getTurnovers() {
     return turnovers;
   }
 
-  public PlayerGameLog setTurnovers(int turnovers) {
+  public PlayerGameLog setTurnovers(double turnovers) {
     this.turnovers = turnovers;
     return this;
   }
@@ -168,11 +344,11 @@ public class PlayerGameLog {
     return this;
   }
 
-  public int getPlusMinus() {
+  public double getPlusMinus() {
     return plusMinus;
   }
 
-  public PlayerGameLog setPlusMinus(int plusMinus) {
+  public PlayerGameLog setPlusMinus(double plusMinus) {
     this.plusMinus = plusMinus;
     return this;
   }
@@ -202,5 +378,20 @@ public class PlayerGameLog {
   public PlayerGameLog setFantasySitePoints(String fantasySite, double points) {
     fantasySitePoints.put(fantasySite, points);
     return this;
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (!(obj instanceof PlayerGameLog)) {
+      return super.equals(obj);
+    }
+    PlayerGameLog other = (PlayerGameLog) obj;
+
+    return toString().equals(other.toString());
+  }
+
+  @Override
+  public String toString() {
+    return new JSONObject(this).toString();
   }
 }

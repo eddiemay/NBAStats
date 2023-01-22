@@ -1,17 +1,16 @@
 package com.digitald4.nbastats.model;
 
 public class Player {
-  private long id;
+  private Integer id;
   private String season;
-  private int playerId;
   private String name;
   private String aka;
 
-  public long getId() {
+  public Integer getId() {
     return id;
   }
 
-  public Player setId(long id) {
+  public Player setId(Integer id) {
     this.id = id;
     return this;
   }
@@ -25,12 +24,14 @@ public class Player {
     return this;
   }
 
-  public int getPlayerId() {
-    return playerId;
+  @Deprecated
+  public Integer getPlayerId() {
+    return id;
   }
 
-  public Player setPlayerId(int playerId) {
-    this.playerId = playerId;
+  @Deprecated
+  public Player setPlayerId(Integer playerId) {
+    this.id = playerId;
     return this;
   }
 

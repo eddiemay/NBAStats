@@ -55,7 +55,7 @@
       <groupId>org.tensorflow</groupId>
       <artifactId>tensorflow</artifactId>
       <version>1.15.0</version>
-      <scope>provided</scope>
+      <!-- scope>provided</scope -->
     </dependency>
 
     <!-- Test Dependencies -->

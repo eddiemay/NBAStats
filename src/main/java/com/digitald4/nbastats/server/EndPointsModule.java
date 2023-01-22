@@ -1,7 +1,8 @@
 package com.digitald4.nbastats.server;
 
 import com.digitald4.common.server.service.Echo;
-import com.digitald4.nbastats.storage.NBAApiDAO;
+import com.digitald4.nbastats.util.FakeWebFetcher;
+import com.digitald4.nbastats.util.WebFetcher;
 import com.google.common.collect.ImmutableList;
 
 public class EndPointsModule extends com.digitald4.common.server.EndPointsModule {
@@ -14,7 +15,7 @@ public class EndPointsModule extends com.digitald4.common.server.EndPointsModule
 	public void configureServlets() {
 		super.configureServlets();
 
-		bind(NBAApiDAO.class).toProvider(() -> null);
+		bind(WebFetcher.class).to(FakeWebFetcher.class);
 
 		configureEndpoints(getApiUrlPattern(),
 				ImmutableList.of(
