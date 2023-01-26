@@ -1,6 +1,7 @@
 package com.digitald4.nbastats.model;
 
 import com.digitald4.common.util.Calculate;
+import com.digitald4.common.util.JSONUtil;
 import java.util.HashMap;
 import java.util.Map;
 import org.json.JSONObject;
@@ -392,6 +393,6 @@ public class PlayerGameLog {
 
   @Override
   public String toString() {
-    return new JSONObject(this).toString();
+    return JSONUtil.toJSON(this).toString();
   }
 }

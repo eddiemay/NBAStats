@@ -12,15 +12,15 @@ com.digitald4.nbastats.PlayerOptionsCtrl.prototype.refresh = function() {
   this.players = [];
   this.projectionMethods = [];
   var fantasyLeague = this.globalData.fantasyLeague;
-	this.playerDayService.list(this.globalData.getApiDate(), function(response) {
-	  if (response.results.length == 0) {
+	this.playerDayService.listByDate(this.globalData.getApiDate(), response => {
+	  if (response.items.length == 0) {
 	    return;
 	  }
-	  for (var method in response.results[0].fantasySiteInfo[fantasyLeague].projection) {
+	  for (var method in response.items[0].fantasySiteInfo[fantasyLeague].projection) {
 	    this.projectionMethods.push(method);
 	  }
-	  for (var i = 0; i < response.results.length; i++) {
-	    var player = response.results[i];
+	  for (var i = 0; i < response.items.length; i++) {
+	    var player = response.items[i];
 	    this.players.push({
 	      playerId: player.playerId,
 	      name: player.name,
@@ -33,20 +33,20 @@ com.digitald4.nbastats.PlayerOptionsCtrl.prototype.refresh = function() {
 	      projection: player.fantasySiteInfo[fantasyLeague].projection,
 	    });
 	  }
-	}.bind(this), notify);
-};
+	}, notifyError);
+}
 
 com.digitald4.nbastats.PlayerOptionsCtrl.prototype.update = function(player, prop) {
   var index = this.players.indexOf(player);
-  this.playerDayService.update(player, [prop], function(player) {
+  this.playerDayService.update(player, [prop], player => {
     this.players[index] = player;
-  }.bind(this), notify);
-};
+  }, notifyError);
+}
 
 com.digitald4.nbastats.PlayerOptionsCtrl.prototype.processStats = function() {
-  this.playerDayService.processStats(this.globalData.getApiDate(), function(response) {
+  this.playerDayService.processStats(this.globalData.getApiDate(), response => {
     console.log('Processing...');
-  }.bind(this), notify);
+  }, notifyError);
 };
 
 com.digitald4.nbastats.PlayerOptionsCtrl.prototype.sortBy = function(prop) {

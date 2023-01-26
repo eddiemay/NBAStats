@@ -311,9 +311,7 @@ public class FanDuelIO {
 		}
 
 		APIConnector apiConnector = new APIConnector("https://fantasy-predictor.appspot.com/_ah/api", "v1");
-		DAOApiProtoImpl messageDAO = new DAOApiProtoImpl(apiConnector);
-		DAORouterImpl dao = new DAORouterImpl(
-				messageDAO, new DAOHasProto(messageDAO), new DAOApiImpl(apiConnector, Clock.systemUTC()));
+		DAO dao = new DAOApiImpl(apiConnector, Clock.systemUTC());
 		Provider<DAO> daoProvider = () -> dao;
 		WebFetcherNBAApi webFetcher = new WebFetcherNBAApi(new APIConnector(null, null, 500));
 		PlayerStore playerStore = new PlayerStore(daoProvider, webFetcher);

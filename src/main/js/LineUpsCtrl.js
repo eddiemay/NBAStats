@@ -7,7 +7,7 @@ com.digitald4.nbastats.LineUpsCtrl = function(globalData, lineUpService, playerD
 	this.refresh();
 	this.sortProp = 'projected';
   this.reverse = true;
-};
+}
 
 com.digitald4.nbastats.LineUpsCtrl.prototype.assemble = function() {
   for (var i = 0; i < this.lineUps.length; i++) {
@@ -26,17 +26,17 @@ com.digitald4.nbastats.LineUpsCtrl.prototype.assemble = function() {
       });
     }
   }
-};
+}
 
 com.digitald4.nbastats.LineUpsCtrl.prototype.refresh = function() {
   this.lineUps = null;
   this.playerDayMap = null;
   var date = this.globalData.getApiDate();
   var league = this.globalData.fantasyLeague;
-  this.playerDayService.list(date, function(response) {
+  this.playerDayService.listByDate(date, response => {
     var playerDayMap = {};
-    for (var i = 0; i < response.results.length; i++) {
-      var playerDay = response.results[i];
+    for (var i = 0; i < response.items.length; i++) {
+      var playerDay = response.items[i];
       playerDayMap[playerDay.playerId] = playerDay;
       if (i == 0) {
         this.projectionMethods = [];
@@ -50,35 +50,36 @@ com.digitald4.nbastats.LineUpsCtrl.prototype.refresh = function() {
     if (this.lineUps) {
       this.assemble();
     }
-  }.bind(this), notify);
+  }, notifyError);
 
   this.refreshLineUps();
-};
+}
 
 com.digitald4.nbastats.LineUpsCtrl.prototype.refreshLineUps = function() {
   var date = this.globalData.getApiDate();
   var league = this.globalData.fantasyLeague;
-	this.lineUpService.list(date, league, this.globalData.projectionMethod, function(response) {
-	  this.lineUps = response.results;
+	this.lineUpService.listByDateSiteMethod(
+	    date, league, this.globalData.projectionMethod, response => {
+	  this.lineUps = response.items;
     if (this.playerDayMap) {
       this.assemble();
     }
-	}.bind(this), notify);
-};
+	}, notifyError);
+}
 
 com.digitald4.nbastats.LineUpsCtrl.prototype.update = function(lineUp, prop) {
   var index = this.lineUps.indexOf(lineUp);
-	this.lineUpService.update(lineUp, [prop], function(lineUp) {
+	this.lineUpService.update(lineUp, [prop], lineUp => {
 	  this.lineUps[index] = lineUp;
 	  this.assemble();
-	}.bind(this), notify);
-};
+	}, notifyError);
+}
 
 com.digitald4.nbastats.LineUpsCtrl.prototype.updateActuals = function() {
-  this.lineUpService.updateActuals(this.globalData.getApiDate(), function(response) {
+  this.lineUpService.updateActuals(this.globalData.getApiDate(), response => {
     console.log('Processing...');
-  }.bind(this), notify);
-};
+  }, notifyError);
+}
 
 com.digitald4.nbastats.LineUpsCtrl.prototype.sortBy = function(prop) {
   if (this.sortProp == prop) {
@@ -87,4 +88,4 @@ com.digitald4.nbastats.LineUpsCtrl.prototype.sortBy = function(prop) {
 	  this.sortProp = prop;
 	  this.reverse = false;
 	}
-};
+}
