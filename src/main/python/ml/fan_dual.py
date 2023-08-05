@@ -28,5 +28,5 @@ model.compile(optimizer=keras.optimizers.Adam(1.0), loss='mean_squared_error')
 
 model.fit(gamelog_features, points, epochs=500)
 print('weights:', model.weights)
-# Should print 59.7
-print(model.predict([[46.8, 9.0, 28.0, 0.0, 7.0, 6.0, 10.0, 6.0, 10.0, 16.0, 9.0, 2.0, 0.0, 3.0, 0.0, -3.0, 1, 0]]))
+print('Desired output: 59.7')
+print('Predict: ', model.predict([[46.8, 9.0, 28.0, 0.0, 7.0, 6.0, 10.0, 6.0, 10.0, 16.0, 9.0, 2.0, 0.0, 3.0, 0.0, -3.0, 1, 0]]))
