@@ -1,11 +1,10 @@
 # Finds how basketball scoring is done from inputs of:
 # Minutes played, field goals made, field goal attempts, 3 point baskets made,
 # 3 point attempts, free throws made and free throw attempts.
-import tensorflow as tf
+import keras
 import numpy as np
-from tensorflow import keras
 
-model = tf.keras.Sequential([keras.layers.Dense(units=1, input_shape=[7])])
+model = keras.Sequential([keras.layers.Dense(units=1, input_shape=[7])])
 model.compile(optimizer=keras.optimizers.Adam(1.0), loss='mean_squared_error')
 
 gamelog = np.array(
@@ -31,5 +30,5 @@ points = np.array(
 
 model.fit(gamelog, points, epochs=500)
 print('weights:', model.weights)
-# Should print 24 = 2 x 9 + 6
-print(model.predict([[47.0, 9.0, 28.0, 0.0, 7.0, 6.0, 10.0]]))
+print('Desired output: 24 = 2 x 9 + 6')
+print(model.predict(np.array([[47.0, 9.0, 28.0, 0.0, 7.0, 6.0, 10.0]])))

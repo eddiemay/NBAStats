@@ -1,14 +1,14 @@
 # Finds how basketball scoring is done from inputs of:
 # Minutes played, field goals made, field goal attempts, 3 point baskets made,
 # 3 point attempts, free throws made and free throw attempts.
-import pandas as pd
+import keras
 import numpy as np
-from tensorflow import keras
+import pandas as pd
 
 # Make numpy values easier to read.
 np.set_printoptions(precision=3, suppress=True)
 
-gamelog = pd.read_csv("data/lebron_gamelog.csv")
+gamelog = pd.read_csv("../../../../data/lebron_gamelog.csv")
 gamelog.head()
 print(gamelog)
 
