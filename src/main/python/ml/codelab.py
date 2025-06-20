@@ -15,4 +15,4 @@ model.fit(xs, ys, epochs=500)
 print('weights:', model.weights)
 
 # Should print 31 = 3(10) + 1
-print(model.predict([10.0]))
+print(model.predict(np.array([10.0])))
