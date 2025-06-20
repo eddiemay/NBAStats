@@ -106,7 +106,8 @@ history = linear_model.fit(
 plot_loss(history)
 
 test_results = {
-  'linear_model': linear_model.evaluate(test_features, test_labels, verbose=0)}
+  'linear_model': linear_model.evaluate(test_features, test_labels, verbose=0)
+}
 
 # DNN model
 dnn_model = build_and_compile_model(normalizer)
