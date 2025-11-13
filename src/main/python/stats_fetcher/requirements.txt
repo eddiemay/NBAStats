@@ -1,0 +1,5 @@
+bs4
+fake_useragent
+numpy
+mlx
+requests
