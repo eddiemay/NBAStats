@@ -53,7 +53,7 @@ if __name__ == '__main__':
   optimizer = optim.Adam(learning_rate=0.1)
   loss_and_grad_fn = nn.value_and_grad(model, loss_fn)
   # 3. Training loop
-  for epoch in range(1500):
+  for epoch in range(2500):
     loss, grads = loss_and_grad_fn(model, npa, results)
       # mx.eval(loss, grads)
     optimizer.update(model, grads)
