@@ -26,6 +26,15 @@ class StatsStore:
 
     return stats
 
+
+  def resave(self, year: int, playoffs: bool):
+    stats = self.get_stats(year, playoffs)
+    file = file_path.format(year) if not playoffs else playoffs_file_path.format(year)
+    with open(file, 'w') as f:
+      for stat in stats:
+        json.dump(stat, f, ensure_ascii=False, separators=(',', ':'))
+        f.write("\n")
+
   def fetch(self, year: int):
     file = file_path.format(year)
     playoffs_file = playoffs_file_path.format(year)
@@ -55,11 +64,11 @@ class StatsStore:
             player_stats = self.fetch_for_player(player, year)
             if reg_player_map.get(player['id']) is None:
               for player_stat in player_stats['regular']:
-                json.dump(player_stat, f)
+                json.dump(player_stat, f, ensure_ascii=False, separators=(',', ':'))
                 f.write("\n")
             if playoffs_player_map.get(player['id']) is None:
               for player_stat in player_stats['playoffs']:
-                json.dump(player_stat, pf)
+                json.dump(player_stat, pf, ensure_ascii=False, separators=(',', ':'))
                 pf.write("\n")
 
   def fetch_playoffs(self, player: dict):
@@ -82,7 +91,7 @@ class StatsStore:
         player_stats = self.fetch_for_player(player, year)
         with open(playoffs_file, "a", encoding="utf-8") as pf:
           for player_stat in player_stats['playoffs']:
-            json.dump(player_stat, pf)
+            json.dump(player_stat, pf, ensure_ascii=False, separators=(',', ':'))
             pf.write("\n")
           pf.close()
 
@@ -125,5 +134,9 @@ if __name__ == '__main__':
   for year in range(1947, 2026):
     print(f"{year}")
     # stats_store.fetch(year)
+    # stats_store.resave(year, False)
+    # stats_store.resave(year, True)
     print(f"{year}:", len(stats_store.get_stats(year, False)), "reg season rows")
     print(f"{year}:", len(stats_store.get_stats(year, True)), "playoff rows")
+
+  # stats_store.resave(2017, False)
