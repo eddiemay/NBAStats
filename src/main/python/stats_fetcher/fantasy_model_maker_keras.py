@@ -19,12 +19,12 @@ if __name__ == '__main__':
   stats = statsStore.get_stats(2017, False, set_doubles)
   print("total stats", len(stats))
   print(stats[sample_idx])
+  val_stats = random.choices(statsStore.get_stats(2016, False, set_doubles), k=20000)
   load_time = time.time()
 
   # Transform the data from dict array to numpy array
   train_x = to_numpy_array(stats, fantasy_weights)
   print(train_x[sample_idx])
-  val_stats = random.choices(stats, k=512)
   val_x = to_numpy_array(val_stats, fantasy_weights)
   transform_time = time.time()
 
