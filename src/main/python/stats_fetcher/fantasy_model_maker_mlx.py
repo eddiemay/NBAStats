@@ -42,18 +42,18 @@ if __name__ == '__main__':
   train_x = mx.array(to_numpy_array(stats))
   print(train_x[sample_idx])
   val_x = mx.array(to_numpy_array(val_stats))
-  weights = mx.array(list(fantasy_weights.values()), dtype=mx.float32)
+  print('train_x shape: ', train_x.shape)
   transform_time = time.time()
 
-  train_y = calc_fantasy(train_x)
-  val_y = calc_fantasy(val_x)
-  model = MLP(in_dims=len(weights), out_dims=len(weights[0]))
+  train_y = mx.array(calc_fantasy(stats))
+  val_y = mx.array(calc_fantasy(val_stats))
+  model = MLP(in_dims=train_x.shape[1], out_dims=train_y.shape[1])
   mx.eval(model.parameters())
   optimizer = optim.Adam(learning_rate=0.1)
   loss_and_grad_fn = nn.value_and_grad(model, loss_fn)
   best_val_loss = float('inf')
   # 3. Training loop
-  for epoch in range(2678):
+  for epoch in range(500):
     loss, grads = loss_and_grad_fn(model, train_x, train_y)
       # mx.eval(loss, grads)
     optimizer.update(model, grads)
@@ -67,6 +67,7 @@ if __name__ == '__main__':
         state = tree_flatten(optimizer.state, destination={})
         mx.save_safetensors("fantasy_model.safetensors", state)
         model.save_weights("fantasy_model_weights.safetensors")
+  weights = mx.array(list(fantasy_weights.values()), dtype=mx.float32)
   # weights = model.get_weights()[0]
   for i in range(len(fantasy_weights.keys())):
     print(list(fantasy_weights.keys())[i], list(fantasy_weights.values())[i], weights[i])

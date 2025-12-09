@@ -9,7 +9,7 @@ from nba_stats_store import StatsStore
 from nba_player_store import PlayerStore
 from fantasy_calculator import set_doubles, to_numpy_array, fantasy_weights, calc_fantasy
 
-sample_idx = 1000
+sample_idx = 21705
 checkpoint_path = "best_model.pt"
 torch.manual_seed(42)
 
@@ -28,23 +28,25 @@ if __name__ == '__main__':
   train_x = torch.tensor(to_numpy_array(stats))
   print(train_x[sample_idx])
   val_x = torch.tensor(to_numpy_array(val_stats))
-  weights = numpy.array(list(fantasy_weights.values()), dtype=numpy.float32)
   transform_time = time.time()
 
-  train_y = calc_fantasy(train_x)
+  train_y = torch.tensor(calc_fantasy(stats))
   print(train_y[sample_idx])
-  val_y = calc_fantasy(val_x)
-  hidden = len(weights) * 2
+  val_y = torch.tensor(calc_fantasy(val_stats))
+  in_dims = train_x.shape[1]
+  out_dims = train_y.shape[1]
+  hidden = in_dims + 2
   model = nn.Sequential(
-      nn.Linear(len(weights), hidden),
+      nn.Linear(in_dims, hidden),
       nn.ReLU(),
       # nn.Linear(hidden, hidden),
       # nn.ReLU(),
-      nn.Linear(hidden, len(weights[0])))
+      nn.Linear(hidden, out_dims))
+  model = nn.Sequential(nn.Linear(in_dims, out_dims))
   loss_function = nn.MSELoss()
   optimizer = optim.Adam(model.parameters(), lr=0.1)
   best_val_loss = float('inf')  # Keeps track of the best validation loss so far
-  for epoch in range(2500):
+  for epoch in range(1000):
     # Reset the optimizer's gradients
     optimizer.zero_grad()
     # Make predictions (forward pass)
@@ -59,7 +61,7 @@ if __name__ == '__main__':
     if (epoch + 1) % 50 == 0:
       print(f"Epoch {epoch + 1}: Loss = {loss.item()}")
       val_loss = loss_function(model(val_x), val_y)
-      # --- Keras-style checkpoint ---
+      # --- Checkpoint ---
       if val_loss < best_val_loss:
         print(f"Validation improved from {best_val_loss:.6f} → {loss:.6f}. Saving model.")
         best_val_loss = val_loss

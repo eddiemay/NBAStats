@@ -22,14 +22,14 @@ if __name__ == '__main__':
   # Transform the data from dict array to numpy array
   train_x = to_numpy_array(stats)
   print(train_x[sample_idx])
-  val_x = to_numpy_array(random.choices(stats, k=512))
-  weights = numpy.array(list(fantasy_weights.values()), dtype=numpy.float32)
+  val_stats = random.choices(stats, k=512)
+  val_x = to_numpy_array(val_stats)
   transform_time = time.time()
 
-  train_y = calc_fantasy(train_x)
-  val_y = calc_fantasy(val_x)
+  train_y = calc_fantasy(stats)
+  val_y = calc_fantasy(val_stats)
   model = keras.Sequential(
-      [keras.layers.Dense(input_shape=[len(weights)], units=len(weights[0]))])
+      [keras.layers.Dense(input_shape=[train_x.shape[1]], units=train_y.shape[1])])
   model.compile(optimizer=keras.optimizers.Adam(1.0), loss='mean_squared_error')
   checkpoint = ModelCheckpoint(
       filepath='fantasy_model.keras',
