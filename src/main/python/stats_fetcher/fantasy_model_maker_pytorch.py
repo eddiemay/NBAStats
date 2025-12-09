@@ -7,9 +7,11 @@ import random
 import time
 from nba_stats_store import StatsStore
 from nba_player_store import PlayerStore
-from fantasy_calculator import set_doubles, to_numpy_array, fantasy_weights, calc_fantasy
+import fantasy_calculator
+from fantasy_calculator import set_doubles, to_numpy_array, calc_fantasy
 
 sample_idx = 21705
+fantasy_weights = fantasy_calculator.fantasy_weights_all
 checkpoint_path = "best_model.pt"
 torch.manual_seed(42)
 
@@ -25,9 +27,9 @@ if __name__ == '__main__':
   load_time = time.time()
 
   # Transform the data from dict array to numpy array
-  train_x = torch.tensor(to_numpy_array(stats))
+  train_x = torch.tensor(to_numpy_array(stats, fantasy_weights))
   print(train_x[sample_idx])
-  val_x = torch.tensor(to_numpy_array(val_stats))
+  val_x = torch.tensor(to_numpy_array(val_stats, fantasy_weights))
   transform_time = time.time()
 
   train_y = torch.tensor(calc_fantasy(stats))
@@ -35,7 +37,7 @@ if __name__ == '__main__':
   val_y = torch.tensor(calc_fantasy(val_stats))
   in_dims = train_x.shape[1]
   out_dims = train_y.shape[1]
-  hidden = in_dims + 2
+  hidden = in_dims * 2
   model = nn.Sequential(
       nn.Linear(in_dims, hidden),
       nn.ReLU(),
@@ -46,7 +48,7 @@ if __name__ == '__main__':
   loss_function = nn.MSELoss()
   optimizer = optim.Adam(model.parameters(), lr=0.1)
   best_val_loss = float('inf')  # Keeps track of the best validation loss so far
-  for epoch in range(1000):
+  for epoch in range(2500):
     # Reset the optimizer's gradients
     optimizer.zero_grad()
     # Make predictions (forward pass)

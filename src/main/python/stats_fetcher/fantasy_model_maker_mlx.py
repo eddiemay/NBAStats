@@ -4,12 +4,15 @@ import random
 import time
 from nba_stats_store import StatsStore
 from nba_player_store import PlayerStore
-from fantasy_calculator import set_doubles, to_numpy_array, fantasy_weights, calc_fantasy
+import fantasy_calculator
+from fantasy_calculator import set_doubles, to_numpy_array, calc_fantasy
 import mlx.nn as nn
 from mlx.nn.losses import mse_loss
 import mlx.optimizers as optim
 from mlx.utils import tree_flatten
 
+sample_idx = 21705
+fantasy_weights = fantasy_calculator.fantasy_weights_all
 
 # 1. Define the model
 class MLP(nn.Module):
@@ -25,7 +28,6 @@ def loss_fn(model, x_mx, y_mx):
   preds = model(x_mx)
   return mx.mean((preds - y_mx) ** 2)
 
-sample_idx = 1000
 
 if __name__ == '__main__':
   start_time = time.time()
@@ -39,9 +41,9 @@ if __name__ == '__main__':
   load_time = time.time()
 
   # Transform the data from dict array to numpy array
-  train_x = mx.array(to_numpy_array(stats))
+  train_x = mx.array(to_numpy_array(stats, fantasy_weights))
   print(train_x[sample_idx])
-  val_x = mx.array(to_numpy_array(val_stats))
+  val_x = mx.array(to_numpy_array(val_stats, fantasy_weights))
   print('train_x shape: ', train_x.shape)
   transform_time = time.time()
 
@@ -53,7 +55,7 @@ if __name__ == '__main__':
   loss_and_grad_fn = nn.value_and_grad(model, loss_fn)
   best_val_loss = float('inf')
   # 3. Training loop
-  for epoch in range(500):
+  for epoch in range(2500):
     loss, grads = loss_and_grad_fn(model, train_x, train_y)
       # mx.eval(loss, grads)
     optimizer.update(model, grads)
@@ -67,10 +69,9 @@ if __name__ == '__main__':
         state = tree_flatten(optimizer.state, destination={})
         mx.save_safetensors("fantasy_model.safetensors", state)
         model.save_weights("fantasy_model_weights.safetensors")
-  weights = mx.array(list(fantasy_weights.values()), dtype=mx.float32)
-  # weights = model.get_weights()[0]
+  result_weights = mx.transpose(model.layer.layers[0].weight)
   for i in range(len(fantasy_weights.keys())):
-    print(list(fantasy_weights.keys())[i], list(fantasy_weights.values())[i], weights[i])
+    print(list(fantasy_weights.keys())[i], list(fantasy_weights.values())[i], result_weights[i])
   model_create_time = time.time()
 
   print(stats[sample_idx])

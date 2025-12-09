@@ -4,10 +4,12 @@ import random
 import time
 from nba_stats_store import StatsStore
 from nba_player_store import PlayerStore
-from fantasy_calculator import set_doubles, to_numpy_array, fantasy_weights, calc_fantasy
+import fantasy_calculator
+from fantasy_calculator import set_doubles, to_numpy_array, calc_fantasy
 from keras.callbacks import ModelCheckpoint, EarlyStopping
 
-sample_idx = 1000
+sample_idx = 21705
+fantasy_weights = fantasy_calculator.fantasy_weights_all
 
 if __name__ == '__main__':
   start_time = time.time()
@@ -20,10 +22,10 @@ if __name__ == '__main__':
   load_time = time.time()
 
   # Transform the data from dict array to numpy array
-  train_x = to_numpy_array(stats)
+  train_x = to_numpy_array(stats, fantasy_weights)
   print(train_x[sample_idx])
   val_stats = random.choices(stats, k=512)
-  val_x = to_numpy_array(val_stats)
+  val_x = to_numpy_array(val_stats, fantasy_weights)
   transform_time = time.time()
 
   train_y = calc_fantasy(stats)
@@ -44,12 +46,12 @@ if __name__ == '__main__':
       mode='min',          # 'min' for metrics that should decrease (like loss), 'max' for metrics that should increase (like accuracy)
       restore_best_weights=True # Restore model weights from the epoch with the best monitored value
   )
-  model.fit(train_x, train_y, epochs=500, batch_size=256,
+  model.fit(train_x, train_y, epochs=250, batch_size=256,
             validation_data=(val_x, val_y),
             callbacks=[checkpoint, early_stopping])
-  weights = model.get_weights()[0]
+  result_weights = model.get_weights()[0]
   for i in range(len(fantasy_weights.keys())):
-    print(list(fantasy_weights.keys())[i], list(fantasy_weights.values())[i], weights[i])
+    print(list(fantasy_weights.keys())[i], list(fantasy_weights.values())[i], result_weights[i])
   model_create_time = time.time()
 
   print(stats[sample_idx])
