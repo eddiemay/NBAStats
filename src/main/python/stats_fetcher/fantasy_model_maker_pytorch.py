@@ -1,17 +1,11 @@
-import torch
-import torch.nn as nn
-import torch.optim as optim
-import helper_utils
 import numpy
 import random
 import time
-from nba_stats_store import StatsStore
-from nba_player_store import PlayerStore
-import fantasy_calculator
-from fantasy_calculator import set_doubles, to_numpy_array, calc_fantasy
+import torch
+from fantasy_calculator import calc_fantasy, fantasy_weights, load_training_data, to_numpy_array
+from torch import nn, optim
 
 sample_idx = 21705
-fantasy_weights = fantasy_calculator.fantasy_weights_all
 checkpoint_path = "fantasy_model.pt"
 torch.manual_seed(42)
 
@@ -27,11 +21,8 @@ if __name__ == '__main__':
   start_time = time.time()
 
   # Load the data
-  statsStore = StatsStore(PlayerStore())
-  stats = statsStore.get_stats(2017, False, set_doubles)
-  print("total stats", len(stats))
+  stats, val_stats = load_training_data()
   print(stats[sample_idx])
-  val_stats = random.choices(statsStore.get_stats(2016, False, set_doubles), k=20000)
   load_time = time.time()
 
   # Transform the data from dict array to numpy array
@@ -50,7 +41,7 @@ if __name__ == '__main__':
   loss_function = nn.MSELoss()
   optimizer = optim.Adam(model.parameters(), lr=0.1)
   best_val_loss = float('inf')  # Keeps track of the best validation loss so far
-  for epoch in range(2500):
+  for epoch in range(10000):
     # Reset the optimizer's gradients
     optimizer.zero_grad()
     # Make predictions (forward pass)
@@ -75,8 +66,6 @@ if __name__ == '__main__':
           'optimizer_state_dict': optimizer.state_dict(),
           'val_loss': val_loss
         }, checkpoint_path)
-
-  # helper_utils.plot_data(model, train_x, train_y)
 
   layer = model.layer[0]
   result_weights = numpy.transpose(layer.weight.data.numpy())

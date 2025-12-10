@@ -1,25 +1,18 @@
 import keras
 import numpy
-import random
 import time
-from nba_stats_store import StatsStore
-from nba_player_store import PlayerStore
-import fantasy_calculator
-from fantasy_calculator import set_doubles, to_numpy_array, calc_fantasy
+from fantasy_calculator import load_training_data, to_numpy_array, calc_fantasy, fantasy_weights
 from keras.callbacks import ModelCheckpoint, EarlyStopping
 
+
 sample_idx = 21705
-fantasy_weights = fantasy_calculator.fantasy_weights_all
 
 if __name__ == '__main__':
   start_time = time.time()
 
   # Load the data
-  statsStore = StatsStore(PlayerStore())
-  stats = statsStore.get_stats(2017, False, set_doubles)
-  print("total stats", len(stats))
+  stats, val_stats = load_training_data()
   print(stats[sample_idx])
-  val_stats = random.choices(statsStore.get_stats(2016, False, set_doubles), k=20000)
   load_time = time.time()
 
   # Transform the data from dict array to numpy array

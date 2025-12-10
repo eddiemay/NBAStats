@@ -1,18 +1,12 @@
 import keras
 import mlx.core as mx
-import random
-import time
-from nba_stats_store import StatsStore
-from nba_player_store import PlayerStore
-import fantasy_calculator
-from fantasy_calculator import set_doubles, to_numpy_array, calc_fantasy
-import mlx.nn as nn
-from mlx.nn.losses import mse_loss
 import mlx.optimizers as optim
-from mlx.utils import tree_flatten
+import time
+from fantasy_calculator import calc_fantasy, fantasy_weights, load_training_data, to_numpy_array
+from mlx import nn
+from mlx.nn.losses import mse_loss
 
 sample_idx = 21705
-fantasy_weights = fantasy_calculator.fantasy_weights_all
 
 # 1. Define the model
 class FantasyModelMLX(nn.Module):
@@ -33,11 +27,8 @@ if __name__ == '__main__':
   start_time = time.time()
 
   # Load the data
-  statsStore = StatsStore(PlayerStore())
-  stats = statsStore.get_stats(2017, False, set_doubles)
-  print("total stats", len(stats))
+  stats, val_stats = load_training_data()
   print(stats[sample_idx])
-  val_stats = random.choices(statsStore.get_stats(2016, False, set_doubles), k=20000)
   load_time = time.time()
 
   # Transform the data from dict array to numpy array
@@ -55,7 +46,7 @@ if __name__ == '__main__':
   loss_and_grad_fn = nn.value_and_grad(model, loss_fn)
   best_val_loss = float('inf')
   # 3. Training loop
-  for epoch in range(2500):
+  for epoch in range(10000):
     loss, grads = loss_and_grad_fn(model, train_x, train_y)
       # mx.eval(loss, grads)
     optimizer.update(model, grads)
@@ -66,7 +57,6 @@ if __name__ == '__main__':
       if val_loss < best_val_loss:
         print(f"Validation improved from {best_val_loss:.6f} → {loss:.6f}. Saving model.")
         best_val_loss = val_loss
-        state = tree_flatten(optimizer.state, destination={})
         model.save_weights("fantasy_model.safetensors")
   result_weights = mx.transpose(model.layer.layers[0].weight)
   for i in range(len(fantasy_weights.keys())):

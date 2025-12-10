@@ -2,14 +2,13 @@ import keras
 import mlx.core as mx
 import time
 import torch
-from nba_stats_store import StatsStore
-from nba_player_store import PlayerStore
-from fantasy_calculator import fantasy_weights_all, set_doubles, to_numpy_array, matmul_fantasy
+from fantasy_calculator import fantasy_weights, set_doubles, to_numpy_array, matmul_fantasy
 from fantasy_model_maker_mlx import FantasyModelMLX
 from fantasy_model_maker_pytorch import FantasyModelPytorch
+from nba_stats_store import StatsStore
+from nba_player_store import PlayerStore
 
 sample_idx = 21705
-fantasy_weights = fantasy_weights_all
 
 if __name__ == '__main__':
   start_time = time.time()
@@ -17,7 +16,7 @@ if __name__ == '__main__':
   # Load the data
   statsStore = StatsStore(PlayerStore())
   stats = []
-  for year in range(1972, 2026):
+  for year in range(1947, 2026):
     stats.extend(statsStore.get_stats(year, False, set_doubles))
   print("total stats", len(stats))
   print(stats[sample_idx])
@@ -31,7 +30,7 @@ if __name__ == '__main__':
   # Reload the Keras model and predict.
   model = keras.models.load_model('fantasy_model.keras')
   results = model.predict(npa)
-  print('Keras result:', results[sample_idx])
+  print('Keras prediction:', results[sample_idx])
   keras_time = time.time()
 
   # Reload the Pytorch model and predict.
@@ -41,14 +40,14 @@ if __name__ == '__main__':
   # Run inference
   with torch.no_grad():
     results = model(torch.tensor(npa))
-    print('PyTorch result:', results[sample_idx])
+    print('PyTorch prediction:', results[sample_idx])
   pytorch_time = time.time()
 
   # Reload the MLX model and predict.
   model = FantasyModelMLX(npa.shape[1], 4)
   model.load_weights('fantasy_model.safetensors')
   results = model(mx.array(npa))
-  print('MLX result:', results[sample_idx])
+  print('MLX prediction:', results[sample_idx])
   mlx_time = time.time()
 
   # Run the matmul time.
@@ -59,7 +58,7 @@ if __name__ == '__main__':
   print("Total time:", end_time - start_time,
         "\n\tLoad time:", load_time - start_time, "transform time:",
         transform_time - load_time,
-        "keras time:", keras_time - transform_time,
+        "Keras time:", keras_time - transform_time,
         "PyTorch time:", pytorch_time - keras_time,
         "MLX time:", mlx_time - pytorch_time,
         "matmul time:", end_time - mlx_time)

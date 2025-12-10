@@ -1,8 +1,8 @@
 import numpy as np
-# import mlx.core as np
+import random
 import time
-from nba_stats_store import StatsStore
 from nba_player_store import PlayerStore
+from nba_stats_store import StatsStore
 
 
 fantasy_weights_all = { # FanDuel, DraftKings, NBA and NBA2017 Fantasy weights
@@ -71,7 +71,7 @@ fantasy_weights_no_doubles = { # FanDuel, DraftKings, NBA and NBA2017 Fantasy we
 }
 double_fields = ['pts', 'trb', 'ast', 'stl', 'blk']
 sample_idx = 959020
-fantasy_weights = fantasy_weights_simple
+fantasy_weights = fantasy_weights_all
 
 
 def get_doubles(stat: dict):
@@ -102,13 +102,28 @@ def to_numpy_array(stats: list, fantasy_weights = fantasy_weights):
     fan_values.append(value_list)
   return np.array(fan_values, dtype=np.float32)
 
+
 def matmul_fantasy(npa, fantasy_weights):
   weights = np.array(list(fantasy_weights.values()), dtype=np.float32)
   return np.matmul(npa, weights)
 
+
 def calc_fantasy(stats: list, fantasy_weights = fantasy_weights_simple):
   npa = to_numpy_array(stats, fantasy_weights)
   return matmul_fantasy(npa, fantasy_weights)
+
+
+def load_training_data():
+  statsStore = StatsStore(PlayerStore())
+  stats = []
+  val_stats = []
+  for year in range(1947, 2026, 10):
+    stats.extend(random.choices(statsStore.get_stats(year, False, set_doubles), k=3000))
+    val_stats.extend(random.choices(statsStore.get_stats(2016, False, set_doubles), k=1024))
+  print("total stats", len(stats))
+  print("total val stats", len(val_stats))
+  return stats, val_stats
+
 
 if __name__ == '__main__':
   start_time = time.time()
