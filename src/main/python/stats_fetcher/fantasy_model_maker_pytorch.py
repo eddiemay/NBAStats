@@ -12,8 +12,16 @@ from fantasy_calculator import set_doubles, to_numpy_array, calc_fantasy
 
 sample_idx = 21705
 fantasy_weights = fantasy_calculator.fantasy_weights_all
-checkpoint_path = "best_model.pt"
+checkpoint_path = "fantasy_model.pt"
 torch.manual_seed(42)
+
+class FantasyModelPytorch(nn.Module):
+  def __init__(self, in_dims: int, out_dims: int, hidden_dims: int = 64):
+    super().__init__()
+    self.layer = nn.Sequential(nn.Linear(in_dims, out_dims))
+
+  def forward(self, x):
+    return self.layer(x)
 
 if __name__ == '__main__':
   start_time = time.time()
@@ -38,13 +46,7 @@ if __name__ == '__main__':
   in_dims = train_x.shape[1]
   out_dims = train_y.shape[1]
   hidden = in_dims * 2
-  model = nn.Sequential(
-      nn.Linear(in_dims, hidden),
-      nn.ReLU(),
-      # nn.Linear(hidden, hidden),
-      # nn.ReLU(),
-      nn.Linear(hidden, out_dims))
-  model = nn.Sequential(nn.Linear(in_dims, out_dims))
+  model = FantasyModelPytorch(in_dims, out_dims)
   loss_function = nn.MSELoss()
   optimizer = optim.Adam(model.parameters(), lr=0.1)
   best_val_loss = float('inf')  # Keeps track of the best validation loss so far
@@ -76,7 +78,7 @@ if __name__ == '__main__':
 
   # helper_utils.plot_data(model, train_x, train_y)
 
-  layer = model[0]
+  layer = model.layer[0]
   result_weights = numpy.transpose(layer.weight.data.numpy())
   bias = layer.bias.data.numpy()
   for i in range(len(fantasy_weights.keys())):
@@ -86,16 +88,16 @@ if __name__ == '__main__':
   print(stats[sample_idx])
   print(train_y[sample_idx])
   with torch.no_grad():
-    checkpoint = torch.load("best_model.pt")
+    checkpoint = torch.load(checkpoint_path)
     model.load_state_dict(checkpoint['model_state_dict'])
     optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
     epoch = checkpoint['epoch']
     best_val_loss = checkpoint['val_loss']
     # Pass the new data to the trained model to get a prediction
-    predicted_time = model(train_x[sample_idx])
+    predicted = model(train_x[sample_idx])
 
     # Use .item() to extract the scalar value from the tensor for printing
-    print(f"Prediction {predicted_time}")
+    print(f"Prediction {predicted}")
   end_time = time.time()
 
   print("Total time:", end_time - start_time,

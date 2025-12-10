@@ -15,7 +15,7 @@ sample_idx = 21705
 fantasy_weights = fantasy_calculator.fantasy_weights_all
 
 # 1. Define the model
-class MLP(nn.Module):
+class FantasyModelMLX(nn.Module):
   def __init__(self, in_dims: int, out_dims: int, hidden_dims: int = 64):
     super().__init__()
     self.layer = nn.Sequential(nn.Linear(in_dims, out_dims))
@@ -49,7 +49,7 @@ if __name__ == '__main__':
 
   train_y = mx.array(calc_fantasy(stats))
   val_y = mx.array(calc_fantasy(val_stats))
-  model = MLP(in_dims=train_x.shape[1], out_dims=train_y.shape[1])
+  model = FantasyModelMLX(in_dims=train_x.shape[1], out_dims=train_y.shape[1])
   mx.eval(model.parameters())
   optimizer = optim.Adam(learning_rate=0.1)
   loss_and_grad_fn = nn.value_and_grad(model, loss_fn)
@@ -67,8 +67,7 @@ if __name__ == '__main__':
         print(f"Validation improved from {best_val_loss:.6f} → {loss:.6f}. Saving model.")
         best_val_loss = val_loss
         state = tree_flatten(optimizer.state, destination={})
-        mx.save_safetensors("fantasy_model.safetensors", state)
-        model.save_weights("fantasy_model_weights.safetensors")
+        model.save_weights("fantasy_model.safetensors")
   result_weights = mx.transpose(model.layer.layers[0].weight)
   for i in range(len(fantasy_weights.keys())):
     print(list(fantasy_weights.keys())[i], list(fantasy_weights.values())[i], result_weights[i])
