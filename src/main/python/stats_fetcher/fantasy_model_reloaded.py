@@ -1,5 +1,6 @@
 import keras
 import mlx.core as mx
+import onnxruntime as ort
 import time
 import torch
 from fantasy_calculator import fantasy_weights, set_doubles, to_numpy_array, matmul_fantasy
@@ -16,7 +17,7 @@ if __name__ == '__main__':
   # Load the data
   statsStore = StatsStore(PlayerStore())
   stats = []
-  for year in range(1947, 2026):
+  for year in range(1997, 2006):
     stats.extend(statsStore.get_stats(year, False, set_doubles))
   print("total stats", len(stats))
   print(stats[sample_idx])
@@ -50,6 +51,16 @@ if __name__ == '__main__':
   print('MLX prediction:', results[sample_idx])
   mlx_time = time.time()
 
+  # Load the PyTorch ONNX model
+  # Load the ONNX model into an ONNX Runtime inference session
+  ort_session = ort.InferenceSession("fantasy_model_pt_export.onnx")
+  # Run inference using the ONNX Runtime session
+  # Get the name of the model's input layer
+  input_name = ort_session.get_inputs()[0].name
+  results = ort_session.run(None, {input_name: npa})[0]
+  print('ONNX prediction:', results[sample_idx])
+  onnx_time = time.time()
+
   # Run the matmul time.
   results = matmul_fantasy(npa, fantasy_weights)
   print('Actual result:', results[sample_idx])
@@ -61,4 +72,5 @@ if __name__ == '__main__':
         "Keras time:", keras_time - transform_time,
         "PyTorch time:", pytorch_time - keras_time,
         "MLX time:", mlx_time - pytorch_time,
-        "matmul time:", end_time - mlx_time)
+        'ONNX time:', onnx_time - mlx_time,
+        "matmul time:", end_time - onnx_time)

@@ -17,6 +17,23 @@ class FantasyModelPytorch(nn.Module):
   def forward(self, x):
     return self.layer(x)
 
+
+def export(trained_model, input_sample):
+  print(input_sample.shape)
+  trained_model.eval()
+  torch.onnx.export(
+      trained_model,
+      input_sample,
+      "fantasy_model_pt_export.onnx",
+      export_params=True,
+      opset_version=13,
+      do_constant_folding=True,
+      input_names=['stats'],
+      output_names=['fantasy'],
+      dynamic_axes={'stats': {0: 'batch_size'}, 'fantasy': {0: 'batch_size'}}
+  )
+
+
 if __name__ == '__main__':
   start_time = time.time()
 
@@ -87,10 +104,14 @@ if __name__ == '__main__':
 
     # Use .item() to extract the scalar value from the tensor for printing
     print(f"Prediction {predicted}")
+  verify_time = time.time()
+
+  export(model, train_x[sample_idx].unsqueeze(0))
   end_time = time.time()
 
   print("Total time:", end_time - start_time,
         "\n\tLoad time:", load_time - start_time,
         "transform time:", transform_time - load_time,
         "model Creation time:", model_create_time - transform_time,
-        'verify time:', end_time - model_create_time)
+        'verify time:', verify_time - model_create_time,
+        'export time:', end_time - verify_time)
