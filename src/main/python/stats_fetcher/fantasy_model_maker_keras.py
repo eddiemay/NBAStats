@@ -4,7 +4,6 @@ import time
 from fantasy_calculator import load_training_data, to_numpy_array, calc_fantasy, fantasy_weights
 from keras.callbacks import ModelCheckpoint, EarlyStopping
 
-
 sample_idx = 21705
 
 if __name__ == '__main__':
@@ -23,9 +22,10 @@ if __name__ == '__main__':
 
   train_y = calc_fantasy(stats)
   val_y = calc_fantasy(val_stats)
-  model = keras.Sequential(
-      [keras.layers.Dense(input_shape=[train_x.shape[1]], units=train_y.shape[1])])
-  model.compile(optimizer=keras.optimizers.Adam(1.0), loss='mean_squared_error')
+  model = keras.Sequential([
+    keras.layers.Dense(input_shape=[train_x.shape[1]], units=train_y.shape[1])
+  ])
+  model.compile(optimizer=keras.optimizers.Adam(0.1), loss='mean_squared_error')
   checkpoint = ModelCheckpoint(
       filepath='fantasy_model.keras',
       monitor='val_loss',  # Metric to monitor (e.g., 'val_accuracy', 'loss')

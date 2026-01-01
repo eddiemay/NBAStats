@@ -76,10 +76,10 @@ class PlayerStore:
         rows = soup.find_all('tr')
         for row in rows:
           print(row)
-          th = row.find_all('th')[0]
+          th = row.find('th')
           id = th.get('data-append-csv')
           if id is not None:
-            a = th.find_all('a')[0]
+            a = th.find('a')
             name = a.string
             player = {"id": id, "name": name}
             tds = row.find_all('td')

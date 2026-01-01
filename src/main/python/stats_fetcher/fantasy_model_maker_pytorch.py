@@ -1,22 +1,54 @@
-import numpy
-import random
 import time
 import torch
 from fantasy_calculator import calc_fantasy, fantasy_weights, load_training_data, to_numpy_array
 from torch import nn, optim
 
 sample_idx = 21705
-checkpoint_path = "fantasy_model.pt"
 torch.manual_seed(42)
 
 class FantasyModelPytorch(nn.Module):
-  def __init__(self, in_dims: int, out_dims: int, hidden_dims: int = 64):
+  def __init__(self, in_dims: int, out_dims: int, loss_function=None, hidden_dims: int = None):
     super().__init__()
-    self.layer = nn.Sequential(nn.Linear(in_dims, out_dims))
+    if hidden_dims is None:
+      self.layers = nn.Sequential(nn.Linear(in_dims, out_dims))
+    else:
+      self.layers = nn.Sequential(
+        nn.Linear(in_dims, hidden_dims),
+        nn.ReLU(),
+        nn.Linear(hidden_dims, out_dims)
+      )
+    self.loss_function = loss_function
 
   def forward(self, x):
-    return self.layer(x)
+    return self.layers(x)
 
+  def train_model(self, train_x, train_y, val_x, val_y, optimizer, epochs, checkpoint_path=None):
+    best_val_loss = float('inf')  # Keeps track of the best validation loss so far
+    for epoch in range(epochs):
+      # Reset the optimizer's gradients
+      optimizer.zero_grad()
+      # Make predictions (forward pass)
+      outputs = self(train_x)
+      # Calculate the loss
+      loss = self.loss_function(outputs, train_y)
+      # Calculate adjustments (backward pass)
+      loss.backward()
+      # Update the model's parameters
+      optimizer.step()
+      # Print loss every 50 epochs
+      if (epoch + 1) % 50 == 0:
+        print(f"Epoch {epoch + 1}: Loss = {loss.item()}")
+        val_loss = self.loss_function(self(val_x), val_y)
+        # --- Checkpoint ---
+        if checkpoint_path is not None and val_loss < best_val_loss:
+          print(f"Validation improved from {best_val_loss:.6f} → {loss:.6f}. Saving model.")
+          best_val_loss = val_loss
+          torch.save({
+            'epoch': epoch,
+            'model_state_dict': self.state_dict(),
+            'optimizer_state_dict': optimizer.state_dict(),
+            'val_loss': val_loss
+          }, checkpoint_path)
 
 def export(trained_model, input_sample):
   print(input_sample.shape)
@@ -34,8 +66,20 @@ def export(trained_model, input_sample):
   )
 
 
+def get_best_device():
+  if torch.cuda.is_available():
+    device = torch.device('cuda')
+  elif torch.backends.mps.is_available():
+    device = torch.device('mps')
+  else:
+    device = torch.device('cpu')
+  print('using device:', device)
+  return device
+
+
 if __name__ == '__main__':
   start_time = time.time()
+  device = get_best_device()
 
   # Load the data
   stats, val_stats = load_training_data()
@@ -43,50 +87,22 @@ if __name__ == '__main__':
   load_time = time.time()
 
   # Transform the data from dict array to numpy array
-  train_x = torch.tensor(to_numpy_array(stats, fantasy_weights))
+  train_x = torch.tensor(to_numpy_array(stats, fantasy_weights)).to(device)
   print(train_x[sample_idx])
-  val_x = torch.tensor(to_numpy_array(val_stats, fantasy_weights))
+  val_x = torch.tensor(to_numpy_array(val_stats, fantasy_weights)).to(device)
   transform_time = time.time()
 
-  train_y = torch.tensor(calc_fantasy(stats))
+  train_y = torch.tensor(calc_fantasy(stats)).to(device)
   print(train_y[sample_idx])
-  val_y = torch.tensor(calc_fantasy(val_stats))
+  val_y = torch.tensor(calc_fantasy(val_stats)).to(device)
   in_dims = train_x.shape[1]
   out_dims = train_y.shape[1]
-  hidden = in_dims * 2
-  model = FantasyModelPytorch(in_dims, out_dims)
-  loss_function = nn.MSELoss()
+  model = FantasyModelPytorch(in_dims, out_dims, nn.MSELoss(), hidden_dims=None).to(device)
   optimizer = optim.Adam(model.parameters(), lr=0.1)
-  best_val_loss = float('inf')  # Keeps track of the best validation loss so far
-  for epoch in range(10000):
-    # Reset the optimizer's gradients
-    optimizer.zero_grad()
-    # Make predictions (forward pass)
-    outputs = model(train_x)
-    # Calculate the loss
-    loss = loss_function(outputs, train_y)
-    # Calculate adjustments (backward pass)
-    loss.backward()
-    # Update the model's parameters
-    optimizer.step()
-    # Print loss every 50 epochs
-    if (epoch + 1) % 50 == 0:
-      print(f"Epoch {epoch + 1}: Loss = {loss.item()}")
-      val_loss = loss_function(model(val_x), val_y)
-      # --- Checkpoint ---
-      if val_loss < best_val_loss:
-        print(f"Validation improved from {best_val_loss:.6f} → {loss:.6f}. Saving model.")
-        best_val_loss = val_loss
-        torch.save({
-          'epoch': epoch,
-          'model_state_dict': model.state_dict(),
-          'optimizer_state_dict': optimizer.state_dict(),
-          'val_loss': val_loss
-        }, checkpoint_path)
+  model.train_model(train_x, train_y, val_x, val_y, optimizer, 10000, checkpoint_path="fantasy_model.pt")
 
-  layer = model.layer[0]
-  result_weights = numpy.transpose(layer.weight.data.numpy())
-  bias = layer.bias.data.numpy()
+  layer = model.layers[0]
+  result_weights = layer.weight.data.T # Transpose the weight data for display.
   for i in range(len(fantasy_weights.keys())):
     print(list(fantasy_weights.keys())[i], list(fantasy_weights.values())[i], result_weights[i])
   model_create_time = time.time()
@@ -94,7 +110,7 @@ if __name__ == '__main__':
   print(stats[sample_idx])
   print(train_y[sample_idx])
   with torch.no_grad():
-    checkpoint = torch.load(checkpoint_path)
+    checkpoint = torch.load("fantasy_model.pt")
     model.load_state_dict(checkpoint['model_state_dict'])
     optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
     epoch = checkpoint['epoch']
