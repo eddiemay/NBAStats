@@ -1,4 +1,5 @@
 import json
+import pandas as pd
 from bs4 import BeautifulSoup
 from nba_player_store import PlayerStore
 from util import is_int, is_float, is_file_exist, send_request
@@ -24,15 +25,15 @@ class StatsStore:
       for line in f:
         stats.append(preprocessor(json.loads(line)))
 
-    return stats
+    return pd.DataFrame(stats)
 
 
   def resave(self, year: int, playoffs: bool):
     stats = self.get_stats(year, playoffs)
     file = file_path.format(year) if not playoffs else playoffs_file_path.format(year)
     with open(file, 'w') as f:
-      for stat in stats:
-        json.dump(stat, f, ensure_ascii=False, separators=(',', ':'))
+      for stat in stats.iterrows():
+        json.dump(stat.to_dict(), f, ensure_ascii=False, separators=(',', ':'))
         f.write("\n")
 
   def fetch(self, year: int):
@@ -57,8 +58,8 @@ class StatsStore:
     with open(file, "a", encoding="utf-8") as f:
       with open(playoffs_file, "a", encoding="utf-8") as pf:
         players = self.player_store.get_active(year)
-        print(len(players), "players for", year)
-        for player in players:
+        print(players.size, "players for", year)
+        for player in players.iterrows():
           if reg_player_map.get(player['id']) is None or playoffs_player_map.get(player['id']) is None and year in player['playoff_years']:
             # Any player we don't have stats for should be appended to the file.
             player_stats = self.fetch_for_player(player, year)
@@ -130,13 +131,18 @@ class StatsStore:
 
 if __name__ == '__main__':
   player_store = PlayerStore()
+  pd.set_option('display.max_columns', 10)
   stats_store = StatsStore(player_store)
-  for year in range(1947, 2026):
+  for year in range(1947, 2026, 10):
     print(f"{year}")
     # stats_store.fetch(year)
     # stats_store.resave(year, False)
     # stats_store.resave(year, True)
-    print(f"{year}:", len(stats_store.get_stats(year, False)), "reg season rows")
-    print(f"{year}:", len(stats_store.get_stats(year, True)), "playoff rows")
+    reg = stats_store.get_stats(year, False)
+    playoffs = stats_store.get_stats(year, True)
+    print(f"{year}:", len(reg), "reg season rows")
+    print(f"{year}:", len(playoffs), "playoff rows")
+    print(reg['pts'].describe())
+    print(playoffs['pts'].describe())
 
   # stats_store.resave(2017, False)

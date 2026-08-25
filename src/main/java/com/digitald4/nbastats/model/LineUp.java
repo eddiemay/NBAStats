@@ -3,7 +3,7 @@ package com.digitald4.nbastats.model;
 import com.google.common.collect.ImmutableList;
 
 public class LineUp {
-  private long id;
+  private Long id;
   private String date;
   private String fantasySite;
   private String projectionMethod;
@@ -13,11 +13,11 @@ public class LineUp {
   private double actual;
   private boolean selected;
 
-  public long getId() {
+  public Long getId() {
     return id;
   }
 
-  public LineUp setId(long id) {
+  public LineUp setId(Long id) {
     this.id = id;
     return this;
   }

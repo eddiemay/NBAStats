@@ -1,6 +1,7 @@
 import keras
 import mlx.core as mx
 import onnxruntime as ort
+import pandas as pd
 import time
 import torch
 from fantasy_calculator import fantasy_weights, set_doubles, to_numpy_array, matmul_fantasy
@@ -16,11 +17,13 @@ if __name__ == '__main__':
 
   # Load the data
   statsStore = StatsStore(PlayerStore())
-  stats = []
-  for year in range(1947, 2026):
-    stats.extend(statsStore.get_stats(year, False, set_doubles))
+  dfs = [
+    statsStore.get_stats(year, False, set_doubles)
+    for year in range(1947, 2026)
+  ]
+  stats = pd.concat(dfs, ignore_index=True)
   print("total stats", len(stats))
-  print(stats[sample_idx])
+  print(stats.iloc[sample_idx])
   load_time = time.time()
 
   # Transform the data from dict array to numpy array
@@ -36,7 +39,8 @@ if __name__ == '__main__':
 
   # Reload the Pytorch model and predict.
   model = FantasyModelPytorch(npa.shape[1], 4)
-  model.load_state_dict(torch.load("fantasy_model.pt", map_location="mps")['model_state_dict'])
+  model.load_state_dict(torch.load(
+      "fantasy_model.pt", map_location="mps")['model_state_dict'])
   model.eval()
   # Run inference
   with torch.no_grad():

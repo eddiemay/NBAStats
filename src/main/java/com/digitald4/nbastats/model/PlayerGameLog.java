@@ -4,13 +4,12 @@ import com.digitald4.common.util.Calculate;
 import com.digitald4.common.util.JSONUtil;
 import java.util.HashMap;
 import java.util.Map;
-import org.json.JSONObject;
 
 public class PlayerGameLog {
   private static final String COMPOSITE_KEY = "%d-%s";
-  private Integer playerId;
+  private Long playerId;
   private String date;
-  private String season;
+  private int season;
   private double age;
   private String matchUp;
   public enum Venue {HOME, ROAD, MUTUAL}
@@ -52,16 +51,11 @@ public class PlayerGameLog {
     return this;
   }
 
-  @Deprecated
-  public PlayerGameLog setId(Long id) {
-    return this;
-  }
-
-  public Integer getPlayerId() {
+  public Long getPlayerId() {
     return playerId;
   }
 
-  public PlayerGameLog setPlayerId(Integer playerId) {
+  public PlayerGameLog setPlayerId(Long playerId) {
     this.playerId = playerId;
     return this;
   }
@@ -75,11 +69,11 @@ public class PlayerGameLog {
     return this;
   }
 
-  public String getSeason() {
+  public int getSeason() {
     return season;
   }
 
-  public PlayerGameLog setSeason(String season) {
+  public PlayerGameLog setSeason(int season) {
     this.season = season;
     return this;
   }

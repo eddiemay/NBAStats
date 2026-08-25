@@ -7,8 +7,8 @@ import com.google.common.collect.ImmutableList;
 import org.joda.time.DateTime;
 
 public interface WebFetcher {
-  ImmutableList<PlayerGameLog> getGames(Player player, String season, DateTime dateFrom);
-  ImmutableList<Player> listAllPlayers(String season);
+  ImmutableList<PlayerGameLog> getGames(Player player, Integer season, DateTime dateFrom);
+  ImmutableList<Player> listAllPlayers(Integer season);
   ImmutableList<PlayerDay> getGameDay(DateTime date);
 
   static PlayerGameLog fillFantasy(PlayerGameLog stats) {

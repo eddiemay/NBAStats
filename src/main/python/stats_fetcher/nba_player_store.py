@@ -1,5 +1,6 @@
 import json
 import Levenshtein
+import pandas as pd
 import re
 import string
 from bs4 import BeautifulSoup
@@ -19,30 +20,21 @@ class PlayerStore:
     if not is_file_exist(file_path):
       self.fetch()
     else:
-      self.players = []
-      with open(file_path, 'r') as f:
-        for line in f:
-          self.players.append(json.loads(line))
+      self.players = pd.read_json(file_path, lines=True)
 
   def get_all(self):
     if self.players is None:
       self.load()
-
     return self.players
 
   def get_active(self, year: int):
-    active = []
-    for player in self.get_all():
-      if player['year_min'] <= year <= player['year_max']:
-        active.append(player)
-    return active
+    return self.players[(self.players['years_min'] <= year) & (self.players['years_max'] >= year)]
 
   def get(self, name: str):
-    for player in self.get_all():
-      if player['name'] == name:
-        return player
-    return None
-
+    if self.players is None:
+      self.load()
+    options = self.players[self.players['name'] == name]
+    return options.iloc[0] if options.size > 0 else None
 
   def fill_playoff_years(self, player: dict):
     playoff_years = []
@@ -58,10 +50,7 @@ class PlayerStore:
     player['playoff_years'] = playoff_years
 
   def save(self):
-    with open(file_path, "w", encoding="utf-8") as f:
-      for player in self.players:
-        json.dump(player, f, ensure_ascii=False, separators=(',', ':'))
-        f.write("\n")
+    self.players.to_json("data.jsonl", orient="records", lines=True)
 
   def fetch(self):
     with open(file_path, "w", encoding="utf-8") as f:
@@ -96,15 +85,15 @@ class PlayerStore:
 
 def print_players():
   player_store = PlayerStore()
-  active = player_store.get_all()
+  df = player_store.get_all()
   count = 0
-  for player in active:
+  for player in df.iterrows():
     print(player)
-    if player.get("playoff_years") is None:
-      count += 1
-      player_store.fill_playoff_years(player)
-      if count % 100 == 0:
-        player_store.save()
+    # if player.get("playoff_years") is None:
+      # count += 1
+      # player_store.fill_playoff_years(player)
+      # if count % 100 == 0:
+        # player_store.save()
   # player_store.save()
 
 
@@ -189,8 +178,13 @@ def parse_nba_com(player_store: PlayerStore):
 
 if __name__ == '__main__':
   # print_players()
-  ps = PlayerStore()
-  parse_nba_com(ps)
-  ps.save()
+  player_store = PlayerStore()
+  kobe = player_store.get("Kobe Bryant")
+  print(kobe)
+  all = player_store.get_all()
+  print(all.describe())
+  # ps = PlayerStore()
+  # parse_nba_com(ps)
+  # ps.save()
 
 

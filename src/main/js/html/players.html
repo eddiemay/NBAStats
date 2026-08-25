@@ -3,15 +3,24 @@
   <table class="table sortable no-margin" cellspacing="0" width="50%">
     <thead>
       <tr>
-        <th></th><th>NBA ID</th><th>Name</th><th>AKA</th>
+        <th>NBA ID</th><th>Name</th><th>AKA</th><th>From</th><th>To</th><th>Date_of_Birth</th>
+        <th>Number</th><th>Position</th><th>Height</th><th>Weight</th><th>School</th><th>Country</th>
       </tr>
     </thead>
     <tbody>
       <tr data-ng-repeat="player in playersCtrl.players | filter:filterText | orderBy:'name'">
-        <td>{{$index + 1}}</td>
-        <td>{{player.playerId}}</td>
+        <td>{{player.id}}</td>
         <td>{{player.name}}</td>
         <td><input type="text" data-ng-model="player.aka" data-on-change="playersCtrl.update(player, 'aka')"></td>
+        <td>{{player.minSeason}}</td>
+        <td>{{player.maxSeason}}</td>
+        <td>{{player.dateOfBirth | date:'yyyy-MM-dd'}}</td>
+        <td>{{player.number}}</td>
+        <td>{{player.position}}</td>
+        <td>{{player.height}}</td>
+        <td>{{player.weight}}</td>
+        <td>{{player.school}}</td>
+        <td>{{player.country}}</td>
       </tr>
     </tbody>
   </table>

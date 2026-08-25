@@ -1,7 +1,7 @@
 package com.digitald4.nbastats.util;
 
 import static com.google.common.truth.Truth.assertThat;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -25,12 +25,12 @@ public class WebFetcherBasketballReferenceTest {
         .thenReturn("<html><body><table><tr></tr></table></body></html>");
 
     webFetcher.getGames(
-        new Player().setId(2544).setName("LeBron James"), "2022-23", null);
+        new Player().setId(2544L).setName("LeBron James"), 2023, null);
     verify(apiConnector)
         .sendGet("https://www.basketball-reference.com/players/J/JamesLe01/gamelog/2023");
 
     webFetcher.getGames(
-        new Player().setId(2408).setName("Kobe Bryant"), "2015-16", null);
+        new Player().setId(2408L).setName("Kobe Bryant"), 2016, null);
     verify(apiConnector)
         .sendGet("https://www.basketball-reference.com/players/B/BryanKo01/gamelog/2016");
   }
@@ -44,7 +44,7 @@ public class WebFetcherBasketballReferenceTest {
         "</table></body></html>");
 
     ImmutableList<PlayerGameLog> gameLogs = webFetcher.getGames(
-        new Player().setId(2544).setName("LeBron James"), "2022-23", null);
+        new Player().setId(2544L).setName("LeBron James"), 2023, null);
 
     assertThat(gameLogs).containsExactly(
         createGamelog("2022-12-30", 38.0, "LAL @ ATL", Venue.ROAD,
@@ -64,7 +64,7 @@ public class WebFetcherBasketballReferenceTest {
       double orb, double drb, double ast, double stl, double blk, double tov, double pf, double pm) {
     return WebFetcher.fillFantasy(
         new PlayerGameLog()
-            .setPlayerId(2544)
+            .setPlayerId(2544L)
             .setDate(date)
             .setAge(age)
             .setMatchUp(matchUp)

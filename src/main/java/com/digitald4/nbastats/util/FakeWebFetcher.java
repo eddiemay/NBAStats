@@ -9,12 +9,12 @@ import org.joda.time.DateTime;
 public class FakeWebFetcher implements WebFetcher {
 
   @Override
-  public ImmutableList<PlayerGameLog> getGames(Player player, String season, DateTime dateFrom) {
+  public ImmutableList<PlayerGameLog> getGames(Player player, Integer season, DateTime dateFrom) {
     return ImmutableList.of();
   }
 
   @Override
-  public ImmutableList<Player> listAllPlayers(String season) {
+  public ImmutableList<Player> listAllPlayers(Integer season) {
     return ImmutableList.of();
   }
 

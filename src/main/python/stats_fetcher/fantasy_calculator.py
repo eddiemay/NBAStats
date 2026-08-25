@@ -1,11 +1,15 @@
 import numpy as np
+import pandas as pd
 import random
 import time
+
+from pandas.core.interchange.dataframe_protocol import DataFrame
+
 from nba_player_store import PlayerStore
 from nba_stats_store import StatsStore
 
 
-fantasy_weights_all = { # FanDuel, DraftKings, NBA and NBA2017 Fantasy weights
+fantasy_weights_all = { # FanDuel, DraftKings, NBA, NBA2017 Fantasy weights
   'player_game_num_career': [0.0, 0.0, 0.0, 0.0],
   'team_game_num_season': [0.0, 0.0, 0.0, 0.0],
   'fg': [2.0, 2.0, 2.0, 2.0],
@@ -34,7 +38,7 @@ fantasy_weights_all = { # FanDuel, DraftKings, NBA and NBA2017 Fantasy weights
   'plus_minus': [0.0, 0.0, 0.0, 0.0],
   'doubles': [0.0, 1.5, 0.0, 0.0],
 }
-fantasy_weights_complex = { # FanDuel, DraftKings, NBA and NBA2017 Fantasy weights
+fantasy_weights_complex = { # FanDuel, DraftKings, NBA, NBA2017 Fantasy weights
   'player_game_num_career': [0.0, 0.0, 0.0, 0.0],
   'team_game_num_season': [0.0, 0.0, 0.0, 0.0],
   'fg': [2.0, 2.0, 2.0, 2.0],
@@ -50,7 +54,7 @@ fantasy_weights_complex = { # FanDuel, DraftKings, NBA and NBA2017 Fantasy weigh
   'plus_minus': [0.0, 0.0, 0.0, 0.0],
   'doubles': [0.0, 1.5, 0.0, 0.0],
 }
-fantasy_weights_simple = { # FanDuel, DraftKings, NBA and NBA2017 Fantasy weights
+fantasy_weights_simple = { # FanDuel, DraftKings, NBA, NBA2017 Fantasy weights
   'fg3': [0.0, 0.5, 0.0, 0.0],
   'trb': [1.2, 1.25, 1.0, 1.2],
   'ast': [1.5, 1.5, 2.0, 1.5],
@@ -60,7 +64,7 @@ fantasy_weights_simple = { # FanDuel, DraftKings, NBA and NBA2017 Fantasy weight
   'pts': [1.0, 1.0, 1.0, 1.0],
   'doubles': [0.0, 1.5, 0.0, 0.0],
 }
-fantasy_weights_no_doubles = { # FanDuel, DraftKings, NBA and NBA2017 Fantasy weights
+fantasy_weights_no_doubles = { # FanDuel, DraftKings, NBA, NBA2017 weights
   'fg3': [0.0, 0.5, 0.0, 0.0],
   'trb': [1.2, 1.25, 1.0, 1.2],
   'ast': [1.5, 1.5, 2.0, 1.5],
@@ -93,14 +97,13 @@ def set_doubles(stat: dict):
   return stat
 
 
-def to_numpy_array(stats: list, fantasy_weights = fantasy_weights):
-  fan_values = []
+def to_numpy_array(stats: DataFrame, fantasy_weights = fantasy_weights):
   keys = list(fantasy_weights.keys())
-  for stat in stats:
-    value_list = [stat.get(key, 0.0) for key in keys]
-    value_list = [0.0 if x is None else x for x in value_list]
-    fan_values.append(value_list)
-  return np.array(fan_values, dtype=np.float32)
+  return (
+    stats.reindex(columns=keys, fill_value=0.0)
+    .fillna(0.0)
+    .to_numpy(dtype=np.float32)
+  )
 
 
 def matmul_fantasy(npa, fantasy_weights):
@@ -115,11 +118,15 @@ def calc_fantasy(stats: list, fantasy_weights = fantasy_weights_simple):
 
 def load_training_data():
   statsStore = StatsStore(PlayerStore())
-  stats = []
-  val_stats = []
+  train_dfs = []
+  val_dfs = []
   for year in range(1947, 2026, 10):
-    stats.extend(random.choices(statsStore.get_stats(year, False, set_doubles), k=3000))
-    val_stats.extend(random.choices(statsStore.get_stats(2016, False, set_doubles), k=1024))
+    df = statsStore.get_stats(year, False, set_doubles)
+    train_dfs.append(df.sample(n=3000, replace=True, random_state=None))
+    val_dfs.append(df.sample(n=1024, replace=True, random_state=None))
+
+  stats = pd.concat(train_dfs, ignore_index=True)
+  val_stats = pd.concat(val_dfs, ignore_index=True)
   print("total stats", len(stats))
   print("total val stats", len(val_stats))
   return stats, val_stats
@@ -130,14 +137,14 @@ if __name__ == '__main__':
 
   # Load the data
   statsStore = StatsStore(PlayerStore())
-  stats = []
-  loaded = []
-  for year in range(1947, 2026):
-    loaded.extend(statsStore.get_stats(year, False, set_doubles))
-  for x in range(1):
-    stats.extend(loaded)
+  dfs = [
+    statsStore.get_stats(year, False, set_doubles)
+    for year in range(1947, 2026)
+  ]
+  stats = pd.concat(dfs, ignore_index=True)
+
   print("total stats", len(stats))
-  print(stats[sample_idx])
+  print(stats.iloc[sample_idx])
   load_time = time.time()
 
   # Transform the data from dict array to numpy array
@@ -150,16 +157,11 @@ if __name__ == '__main__':
   print(results[sample_idx])
   matmul_time = time.time()
 
-  for i in range(len(stats)):
-   stat = stats[i]
-   stat['fanduel'] = results[i][0].item()
-   stat['draftkings'] = results[i][1].item()
-   stat['nba'] = results[i][2].item()
-   stat['nba2017'] = results[i][3].item()
+  stats[["fanduel", "draftkings", "nba", "nba2017"]] = results[:, :4]
 
-  sorted_stats = sorted(stats, key=lambda s:s['draftkings'], reverse=True)
-  for i in range(50):
-    print(i + 1, sorted_stats[i])
+  sorted_stats = stats.sort_values(by="draftkings", ascending=False)
+  for i, row in sorted_stats.head(50).iterrows():
+    print(i + 1, row)
   end_time = time.time()
 
   mmt = matmul_time - transform_time
@@ -167,5 +169,6 @@ if __name__ == '__main__':
         "\n\tLoad time:", load_time - start_time, "transform time:",
         transform_time - load_time, "matmul time:", mmt,
         'set & sort time:', end_time - matmul_time)
-  fpos = (len(npa) * len(list(fantasy_weights.values())) * len(fantasy_weights['fg3']))
-  print("Billion Floating Point Operations:", fpos / 1000000000, "GFLOPs:", (1 / mmt * fpos) / 1000000000)
+  fpos = len(npa) * len(list(fantasy_weights.values()) * len(fantasy_weights['fg3']))
+  print("Billion Floating Point Operations:", fpos / 1000000000, "GFLOPs:",
+        (1 / mmt * fpos) / 1000000000)

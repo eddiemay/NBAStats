@@ -37,7 +37,7 @@ public class PlayerDayStore extends GenericStore<PlayerDay, String> {
 			ImmutableList<PlayerDay> results =
 					webFetcher.getGameDay(date).parallelStream().map(this::create).collect(toImmutableList());
 
-			return QueryResult.of(results, results.size(), query);
+			return QueryResult.of(PlayerDay.class, results, results.size(), query);
 		}
 
 		return queryResult;

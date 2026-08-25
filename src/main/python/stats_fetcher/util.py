@@ -1,5 +1,6 @@
 import os
 import requests
+import time
 
 
 zenrows_api_key = {}
@@ -38,11 +39,12 @@ def is_file_exist(file: str):
 
 
 def send_request(url: str) -> requests.Response:
-  # time.sleep(1) # Sleep for 1 second so we don't get blacklisted.
+  time.sleep(3) # Sleep for 1 second so we don't get blacklisted.
   params = {
     'url': url,
     'apikey': get_zenrows_api_key(),
   }
-  response = requests.get('https://api.zenrows.com/v1/', params=params)
+  # response = requests.get('https://api.zenrows.com/v1/', params=params)
+  response = requests.get(url)
   # print(response.text)
   return response

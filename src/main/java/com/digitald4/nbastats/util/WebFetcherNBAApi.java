@@ -73,7 +73,8 @@ public class WebFetcherNBAApi implements WebFetcher {
 		this.apiConnector = apiConnector;
 	}
 
-	public ImmutableList<PlayerGameLog> getGames(Player player, String season, DateTime dateFrom) {
+	@Override
+	public ImmutableList<PlayerGameLog> getGames(Player player, Integer season, DateTime dateFrom) {
 		if (!fetchFromNBAApiEnabled) {
 			return ImmutableList.of();
 		}
@@ -131,18 +132,20 @@ public class WebFetcherNBAApi implements WebFetcher {
 				.collect(toImmutableList());
 	}
 
-	public ImmutableList<Player> getTeamRoster(String season, long teamId) {
-		NBADataResult result = new NBADataResult(apiConnector.sendGet(format(TEAM_ROSTER, season, teamId)));
+	public ImmutableList<Player> getTeamRoster(Integer season, long teamId) {
+		NBADataResult result = new NBADataResult(
+				apiConnector.sendGet(format(TEAM_ROSTER, String.format("%d-%d", season - 1, season % 100), teamId)));
 
 		return IntStream.range(0, result.getResultCount())
 				.mapToObj(i -> new Player()
-						.setId(result.getInt("PLAYER_ID", i))
-						.setSeason(season)
+						.setId(result.getLong("PLAYER_ID", i))
+						// .setSeason(season)
 						.setName(result.getString("PLAYER", i)))
 				.collect(toImmutableList());
 	}
 
-	public ImmutableList<Player> listAllPlayers(String season) {
+	@Override
+	public ImmutableList<Player> listAllPlayers(Integer season) {
 		if (!fetchFromNBAApiEnabled) {
 			return ImmutableList.of();
 		}
@@ -152,6 +155,7 @@ public class WebFetcherNBAApi implements WebFetcher {
 				.collect(toImmutableList());
 	}
 
+	@Override
 	public ImmutableList<PlayerDay> getGameDay(DateTime date) {
 		Map<String, PlayerDay> playerDayMap = new HashMap<>();
 		for (FantasyLeague league : FantasyLeague.values()) {

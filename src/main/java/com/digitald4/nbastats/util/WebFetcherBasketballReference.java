@@ -31,16 +31,14 @@ public class WebFetcherBasketballReference implements WebFetcher {
   }
 
   @Override
-  public ImmutableList<PlayerGameLog> getGames(Player player, String season, DateTime dateFrom) {
+  public ImmutableList<PlayerGameLog> getGames(Player player, Integer season, DateTime dateFrom) {
     String name = player.getName();
     String lastName = name.substring(name.lastIndexOf(" ") + 1);
     if (lastName.length() > 5) {
       lastName = lastName.substring(0, 5);
     }
     String firstName = name.substring(0, 2);
-    int seasonEndYear =
-        Integer.parseInt(season.substring(0, 2) + season.substring(season.length() - 2));
-    String url = String.format(GAME_LOG_URL, lastName.charAt(0), lastName, firstName, seasonEndYear);
+    String url = String.format(GAME_LOG_URL, lastName.charAt(0), lastName, firstName, season);
     Document doc = Jsoup.parse(apiConnector.sendGet(url).trim(), "", Parser.xmlParser());
 
     return doc.getElementsByTag("tr").stream()
@@ -106,7 +104,7 @@ public class WebFetcherBasketballReference implements WebFetcher {
   }
 
   @Override
-  public ImmutableList<Player> listAllPlayers(String season) {
+  public ImmutableList<Player> listAllPlayers(Integer season) {
     return ImmutableList.of();
   }
 

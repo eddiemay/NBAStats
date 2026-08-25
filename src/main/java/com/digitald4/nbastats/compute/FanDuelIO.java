@@ -19,14 +19,13 @@ import com.digitald4.nbastats.storage.PlayerDayStore;
 import com.digitald4.nbastats.storage.PlayerStore;
 import com.digitald4.nbastats.util.Constaints;
 import com.digitald4.nbastats.util.Constaints.FantasyLeague;
-import com.digitald4.nbastats.util.DistinictSalaryList;
+import com.digitald4.nbastats.util.DistinctSalaryList;
 import com.google.common.collect.ImmutableList;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.text.NumberFormat;
-import java.time.Clock;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -49,11 +48,11 @@ public class FanDuelIO {
 	}
 
 	public void output(DateTime date) throws IOException {
-		List<PlayerDay> pgs = new DistinictSalaryList(PAIR_LIMIT, league);
-		List<PlayerDay> sgs = new DistinictSalaryList(PAIR_LIMIT, league);
-		List<PlayerDay> sfs = new DistinictSalaryList(PAIR_LIMIT, league);
-		List<PlayerDay> pfs = new DistinictSalaryList(PAIR_LIMIT, league);
-		List<PlayerDay> cs = new DistinictSalaryList(SINGLE_LIMIT, league);
+		List<PlayerDay> pgs = new DistinctSalaryList(PAIR_LIMIT, league);
+		List<PlayerDay> sgs = new DistinctSalaryList(PAIR_LIMIT, league);
+		List<PlayerDay> sfs = new DistinctSalaryList(PAIR_LIMIT, league);
+		List<PlayerDay> pfs = new DistinctSalaryList(PAIR_LIMIT, league);
+		List<PlayerDay> cs = new DistinctSalaryList(SINGLE_LIMIT, league);
 
 		ImmutableList<PlayerDay> selected = statsProcessor.processStats(date)
 				.stream()
@@ -310,7 +309,7 @@ public class FanDuelIO {
 			}
 		}
 
-		APIConnector apiConnector = new APIConnector("https://fantasy-predictor.appspot.com/_ah/api", "v1");
+		APIConnector apiConnector = new APIConnector("https://fantasy-predictor.appspot.com/_api", "v1");
 		DAO dao = new DAOApiImpl(apiConnector);
 		Provider<DAO> daoProvider = () -> dao;
 		WebFetcherNBAApi webFetcher = new WebFetcherNBAApi(new APIConnector(null, null, 500));

@@ -7,9 +7,12 @@ sample_idx = 21705
 torch.manual_seed(42)
 
 class FantasyModelPytorch(nn.Module):
-  def __init__(self, in_dims: int, out_dims: int, loss_function=None, hidden_dims: int = None):
+  def __init__(self, in_dims: int = None, out_dims: int = None,
+      loss_function=None, hidden_dims: int = None, layers = None):
     super().__init__()
-    if hidden_dims is None:
+    if layers is not None:
+      self.layers = layers
+    elif hidden_dims is None:
       self.layers = nn.Sequential(nn.Linear(in_dims, out_dims))
     else:
       self.layers = nn.Sequential(
@@ -83,7 +86,7 @@ if __name__ == '__main__':
 
   # Load the data
   stats, val_stats = load_training_data()
-  print(stats[sample_idx])
+  print(stats.iloc[sample_idx])
   load_time = time.time()
 
   # Transform the data from dict array to numpy array
@@ -107,7 +110,7 @@ if __name__ == '__main__':
     print(list(fantasy_weights.keys())[i], list(fantasy_weights.values())[i], result_weights[i])
   model_create_time = time.time()
 
-  print(stats[sample_idx])
+  print(stats.iloc[sample_idx])
   print(train_y[sample_idx])
   with torch.no_grad():
     checkpoint = torch.load("fantasy_model.pt")

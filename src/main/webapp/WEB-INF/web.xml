@@ -21,7 +21,7 @@
   	</filter>
   	<filter-mapping>
     	<filter-name>guiceFilter</filter-name>
-    	<url-pattern>/_ah/api/*</url-pattern>
+    	<url-pattern>/_api/*</url-pattern>
   	</filter-mapping>
 
   	<listener>
@@ -32,53 +32,4 @@
 	<welcome-file-list>
 		<welcome-file>index.html</welcome-file>
 	</welcome-file-list>
-	
-	<session-config>
-		<session-timeout>30</session-timeout>
-	</session-config>
-	
-	<context-param>
-		<param-name>company</param-name>
-		<param-value>Digital D4</param-value>
-	</context-param>
-	
-	<context-param>
-		<param-name>website</param-name>
-		<param-value>budget.digitald4.com</param-value>
-	</context-param>
-	
-	<context-param>
-		<param-name>dbdriver</param-name>
-		<param-value>org.gjt.mm.mysql.Driver</param-value>
-	</context-param>
-	
-	<context-param>
-		<param-name>dbuser</param-name>
-		<param-value>dd4_user</param-value>
-	</context-param>
-	
-	<context-param>
-		<param-name>dbpass</param-name>
-		<param-value>getSchooled85</param-value>
-	</context-param>
-	
-	<context-param>
-		<param-name>emailserver</param-name>
-		<param-value>mail.digitald4.com</param-value>
-	</context-param>
-	
-	<context-param>
-		<param-name>emailuser</param-name>
-		<param-value>dd4_user</param-value>
-	</context-param>
-	
-	<context-param>
-		<param-name>emailpass</param-name>
-		<param-value>getSchooled85</param-value>
-	</context-param>
-
-	<!-- context-param>
-		<param-name>auto_login_id</param-name>
-		<param-value>1</param-value>
-	</context-param -->
 </web-app>

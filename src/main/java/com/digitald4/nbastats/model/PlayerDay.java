@@ -10,7 +10,7 @@ import java.util.Map;
 
 public class PlayerDay {
   private static final String COMPOSITE_KEY = "%d-%s";
-  private int playerId;
+  private long playerId;
   private String date;
 
   private String name;
@@ -35,15 +35,11 @@ public class PlayerDay {
     return this;
   }
 
-  public PlayerDay setId(long id) {
-    return this;
-  }
-
-  public int getPlayerId() {
+  public long getPlayerId() {
     return playerId;
   }
 
-  public PlayerDay setPlayerId(int playerId) {
+  public PlayerDay setPlayerId(long playerId) {
     this.playerId = playerId;
     return this;
   }

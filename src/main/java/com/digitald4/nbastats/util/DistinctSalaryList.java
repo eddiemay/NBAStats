@@ -6,12 +6,12 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class DistinictSalaryList extends ArrayList<PlayerDay> {
+public class DistinctSalaryList extends ArrayList<PlayerDay> {
 		private final Map<Integer, AtomicInteger> byCostCount = new HashMap<>();
 
 		private final int limit;
 		private final String league;
-		public DistinictSalaryList(int limit, String league) {
+		public DistinctSalaryList(int limit, String league) {
 			this.limit = limit;
 			this.league = league;
 		}

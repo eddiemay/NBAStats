@@ -20,13 +20,11 @@ public class Constaints {
 		}
 	}
 
-	public static String getSeason(DateTime date) {
-		int startYear = date.getYear() - (date.getMonthOfYear() < 7 ?  1 : 0);
-		return startYear + "-" + ((startYear + 1) % 100);
+	public static int getSeason(DateTime date) {
+		return date.getYear() + (date.getMonthOfYear() > 9 ?  1 : 0);
 	}
 
-	public static String getPrevSeason(DateTime date) {
-		int startYear = date.getYear() - (date.getMonthOfYear() < 7 ?  2 : 1);
-		return startYear + "-" + ((startYear + 1) % 100);
+	public static int getPrevSeason(DateTime date) {
+		return getSeason(date) - 1;
 	}
 }

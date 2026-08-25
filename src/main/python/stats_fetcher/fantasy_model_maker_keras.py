@@ -11,7 +11,7 @@ if __name__ == '__main__':
 
   # Load the data
   stats, val_stats = load_training_data()
-  print(stats[sample_idx])
+  print(stats.iloc[sample_idx])
   load_time = time.time()
 
   # Transform the data from dict array to numpy array
@@ -47,7 +47,7 @@ if __name__ == '__main__':
     print(list(fantasy_weights.keys())[i], list(fantasy_weights.values())[i], result_weights[i])
   model_create_time = time.time()
 
-  print(stats[sample_idx])
+  print(stats.iloc[sample_idx])
   print(train_y[sample_idx])
   print(f'Predict: {model.predict(numpy.array([train_x[sample_idx]]))}')
   # model.predict(npa)

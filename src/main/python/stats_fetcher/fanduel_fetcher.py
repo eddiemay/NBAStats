@@ -1,0 +1,20 @@
+import southpaw
+
+basic_auth_token = 'Basic ZWFmNzdmMTI3ZWEwMDNkNGUyNzVhM2VkMDdkNmY1Mjc6'
+x_auth_token = 'eyJraWQiOiIyIiwiYWxnIjoiUlMyNTYifQ.eyJzZXMiOjg2MzM0MjU5MDgsInN1YiI6NzMzMjAwNSwidXNuIjoiZWRkaWVtYXkiLCJwcmQiOiJERlMiLCJjcnQiOjE3NjM3ODcxODgsImVtbCI6ImVkZGllbWF5MTk5OUB5YWhvby5jb20iLCJzcmMiOjEsInJscyI6WzFdLCJtZmEiOmZhbHNlLCJ0eXAiOjEsInBybSI6eyJ1aWQiOiIwMUtBVkYwUDdSTkdYWFhDWkVIQks0TUQ5RCIsImxvYyI6eyJwcnMiOlsiREZTIl0sImFjciI6IkNBIiwicmVnIjpmYWxzZSwiaXAiOiI5Ni40MC4xNzMuMTQ5IiwicmVyIjoiQ0EiLCJjbnkiOiJVUyJ9LCJwcmQiOiJERlMiLCJkbmwiOltdLCJncnQiOnsicmlzIjoiQ0EiLCJyaWMiOiJVTklURURfU1RBVEVTIiwiYWdlIjo0NH0sImV4cCI6IjIwMjUtMTEtMjVUMDY6MzY6MzYuMDg4NjUyNjA0WiJ9LCJleHAiOjE3NjQwNDg5OTZ9.gF-9jGK_QFRMiU3-4rQw2SIJHbbWPaWtANY-WNj8CfRS3N9d8IyOCH76EHW3N6mOqhvI2XvZygvcYO37-Dzt4oRWoeg8doAYR-7wcMnzwhJWQtcFh3rH8J8JVw71nRmkKGFv0_WgtF0mPnpw_IGt-RoEV7B_huhwON1TWgE-XcFtkio23Tq-Ua78awGuylbZPEXTd8qKq4l2uesUhtqEIe_LhKQfXNzz5zTM1hW-hzddZhYowCNb2mPLkeka_XBGLrmBqCNUyYgsvUtApUBtw0TwGkOqJJjD3KBO31qnB5t-lvwyi6LOSUFwbIndGJKM3nV41U8fTnUOxRDwOejpEQ'
+fanduel_email = 'eddiemay1999@yahoo.com'
+fanduel_password = 'fakeFanduelPassword'
+
+fd = southpaw.Fanduel(fanduel_email, fanduel_password, basic_auth_token, x_auth_token)
+
+# Get a list of all currently entered contests
+contests = fd.get_contests()
+print('contests:', len(contests), contests)
+
+# Get a list of all currently entered contests
+fixtures = fd.get_fixture_lists()
+print('fixtures:', len(fixtures), fixtures)
+
+# Get a list of all currently entered contests
+contests = fd.get_contests()
+print('contests:', len(contests), contests)

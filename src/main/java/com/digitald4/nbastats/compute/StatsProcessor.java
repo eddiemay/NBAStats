@@ -103,7 +103,7 @@ public class StatsProcessor {
 											.setLimit(SAMPLE_SIZE - games.size())).getItems())
 					.build();
 		}
-		if (games.size() > 0) {
+		if (!games.isEmpty()) {
 			int sampleSize = games.size();
 			double[][] matrix = new double[FantasyLeague.values().length][sampleSize];
 			double[] totals = new double[FantasyLeague.values().length];
@@ -141,7 +141,7 @@ public class StatsProcessor {
 				.build());*/
 		String strDate = date.toString(Constaints.COMPUTER_DATE);
 		// playerStore.refreshPlayerList(Constaints.getSeason(date));
-		ImmutableMap<Integer, PlayerDay> playerDaysMap = playerDayStore.list(date)
+		ImmutableMap<Long, PlayerDay> playerDaysMap = playerDayStore.list(date)
 				.getItems()
 				.stream()
 				.parallel()

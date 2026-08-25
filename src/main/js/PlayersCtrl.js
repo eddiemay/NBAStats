@@ -7,7 +7,8 @@ com.digitald4.nbastats.PlayersCtrl = function(globalData, playerService) {
 }
 
 com.digitald4.nbastats.PlayersCtrl.prototype.refresh = function() {
-  this.playerService.listBySeason(this.globalData.getSeason(), response => {
+  this.players = [];
+  this.playerService.listBySeason(this.globalData.season, response => {
     this.players = response.items;
   }, notifyError);
 }

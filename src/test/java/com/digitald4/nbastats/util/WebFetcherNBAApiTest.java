@@ -49,7 +49,7 @@ public class WebFetcherNBAApiTest {
 
   @Test
   public void getTeamRoster() {
-    ImmutableList<String> playerNames = apiDao.getTeamRoster("2020-21", 1610612750).stream()
+    ImmutableList<String> playerNames = apiDao.getTeamRoster(2021, 1610612750).stream()
         .map(Player::getName)
         .collect(toImmutableList());
     assertThat(playerNames).containsExactly(
