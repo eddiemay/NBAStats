@@ -16,6 +16,7 @@ if __name__ == '__main__':
   start_time = time.time()
 
   # Load the data
+  print("Loading data...")
   statsStore = StatsStore(PlayerStore())
   dfs = [
     statsStore.get_stats(year + 1, False, set_doubles)
