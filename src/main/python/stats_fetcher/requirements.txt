@@ -3,5 +3,7 @@ fake_useragent
 numpy
 mlx
 onnxruntime
+pytorch
 requests
 southpaw
+tensorflow
