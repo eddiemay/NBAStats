@@ -18,8 +18,8 @@ if __name__ == '__main__':
   # Load the data
   statsStore = StatsStore(PlayerStore())
   dfs = [
-    statsStore.get_stats(year, False, set_doubles)
-    for year in range(1947, 2026)
+    statsStore.get_stats(year + 1, False, set_doubles)
+    for year in range(1946, 2026)
   ]
   stats = pd.concat(dfs, ignore_index=True)
   print("total stats", len(stats))

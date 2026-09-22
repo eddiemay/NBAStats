@@ -28,7 +28,9 @@ class PlayerStore:
     return self.players
 
   def get_active(self, year: int):
-    return self.players[(self.players['years_min'] <= year) & (self.players['years_max'] >= year)]
+    if self.players is None:
+      self.load()
+    return self.players[(self.players['year_min'] <= year) & (self.players['year_max'] >= year)]
 
   def get(self, name: str):
     if self.players is None:
@@ -183,6 +185,10 @@ if __name__ == '__main__':
   print(kobe)
   all = player_store.get_all()
   print(all.describe())
+  year_2016 = player_store.get_active(2016)
+  print(year_2016.describe())
+  year_2026 = player_store.get_active(2026)
+  print(year_2026.describe())
   # ps = PlayerStore()
   # parse_nba_com(ps)
   # ps.save()

@@ -35,13 +35,13 @@ if __name__ == '__main__':
   )
   early_stopping = EarlyStopping(
       monitor='val_loss',  # Metric to monitor (e.g., validation loss)
-      patience=16,         # Number of epochs with no improvement after which training will be stopped
+      patience=32,         # Number of epochs with no improvement after which training will be stopped
       mode='min',          # 'min' for metrics that should decrease (like loss), 'max' for metrics that should increase (like accuracy)
       restore_best_weights=True # Restore model weights from the epoch with the best monitored value
   )
-  model.fit(train_x, train_y, epochs=250, batch_size=256,
+  model.fit(train_x, train_y, epochs=500, batch_size=256,
             validation_data=(val_x, val_y),
-            callbacks=[checkpoint, early_stopping])
+            callbacks=[checkpoint])
   result_weights = model.get_weights()[0]
   for i in range(len(fantasy_weights.keys())):
     print(list(fantasy_weights.keys())[i], list(fantasy_weights.values())[i], result_weights[i])

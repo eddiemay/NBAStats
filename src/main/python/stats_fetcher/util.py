@@ -39,11 +39,11 @@ def is_file_exist(file: str):
 
 
 def send_request(url: str) -> requests.Response:
-  time.sleep(3) # Sleep for 1 second so we don't get blacklisted.
-  params = {
+  time.sleep(3) # Sleep for 3 seconds so we don't get blacklisted.
+  ''' params = {
     'url': url,
     'apikey': get_zenrows_api_key(),
-  }
+  } '''
   # response = requests.get('https://api.zenrows.com/v1/', params=params)
   response = requests.get(url)
   # print(response.text)

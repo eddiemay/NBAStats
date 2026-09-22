@@ -58,16 +58,16 @@ class StatsStore:
     with open(file, "a", encoding="utf-8") as f:
       with open(playoffs_file, "a", encoding="utf-8") as pf:
         players = self.player_store.get_active(year)
-        print(players.size, "players for", year)
-        for player in players.iterrows():
-          if reg_player_map.get(player['id']) is None or playoffs_player_map.get(player['id']) is None and year in player['playoff_years']:
+        print(len(players), "players for", year)
+        for _, player in players.iterrows():
+          if reg_player_map.get(player.id) is None or playoffs_player_map.get(player.id) is None and year in player.playoff_years:
             # Any player we don't have stats for should be appended to the file.
             player_stats = self.fetch_for_player(player, year)
-            if reg_player_map.get(player['id']) is None:
+            if reg_player_map.get(player.id) is None:
               for player_stat in player_stats['regular']:
                 json.dump(player_stat, f, ensure_ascii=False, separators=(',', ':'))
                 f.write("\n")
-            if playoffs_player_map.get(player['id']) is None:
+            if playoffs_player_map.get(player.id) is None:
               for player_stat in player_stats['playoffs']:
                 json.dump(player_stat, pf, ensure_ascii=False, separators=(',', ':'))
                 pf.write("\n")
@@ -133,7 +133,7 @@ if __name__ == '__main__':
   player_store = PlayerStore()
   pd.set_option('display.max_columns', 10)
   stats_store = StatsStore(player_store)
-  for year in range(1947, 2026, 10):
+  for year in range(1956, 2027, 10):
     print(f"{year}")
     # stats_store.fetch(year)
     # stats_store.resave(year, False)
