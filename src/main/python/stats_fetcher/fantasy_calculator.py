@@ -111,7 +111,7 @@ def matmul_fantasy(npa, fantasy_weights):
   return np.matmul(npa, weights)
 
 
-def calc_fantasy(stats: list, fantasy_weights = fantasy_weights_simple):
+def calc_fantasy(stats: list, fantasy_weights = fantasy_weights):
   npa = to_numpy_array(stats, fantasy_weights)
   return matmul_fantasy(npa, fantasy_weights)
 
